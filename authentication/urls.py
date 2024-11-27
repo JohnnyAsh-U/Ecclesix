@@ -1,8 +1,10 @@
 from django.urls import path, include
-from .views import Connexion
+from . import views
 
 urlpatterns = [
-    path('connexion', Connexion.as_view()),
+    path('connexion', views.Connexion.as_view()),
+    path('verify-email', views.VerifyEmail.as_view()),
+    path('setup-otp', views.SetupOTP.as_view())
     # path('inscription'),
     # path('verify-email'),
     # path('reinitialisation'),

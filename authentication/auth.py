@@ -1,59 +1,15 @@
 import smtplib
-from rest_framework.authentication import BasicAuthentication, BaseAuthentication
+from rest_framework.authentication import BaseAuthentication
 from django.contrib.auth import authenticate as login
 from members.models import Members
-import datetime, os, random, hashlib, jwt
-from django.core.mail import send_mail
+# from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
-
+from .utils import jwtEncode, jwtDecode, generate_random_hash
+from members.models import Members
+import os
 
 temp_token_secret = os.getenv('TEMP_TOKEN')
-
-
-def generate_random_hash():
-    """
-    Generate random number and hashed number
-    """    
-    random_num = str(random.randint(100000, 999999))
-    hashed_num = hashlib.sha256(random_num.encode())
-    hashed_hex = hashed_num.hexdigest()
-    return random_num, hashed_hex
-
-
-
-
-def send_verification_email(email, code):
-    content = render_to_string(
-        "email_template.html",
-        context={"code": code}
-    )
-    try:
-        msg = EmailMultiAlternatives(
-            'Verification Email',
-            content,
-            'Church Management System <noreply@example.com>',
-            [email],
-        )
-        # msg.attach_alternative(content, 'text/html')
-        msg.content_subtype = 'html'
-        msg.send()
-        return True
-    except smtplib.SMTPException :
-        return False
-
-
-
-
-def jwtEncode(payload, age, secret):
-    """
-    Jwt encoding with secret
-    """
-    payload["exp"] = datetime.datetime.now() + datetime.timedelta(minutes=age)
-    token = jwt.encode(payload, key=secret, algorithm="HS256")
-    return token
-
-
 
 
 class AuthBackend:
@@ -68,15 +24,12 @@ class AuthBackend:
         user = login(request, **cred)
         if user:
             return AuthBackend(user)
-        
-    def get_user(self):
-        pass
     
     def check_email_verification(self):
         return self.user.verified
     
-    def check_otp_setup(self):
-        pass
+    def check_otp(self):
+        return True if self.user.otp_key is not None else False
     
     def verify_otp(self):
         pass
@@ -101,15 +54,36 @@ class AuthBackend:
                 "from": "Connexion",
                 "next": "VerifyEmail"
             }
-            verification_email_status = send_verification_email(self.user.email,random_num)
+            verification_email_status = self._send_verification_email(code=random_num)
             token = jwtEncode(payload, age=30, secret=temp_token_secret)
             return token, verification_email_status
-            
+        
+        
+    def _send_verification_email(self, code):
+        content = render_to_string(
+            "email_template.html",
+            context={"code": code}
+        )
+        try:
+            msg = EmailMultiAlternatives(
+                'Verification Email',
+                content,
+                'Church Management System <noreply@example.com>',
+                [self.user.email],
+            )
+            msg.content_subtype = 'html'
+            msg.send()
+            return True
+        except smtplib.SMTPException :
+            return False
+        
     
-    @staticmethod
-    def checktoken(token):
-        if token:
-            return AuthBackend(id)
+    def verify_refresh_token(self, token, secret):
+        user_payload = jwtDecode(token, secret)
+        if user_payload.device_id == self.user.device_id and user_payload.id == self.user.id:
+            return True
+        else:
+            return False
         
 
 
@@ -123,6 +97,16 @@ class JWTAuthentication(BaseAuthentication):
         setattr(request, "user", "Something")
         print(request)
         return (Members.objects.get(id=1), None)
+    
+    
+    # @staticmethod
+    # def verify_refresh_token(token, secret):
+    #     payload = jwtDecode(token, secret)
+    #     return JWTAuthentication()
+    
+    
+    def get_user():
+        pass
         # auth = get_authorization_header(request).split()
 
         # if not auth or auth[0].lower() != b'basic':
@@ -166,4 +150,4 @@ class JWTAuthentication(BaseAuthentication):
 
 
 
-# {"values":{"email":"test@test.com", "password":"1234"}}
+# {"values":{"email":"johnashimedua@chms.com", "password":"1234"}}

@@ -26,6 +26,13 @@ class UserManagerCustom(UserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_admin", True)
+        extra_fields.setdefault("gender", 'H')
+        extra_fields.setdefault("marital_status", 'M')
+        extra_fields.setdefault("category", 'Adulte')
+        extra_fields.setdefault("status", 'Ministre')
+        extra_fields.setdefault("first_name", "SuperAdmin")
+        extra_fields.setdefault("last_name", "Superadmin")
+        
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
@@ -38,10 +45,10 @@ class UserManagerCustom(UserManager):
 
 class Members(User):
     gender = models.CharField(
-        max_length=20, choices=[("M", "Male"), ("F", "Female")], null=False, blank=False
+        max_length=20, choices=[("H", "Homme"), ("F", "Femme")], null=False, blank=False
     )
     birthdate = models.DateField(null=True, blank=True)
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=15, null=True)
     profession_type = models.CharField(
         max_length=20,
         choices=[
@@ -52,9 +59,10 @@ class Members(User):
         ],
         blank=False,
         null=False,
+        default="Autres"
     )
-    profession = models.CharField(max_length=100)
-    address = models.CharField(max_length=256)
+    profession = models.CharField(max_length=100, null=True)
+    address = models.CharField(max_length=256, null=True)
     baptism_date = models.DateField(null=True, blank=True)
     marital_status = models.CharField(
         max_length=10, choices=[("M", "Marie"), ("C", "Celibataire"), ("V", "Veuf")]
