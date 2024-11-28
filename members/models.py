@@ -1,5 +1,5 @@
 from django.db import models
-from authentication.models import User
+from auth_custom.models import User
 from django.contrib.auth.models import UserManager
 from django.contrib.auth.hashers import make_password
 
@@ -12,7 +12,9 @@ class UserManagerCustom(UserManager):
         """
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        user.password = make_password(password)
+        
+        #added this condition for purpose of testing when creating user(members) with this function
+        user.password = make_password(password) if password !='None' else password
         user.save(using=self._db)
         return user
 
@@ -20,6 +22,12 @@ class UserManagerCustom(UserManager):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
         extra_fields.setdefault("is_admin", False)
+        extra_fields.setdefault("gender", 'H')
+        extra_fields.setdefault("marital_status", 'C')
+        extra_fields.setdefault("category", 'Adulte')
+        extra_fields.setdefault("status", 'Ministre')
+        extra_fields.setdefault("first_name", "user")
+        extra_fields.setdefault("last_name", "user")
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email=None, password=None, **extra_fields):
@@ -80,9 +88,11 @@ class Members(User):
             ("Visiteur", "Visiteur"),
         ],
     )
+    eglise_id = models.IntegerField( null=True, blank=True)
     
     objects = UserManagerCustom()
     
     class Meta :
         verbose_name = "members"
         verbose_name_plural = "members"
+        db_table = "members"

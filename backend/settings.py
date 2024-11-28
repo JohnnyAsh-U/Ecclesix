@@ -36,7 +36,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'authentication',
+    'auth_custom',
     'members',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,12 +56,13 @@ REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'authentication.auth.JWTAuthentication',
+        'auth_custom.auth.JWTAuthentication',
         'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
-    ]
+    ],
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json'
 }
 
 # AUTHENTICATION_BACKENDS = [

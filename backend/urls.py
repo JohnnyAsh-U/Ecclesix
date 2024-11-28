@@ -13,7 +13,7 @@ urlpatterns = [
     
     
     #api routes
-    path('api/auth/', include('authentication.urls')),
+    path('api/auth/', include('auth_custom.urls')),
     path('api/membre/', include('members.urls')),
     path('api/eglise/', include('church.urls')),
 ]
