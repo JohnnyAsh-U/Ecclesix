@@ -37,6 +37,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'auth_custom',
+    'admin_custom',
     'members',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,7 +57,7 @@ REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES' : [
-        'auth_custom.auth.JWTAuthentication',
+        # 'auth_custom.auth.JWTAuthentication',
         'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -192,7 +193,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-AUTH_USER_MODEL = 'members.Members'
+AUTH_USER_MODEL = 'members.Member'
 
 
 # Default primary key field type

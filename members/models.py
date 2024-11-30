@@ -4,7 +4,6 @@ from django.contrib.auth.models import UserManager
 from django.contrib.auth.hashers import make_password
 
 
-
 class UserManagerCustom(UserManager):
     def _create_user(self, email, password, **extra_fields):
         """
@@ -12,9 +11,9 @@ class UserManagerCustom(UserManager):
         """
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        
-        #added this condition for purpose of testing when creating user(members) with this function
-        user.password = make_password(password) if password !='None' else password
+
+        # added this condition for purpose of testing when creating user(members) with this function
+        user.password = make_password(password) if password != "None" else password
         user.save(using=self._db)
         return user
 
@@ -22,10 +21,10 @@ class UserManagerCustom(UserManager):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
         extra_fields.setdefault("is_admin", False)
-        extra_fields.setdefault("gender", 'H')
-        extra_fields.setdefault("marital_status", 'C')
-        extra_fields.setdefault("category", 'Adulte')
-        extra_fields.setdefault("status", 'Ministre')
+        extra_fields.setdefault("gender", "H")
+        extra_fields.setdefault("marital_status", "C")
+        extra_fields.setdefault("category", "Adulte")
+        extra_fields.setdefault("status", "Ministre")
         extra_fields.setdefault("first_name", "user")
         extra_fields.setdefault("last_name", "user")
         return self._create_user(email, password, **extra_fields)
@@ -34,24 +33,21 @@ class UserManagerCustom(UserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_admin", True)
-        extra_fields.setdefault("gender", 'H')
-        extra_fields.setdefault("marital_status", 'M')
-        extra_fields.setdefault("category", 'Adulte')
-        extra_fields.setdefault("status", 'Ministre')
+        extra_fields.setdefault("gender", "H")
+        extra_fields.setdefault("marital_status", "M")
+        extra_fields.setdefault("category", "Adulte")
+        extra_fields.setdefault("status", "Ministre")
         extra_fields.setdefault("first_name", "SuperAdmin")
         extra_fields.setdefault("last_name", "Superadmin")
-        
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
         return self._create_user(email, password, **extra_fields)
-    
-    
 
 
-class Members(User):
+class Member(User):
     gender = models.CharField(
         max_length=20, choices=[("H", "Homme"), ("F", "Femme")], null=False, blank=False
     )
@@ -67,7 +63,7 @@ class Members(User):
         ],
         blank=False,
         null=False,
-        default="Autres"
+        default="Autres",
     )
     profession = models.CharField(max_length=100, null=True)
     address = models.CharField(max_length=256, null=True)
@@ -88,11 +84,77 @@ class Members(User):
             ("Visiteur", "Visiteur"),
         ],
     )
-    eglise_id = models.IntegerField( null=True, blank=True)
-    
+
+    city = models.ForeignKey(
+        "church.City",
+        on_delete=models.SET_NULL,
+        related_name="city_member",
+        related_query_name="city",
+        null=True,
+    )
+    church = models.ForeignKey(
+        "church.Church",
+        on_delete=models.SET_NULL,
+        related_name="church_member",
+        related_query_name="church",
+        null=True,
+    )
+    role = models.ForeignKey(
+        "admin_custom.Role",
+        verbose_name="role",
+        related_name="role_member",
+        related_query_name="role",
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+
+    followed_up_by = models.ForeignKey(
+        "self",
+        verbose_name="followed_up_by",
+        # related_name="role_member",
+        # related_query_name="role",
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+
+    relations = models.ManyToManyField(
+        "self",
+        through="Relationship",
+        through_fields=("from_member", "to_member"),
+        symmetrical=False,
+        related_name="related_to",
+        db_constraint=True,
+    )
+
     objects = UserManagerCustom()
-    
-    class Meta :
-        verbose_name = "members"
+
+    class Meta:
+        verbose_name = "member"
         verbose_name_plural = "members"
-        db_table = "members"
+        unique_together = ["email", "first_name", "last_name"]
+
+
+class Relationship(models.Model):
+
+    from_member = models.ForeignKey(
+        Member, related_name="from_member_relations", on_delete=models.CASCADE
+    )
+    to_member = models.ForeignKey(
+        Member, related_name="to_member_relations", on_delete=models.CASCADE
+    )
+    relationship = models.CharField(
+        max_length=20,
+        choices=[
+            ("Marriage", "Marriage"),
+            ("Enfant", "Enfant"),
+            ("Parent", "Parent"),
+            ("Frere/Soeur", "Frere/Soeur"),
+            ("Autres", "Autres"),
+        ],
+    )
+
+    class Meta:
+        verbose_name = "Relationship"
+        verbose_name_plural = "Relationships"
+        unique_together = ['from_member', 'to_member']
+

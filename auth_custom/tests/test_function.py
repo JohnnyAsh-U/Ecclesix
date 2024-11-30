@@ -1,6 +1,6 @@
 from django.test import TestCase, SimpleTestCase
 from .. import utils, auth
-from members.models import Members
+from members.models import Member
 from django.core import mail
 from uuid import uuid4
 from os import getenv
@@ -66,7 +66,7 @@ class TestFunc(SimpleTestCase):
         
 class TestAuthBackend(TestCase):
     def setUp(self):
-        Members.objects.create_superuser(
+        Member.objects.create_superuser(
             email="johnashimedua@chms.com",
             password= "1234",
             first_name = "John",
@@ -81,7 +81,7 @@ class TestAuthBackend(TestCase):
         
     def test_auth_instance(self):
         self.assertIsInstance(self.login_user, auth.AuthBackend)
-        self.assertIsInstance(self.login_user.user, Members)
+        self.assertIsInstance(self.login_user.user, Member)
         self.assertEqual(self.login_user.check_otp(), False)    
         self.assertEqual(self.login_user.check_email_verification(), False)
         
@@ -96,9 +96,9 @@ class TestAuthBackend(TestCase):
         
         #verifying email with code
         wrong_email_code = auth.AuthBackend.verify_email(token, "145256")
-        self.assertNotIsInstance(wrong_email_code, Members)
+        self.assertNotIsInstance(wrong_email_code, Member)
         correct_email_code = auth.AuthBackend.verify_email(token, code)
-        self.assertIsInstance(correct_email_code, Members)
+        self.assertIsInstance(correct_email_code, Member)
         self.assertEqual(correct_email_code.verified, True)
         
     def test_refresh_token_device_id(self):
@@ -156,11 +156,11 @@ class TestAuthBackend(TestCase):
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=otp_code, secret=otp_key)
         self.assertNotEqual(is_valid, False)
-        self.assertIsInstance(is_valid, Members)
+        self.assertIsInstance(is_valid, Member)
             
             
         #user has an otpkey in db
-        user = Members.objects.get(email = "johnashimedua@chms.com")
+        user = Member.objects.get(email = "johnashimedua@chms.com")
         user.otp_key = otp_key
         user.save()
         
@@ -177,7 +177,15 @@ class TestAuthBackend(TestCase):
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=otp_code)
         self.assertNotEqual(is_valid, False)
-        self.assertIsInstance(is_valid, Members)
+        self.assertIsInstance(is_valid, Member)
+        
+        
+    def test_sent_reset_password_email(self):
+         #generate email code 
+        generate_email = self.login_user.send_reset_password_email()
+        self.assertEqual(generate_email, True)
+        self.assertEqual(len(mail.outbox), 1)
+        
         
         
         

@@ -1,18 +1,18 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from members.models import Members
+from members.models import Member
 from django.utils import timezone
+from django.contrib.auth import logout
 from .auth import AuthBackend
-from django.contrib.auth.hashers import make_password
 from .auth import JWTAuthentication
 from .utils import getRefreshToken, jwtEncode, jwtDecode, generate_tokens
-import os, pyotp, uuid, datetime
-
+import os, pyotp, uuid
 
 access_token_secret = os.getenv("ACCESS_TOKEN")
 temp_token_secret = os.getenv("TEMP_TOKEN")
 refresh_token_secret = os.getenv("REFRESH_TOKEN")
+email_token_secret = os.getenv("EMAIL_TOKEN")
 
 
 class Register(APIView):
@@ -31,31 +31,30 @@ class Register(APIView):
             )
 
         # to test if the user is the first admin
-        total_admin = Members.objects.filter(is_admin=True)
+        # total_admin = Member.objects.filter(is_admin=True)
 
-        if total_admin.count() == 0:
-            admin = Members.objects.create_superuser(
-                email=email,
-                password=password,
-                first_name="SuperAdmin",
-                last_name="SuperAdmin",
-            )
+        # if total_admin.count() == 0:
+        #     admin = Member.objects.create_superuser(
+        #         email=email,
+        #         password=password,
+        #         first_name="SuperAdmin",
+        #         last_name="SuperAdmin",
+        #     )
 
-        new_user = Members.objects.filter(email=email, is_admin=True, is_active=True).first()
-        
-        #to make sure the user is not already registered as an admin
-        if not new_user or new_user.password  != "None":
+        new_user = Member.objects.filter(
+            email=email, is_admin=True, is_active=True
+        ).first()
+
+        # to make sure the user is not already registered as an admin
+        if not new_user or new_user.password != "None":
             return Response(
                 {"status": False, "err": "Erreur ! Impossible de s'inscrire"},
                 status.HTTP_400_BAD_REQUEST,
             )
-            
-        #update the user row with new password
-        new_user.password = make_password(password)
-        new_user.save()
 
-        #authenticate the user with the new password
-        admin = AuthBackend.authenticate(request, email=email, password=password)
+        # update the user row with new password
+        admin = AuthBackend(new_user)
+        admin.change_password(password)
 
         token, sent, code = admin.generate_email_verification(from_view="Inscription")
         return (
@@ -79,9 +78,11 @@ class Login(APIView):
                 status.HTTP_400_BAD_REQUEST,
             )
 
-        admin = Members.objects.filter(email=email, is_admin = True, is_active= True).first()
-        
-        #to make sure if the password is default none then the user has to first register
+        admin = Member.objects.filter(
+            email=email, is_admin=True, is_active=True
+        ).first()
+
+        # to make sure if the password is default none then the user has to first register
         if not admin or admin.password == "None":
             return Response(
                 {"status": False, "err": "Ce compte n'existe pas"},
@@ -109,7 +110,7 @@ class Login(APIView):
 
         full_name = admin.user.get_full_name()
         has_otp_key = admin.check_otp()
-        refresh_token = getRefreshToken(request)
+        refresh_token = getRefreshToken(self.request)
 
         # to check if the user still has a refresh token
         # if not we generate a token for verification or setup of otp
@@ -140,7 +141,7 @@ class Login(APIView):
             new_payload = {
                 "id": user.id,
                 "username": user.first_name,
-                "eglise_id": user.eglise_id,
+                "church_id": user.church_id,
                 "device_id": user.device_id,
             }
             access, refresh = generate_tokens(new_payload)
@@ -174,6 +175,85 @@ class Login(APIView):
             response.delete_cookie("refreshToken")
 
             return response
+
+
+class Reinitialization(APIView):
+    authentication_classes = []
+
+    def post(self, request, format=None):
+        email = request.data.get("values", {}).get("email", None)
+
+        if not email:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        admin = Member.objects.filter(
+            email=email, is_admin=True, is_active=True
+        ).first()
+
+        # to make sure if the password is not default
+        if not admin or admin.password == "None":
+            return Response(
+                {"status": False, "err": "Ce compte n'existe pas"},
+                status.HTTP_400_BAD_REQUEST,
+            )
+
+        auth_instance = AuthBackend(admin)
+        token = auth_instance.send_reset_password_email()
+        return (
+            Response({"email": email})
+            if token
+            else Response({"err": "Echec de verification"}, status.HTTP_400_BAD_REQUEST)
+        )
+
+
+class ConfirmReinitialization(APIView):
+
+    authentication_classes = []
+
+    def get(self, request, format=None):
+        try:
+            token = self.request.query_params["token"]
+            payload = jwtDecode(token, email_token_secret) or {}
+            email = payload["email"]
+            id = payload["id"]
+            user = Member.objects.get(
+                email=email, id=id, is_admin=True, is_active=True
+            )
+            return Response({"email": email, "name": user.get_full_name()})
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPassword(APIView):
+
+    authentication_classes = []
+
+    def post(self, request, format=None):
+        try:
+            token = self.request.query_params["token"]
+            values = self.request.data["values"]
+            password = values["password"]
+            password2 = values["password2"]
+            if not password == password2:
+                raise Exception
+
+            payload = jwtDecode(token, email_token_secret) or {}
+            email = payload["email"]
+            id = payload["id"]
+            user = Member.objects.get(
+                email=email, id=id, is_admin=True, is_active=True
+            )
+            auth_instance = AuthBackend(user)
+            auth_instance.change_password(password)
+
+            temp_token = jwtEncode(
+                {"email": email, "from": "Reinitialization", "next": "OTP"},
+                age=5,
+                secret=temp_token_secret,
+            )
+            return Response({"token": temp_token, "next": "OTP"})
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyEmail(APIView):
@@ -222,7 +302,7 @@ class SetupOTP(APIView):
         if not payload or not email:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        user = Members.objects.filter(email=email, is_admin=True).first()
+        user = Member.objects.filter(email=email, is_admin=True).first()
 
         if not user:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -262,7 +342,7 @@ class VerifyOTP(APIView):
             payload = {
                 "id": user.pk,
                 "username": user.first_name,
-                "eglise_id": user.eglise_id,
+                "church_id": user.church_id,
                 "device_id": device_id,
             }
 
@@ -288,7 +368,7 @@ class RefreshToken(APIView):
     authentication_classes = []
 
     def post(self, request, format=None):
-        refresh_token = getRefreshToken(request)
+        refresh_token = getRefreshToken(self.request)
         if not refresh_token:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -298,7 +378,7 @@ class RefreshToken(APIView):
         if not verification or not id:
             return Response(status=status.HTTP_402_PAYMENT_REQUIRED)
 
-        user = Members.objects.filter(id=id, is_admin=True).first()
+        user = Member.objects.filter(id=id, is_admin=True).first()
 
         if not user:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -312,7 +392,7 @@ class RefreshToken(APIView):
         payload = {
             "id": user.pk,
             "username": user.first_name,
-            "eglise_id": user.eglise_id,
+            "church_id": user.church_id,
             "device_id": user.device_id,
         }
 
@@ -322,3 +402,15 @@ class RefreshToken(APIView):
         user.save()
 
         return Response({"token": access})
+
+
+class Logout(APIView):
+    
+    #add jwt auth check in permission classes
+    authentication_classes = []
+    permission_classes = []
+    
+    
+    def post(self, request, format=None):
+        logout(self.request)
+        return Response()

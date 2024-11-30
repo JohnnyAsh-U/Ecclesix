@@ -16,4 +16,5 @@ urlpatterns = [
     path('api/auth/', include('auth_custom.urls')),
     path('api/membre/', include('members.urls')),
     path('api/eglise/', include('church.urls')),
+    path('api/admin/', include('admin_custom.urls')),
 ]

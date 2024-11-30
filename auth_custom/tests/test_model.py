@@ -1,10 +1,10 @@
 from django.test import TestCase, Client
-from members.models import Members
+from members.models import Member
 
 class TestModel(TestCase):
     
     def setUp(self):
-        self.user = Members.objects.create_superuser(
+        self.user = Member.objects.create_superuser(
             email="johnashimedua@chms.com",
             password= "1234",
             first_name = "John",

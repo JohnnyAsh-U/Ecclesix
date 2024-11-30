@@ -1,19 +1,18 @@
 from django.test import TestCase
 from rest_framework.test import APIClient, APITestCase, APIRequestFactory
-from members.models import Members
+from members.models import Member
 from ..utils import generate_tokens, jwtEncode
 from django.core import mail
 from django.urls import reverse
 import uuid
-
-# Create your tests here.
+import os
 
 
 class AuthTest(APITestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.superadmin = Members.objects.create_superuser(
+        cls.superadmin = Member.objects.create_superuser(
             email="johnashimedua@chms.com",
             password="1234",
             first_name="John",
@@ -21,7 +20,7 @@ class AuthTest(APITestCase):
         )
         
         #member that was just made an admin
-        cls.admin = Members.objects.create_user(
+        cls.admin = Member.objects.create_user(
             email="admin@chms.com",
             password="None",
             is_admin = True,
@@ -30,7 +29,7 @@ class AuthTest(APITestCase):
         )
          
         #normal user(member)
-        cls.user = Members.objects.create_user(
+        cls.user = Member.objects.create_user(
             email="testuser@chms.com",
             password="None",
             first_name="Test",
@@ -148,7 +147,7 @@ class AuthTest(APITestCase):
         new_payload = {
             "id": self.superadmin.id,
             "username": self.superadmin.first_name,
-            "eglise_id": self.superadmin.eglise_id,
+            "church_id": self.superadmin.church_id,
             "device_id": device_id,
         }
         access, refresh = generate_tokens(new_payload)
@@ -187,6 +186,115 @@ class AuthTest(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["status"], False)
         
+        
+    def test_reinitialization(self):
+        url = reverse('reinitialization')
+        values = {"values": {}}
+        
+        #no email
+        values["values"]["email"] = ""
+        response = self.client.post(url, data=values, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #with invalid email
+        values["values"]["email"] = "invalidemail@chms.com"
+        response = self.client.post(url, data=values, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["status"], False)
+        
+        
+        #with nonadmin email that has None password
+        values["values"]["email"] = "testuser@chms.com"
+        response = self.client.post(url, data=values, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["status"], False)
+        
+        
+        #with valid email
+        values["values"]["email"] = "johnashimedua@chms.com"
+        response = self.client.post(url, data=values, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.data.keys()), ['email'])
+        self.assertEqual(len(mail.outbox), 1)
+        
+        
+    def test_confirm_reset_pass(self):
+        
+        url = reverse('confirm-reinitialization')
+        query = {}
+        
+        #no token in query
+        response = self.client.get(url, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #invalid token
+        query['token'] = 'tokenhere'
+        response = self.client.get(url, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #expired token
+        token = jwtEncode({"email": "johnashimedua@chms.com", "id": 1}, age=-1, secret=os.getenv('EMAIL_TOKEN'))
+        query['token'] = token
+        response = self.client.get(url, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #valid token with invalid user
+        token = jwtEncode({"email": "test@test.com", "id": 1}, age=1, secret=os.getenv('EMAIL_TOKEN'))
+        query['token'] = token
+        response = self.client.get(url, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #valid token with valid user
+        token = jwtEncode({"email": self.superadmin.email, "id": self.superadmin.id}, age=10, secret=os.getenv('EMAIL_TOKEN'))
+        query['token'] = token
+        response = self.client.get(url, query_params=query, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.data, {"email": self.superadmin.email, "name": self.superadmin.get_full_name()})
+       
+       
+    def test_password_reset(self):
+        url = reverse('reset-password')
+        values = {
+           "values": { "password": "pass",
+            "password2": "pass"}
+        }
+        query = {}
+        
+        #no token in query
+        response = self.client.post(url, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #expired token
+        token = jwtEncode({"email": "johnashimedua@chms.com", "id": 1}, age=-1, secret=os.getenv('EMAIL_TOKEN'))
+        query['token'] = token
+        response = self.client.post(url, data=values, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #valid token with invalid user
+        token = jwtEncode({"email": "test@test.com", "id": 1}, age=2, secret=os.getenv('EMAIL_TOKEN'))
+        query['token'] = token
+        response = self.client.post(url, data=values, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        #valid token, valid user with wrong password match
+        values["values"]['password2'] = 'passs'
+        token = jwtEncode({"email": self.superadmin.email, "id": self.superadmin.id}, age=10, secret=os.getenv('EMAIL_TOKEN'))
+        query['token'] = token
+        response = self.client.post(url, data=values, query_params=query, format="json")
+        self.assertEqual(response.status_code, 400)
+        
+        
+        #valid token, valid user, valid pass
+        values['values']['password2'] = 'pass'
+        response = self.client.post(url,data=values, query_params=query, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data.keys()), 2)
+        self.assertEqual(response.data['next'], "OTP")
+       
+        
+    
+        
+    
     
     def test_refresh_token_url(self):
         url = reverse('refresh-token')
@@ -202,7 +310,7 @@ class AuthTest(APITestCase):
         new_payload = {
             "id": self.superadmin.id,
             "username": self.superadmin.first_name,
-            "eglise_id": self.superadmin.eglise_id,
+            "church_id": self.superadmin.church_id,
             "device_id": device_id,
         }
         

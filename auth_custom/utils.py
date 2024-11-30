@@ -38,7 +38,7 @@ def jwtDecode(token, secret):
     
     
 def getRefreshToken(request):
-    return request._request.COOKIES.get('refreshToken', None)
+    return request.COOKIES.get('refreshToken', None)
 
 
 def generate_tokens(payload):
