@@ -111,7 +111,7 @@ class Member(User):
     followed_up_by = models.ForeignKey(
         "self",
         verbose_name="followed_up_by",
-        # related_name="role_member",
+        related_name="members_followed_up",
         # related_query_name="role",
         on_delete=models.SET_NULL,
         null=True,
@@ -132,6 +132,9 @@ class Member(User):
         verbose_name = "member"
         verbose_name_plural = "members"
         unique_together = ["email", "first_name", "last_name"]
+        
+    def __str__(self):
+        return self.get_full_name()
 
 
 class Relationship(models.Model):
@@ -156,5 +159,6 @@ class Relationship(models.Model):
     class Meta:
         verbose_name = "Relationship"
         verbose_name_plural = "Relationships"
+        default_permissions = ()
         unique_together = ['from_member', 'to_member']
 

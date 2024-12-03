@@ -8,6 +8,8 @@ class City(models.Model):
     class Meta:
         verbose_name = "City"
         verbose_name_plural = "Cities"
+        default_permissions = ()
+        
 
     def __str__(self):
         return f"{self.city_name}"
@@ -20,9 +22,11 @@ class Church_type(models.Model):
     class Meta:
         verbose_name = "Church_type"
         verbose_name_plural = "Church_types"
+        default_permissions = ()
+        
 
     def __str__(self):
-        f"{self.church_type_name}"
+        return f"{self.church_type_name}"
 
 
 class Church(models.Model):
@@ -62,6 +66,8 @@ class Church(models.Model):
     class Meta:
         verbose_name = "Church"
         verbose_name_plural = "Churches"
+        default_permissions = ()
+        
 
     def __str__(self):
         return f"{self.church_name}"

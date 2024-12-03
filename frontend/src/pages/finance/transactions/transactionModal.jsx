@@ -1,0 +1,463 @@
+import React, { useEffect, useState } from 'react'
+import Modal from 'react-bootstrap/Modal'
+import _ from 'lodash'
+import { useFormik, Form, Field, ErrorMessage, Formik } from 'formik'
+import * as yup from 'yup';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+import { AppGlobalContext } from '../../../hooks/AppContext';
+import { LoadingButton2 } from '../../../components/buttons/loadingbuttons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCancel, faCheckCircle, faClose, faCross, faEdit, faMoneyCheck, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { formatAmount } from '../../../utils/datetime/amount';
+import { ContentPermsWrapper } from '../../../utils/permissions/permwrapper';
+import { FormInputWithLabel } from '../../../components/Inputbox/input';
+
+
+
+
+export default function Ajouter({ type, eglise, categorie, handleModal, modal, toutComptes, comptes, ...props }) {
+    const { permissions, admin } = AppGlobalContext()
+    const [loading, setLoading] = useState(false)
+
+    const title = (val) => {
+        if (val == 'Credit') {
+            return "Ajouter une Collecte"
+        } else if (val == 'Debit') {
+            return "Ajouter une Depense"
+        } else if (val == 'Transfer') {
+            return "Faire un Transfert"
+        }
+    }
+
+    const formik = useFormik({
+        initialValues: {
+            description: '',
+            montant: 0.00,
+            id_eglise: eglise || 0,
+            id_compte: 0,
+            au_compte: 0,
+            id_categorie: 0,
+            id_evenement: '0',
+            id_membre: eglise || admin.id,
+        },
+        validationSchema: yup.object({
+            description: yup.string().notRequired(),
+            montant: yup.number().min(1, 'Ce champ est requis'),
+            id_compte: type != 'Credit' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            au_compte: type == 'Transfer' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            id_categorie: type != 'Transfer' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            id_evenement: type == 'Credit' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+        }),
+        onSubmit: values => {
+            setLoading(true)
+            axios.post(`/finance/transactions`, { values, type, eglise }).then(data => {
+                toast.success('Success')
+                formik.resetForm()
+                handleModal()
+            })
+                .catch(err => {
+                    toast.error(err.message)
+                    handleModal();
+                }).finally(() => setLoading(false))
+        }
+    })
+
+    //Filters categories according to transaction type: Credit, Debit
+    let filteredCategorie = categorie.filter(cate => cate.type == type)
+
+    //filters comptes to remove the sending compte from the list of receiving compte in transfert
+    const receivingCompte = toutComptes.filter(c => c.id_compte != formik.values.id_compte)
+
+
+
+    return (
+        <Modal alignment="center" show={modal === 'ajouter'} onHide={() => handleModal()} centered>
+            <form onSubmit={formik.handleSubmit}>
+                <Modal.Header closeButton>
+                    <Modal.Title className='fs-5'>{title(type)}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+
+                    {type != 'Transfer' &&
+                        <div className="form-group row mb-3">
+                            <label htmlFor="id_categorie" className="fw-bold col-sm-3 col-form-label">
+                                Categorie
+                            </label>
+                            <div className="col-sm-9">
+                                <select className='form-control form-select' name="id_categorie" id="id_categorie" placeholder='Type' {...formik.getFieldProps('id_categorie')}>
+                                    <option value={0} disabled>Categorie {type == 'Credit' ? 'Collecte' : 'Depense'} </option>
+                                    {filteredCategorie.map((cate) =>
+                                        <option key={cate.id_categorie} value={cate.id_categorie}>{cate.lib_categorie}</option>
+                                    )}
+                                </select>
+                                {formik.touched.id_categorie && formik.errors.id_categorie ? (<small className='text-danger'>{formik.errors.id_categorie}</small>) : null}
+                            </div>
+                        </div>
+                    }
+
+                    {
+                        type == 'Credit' &&
+                        <div className="form-group row mb-3">
+                            <label htmlFor="id_evenement" className="fw-bold col-sm-3 col-form-label">
+                                Evenement
+                            </label>
+                            <div className='col-sm-9' sm={10}>
+                                <select name='id_evenement' className="form-control form-select mb-1"  {...formik.getFieldProps('id_evenement')}>
+                                    <option value={0} disabled>Evenement </option>
+                                    {props.evenements.map((ev) =>
+                                        <option key={ev.id_evenement} value={ev.id_evenement}>{ev.evenement}</option>
+                                    )}
+                                </select>
+                                {formik.touched.id_evenement && formik.errors.id_evenement ? (<small className='text-danger'>{formik.errors.id_evenement}</small>) : null}
+                            </div>
+                        </div>
+                    }
+
+                    {type != 'Credit' &&
+                        <div className="form-group row mb-2">
+                            <label htmlFor="id_compte" className="fw-semibold col-sm-3 col-form-label">
+                                Compte
+                            </label>
+                            <div className="col-sm-9">
+                                <select name='id_compte' className="form-control form-select mb-1"  {...formik.getFieldProps('id_compte')}>
+                                    <option value={0} disabled>Du Compte </option>
+                                    {comptes.map((com) =>
+                                        <option key={com.id_compte} value={com.id_compte}>{com.lib_compte}</option>
+                                    )}
+                                </select>
+                                {formik.touched.id_compte && formik.errors.id_compte ? (<small className='text-danger'>{formik.errors.id_compte}</small>) : null}
+                            </div>
+                        </div>}
+
+                    {type == 'Transfer' &&
+                        <div className="form-group row mb-2">
+                            <label htmlFor="au_compte" className="fw-semibold col-sm-3 col-form-label">
+                                Compte
+                            </label>
+                            <div className='col-sm-9'>
+                                <select name='au_compte' className="form-control form-select mb-1"  {...formik.getFieldProps('au_compte')}>
+                                    <option value={0} disabled>Au Compte </option>
+                                    {receivingCompte.map((com) =>
+                                        <option key={com.id_compte} value={com.id_compte}>{com.lib_compte}</option>
+                                    )}
+                                </select>
+                                {formik.touched.au_compte && formik.errors.au_compte ? (<small className='text-danger'>{formik.errors.au_compte}</small>) : null}
+                            </div>
+                        </div>
+                    }
+
+                    <div className="form-group row mb-2">
+                        <label htmlFor="montant" className="fw-semibold col-sm-3 col-form-label">
+                            Montant
+                        </label>
+                        <div className='col-sm-9'>
+                            <input type="number" className='form-control' name="montant" id="montant" {...formik.getFieldProps('montant')} />
+                            {formik.touched.montant && formik.errors.montant ? (<small className='text-danger'>{formik.errors.montant}</small>) : null}
+                        </div>
+                    </div>
+
+
+                    <div className="form-group row mb-2">
+                        <label htmlFor="description" className="col-sm-3 col-form-label fw-semibold">
+                            Description
+                        </label>
+                        <div className='col-sm-9'>
+                            <textarea id="description" className="form-control" name='description' {...formik.getFieldProps('description')} rows={3} placeholder='Description'>
+                            </textarea>
+                            {formik.touched.description && formik.errors.description ? (<small className='text-danger'>{formik.errors.description}</small>) : null}
+                        </div>
+                    </div>
+
+                </Modal.Body>
+
+                <Modal.Footer>
+                    {!loading &&
+                        <button color="secondary" className='btn btn-danger btn-outline-danger' onClick={() => handleModal()}>
+                            Fermer
+                        </button>}
+                    <LoadingButton2 loading={loading} color={"primary"} type={"submit"} name={"Ajouter"} />
+                </Modal.Footer>
+            </form>
+        </Modal>
+    )
+}
+
+
+
+
+export function Info({ transaction, handleModal, fetch, modal }) {
+    const { permissions, admin } = AppGlobalContext()
+
+    const [action, setAction] = useState(null)
+    const [loading, setLoading] = useState(false)
+
+
+    const initialValues = {
+        description: transaction.description,
+        montant: transaction.montant,
+        notes: ''
+    }
+    const validationSchema = yup.object({
+        description: yup.string().notRequired(),
+        montant: yup.number().min(1, 'Ce champ est requis'),
+        notes: yup.string().required('Ce champ est requis')
+    })
+
+
+    const type = (val) => {
+        if (val == 'Credit') {
+            return "Collecte"
+        } else if (val == 'Debit') {
+            return "Depense"
+        } else if (val == 'Transfer') {
+            return "Transfert"
+        }
+    }
+
+    const timeDate = (t) => {
+        if (t) {
+            let d = new Date(t)
+            return <>{d.toLocaleTimeString('fr')}  {d.toLocaleDateString('fr')}</>
+        }
+    }
+
+    const ApprovedOrRejected = (statut) => {
+        if (statut == 'Rejected') {
+            return <>Rejecté par{' '}
+                <span color='danger' className='fw-bold text-danger'>
+                    <FontAwesomeIcon icon={faClose} />
+                </span> : </>
+        } else {
+            return <>Validé par{' '}
+                <span color='success' className='fw-bold text-success'>
+                    <FontAwesomeIcon icon={faCheckCircle} />
+                </span> : </>
+        }
+    }
+
+    const title = (val) => {
+        let res = ""
+        if (val === 'm') {
+            res = "Modifier"
+        } else if (val === 's') {
+            res = "Supprimer"
+        } else if (val === 'r') {
+            res = "Refuser"
+        } else if (val === 'v') {
+            res = "Valider"
+        } else if (val === null) {
+            res = "Info"
+        }
+        return res
+    }
+
+
+    const ShowValidationButtons = ({ trans, children }) => {
+        //checks if the transaction is still pending and the admin not the owner
+        //of the transaction
+        if (trans.statut == 'Pending' && trans.id_membre != admin.id) {
+
+            //checks if the account of the transaction is the church of the
+            //admin or if the admin is a superadmin
+            if (transaction.compte.id_eglise == admin.id_eglise) {
+                return children
+            }
+            if (permissions.superAdmin) {
+                return children
+            }
+        }
+    }
+
+    const ShowEditDeleteButtons = ({ trans, children }) => {
+        //checks if the transaction is still pending and the admin is the owner
+        //of the transaction
+        if (trans.statut == 'Pending' && trans.id_membre == admin.id) {
+            return children
+        }
+    }
+
+    const validateOrRejectTransaction = async (values) => {
+        setLoading(true)
+        const query = new URLSearchParams({ notes: values.notes }).toString()
+        let a = action === 'v' ? 'confirmer' : 'rejecter'
+        try {
+            const { data } = await axios.put(`/finance/transactions/${transaction.id_transaction}/${a}?${query}`)
+            handleModal(null)
+            fetch()
+            toast.success('Success')
+        } catch (err) {
+            toast.error('Echec')
+            handleModal(null);
+        } finally {
+            setLoading(false)
+        }
+    }
+
+
+    const modifyOrDeleteTransaction = async (values) => {
+        setLoading(true)
+        const query = new URLSearchParams({ notes: values.notes }).toString()
+        let data
+        try {
+            if (action == 'm') {
+                data = await axios.put(`/finance/transactions/${transaction.id_transaction}/modifier?${query}`, { values })
+            }
+            if (action == 's') {
+                data = await axios.delete(`/finance/transactions/${transaction.id_transaction}/supprimer?${query}`)
+            }
+            handleModal()
+            if (data) toast.success('Success');
+        } catch (err) {
+            handleModal()
+            toast.error('Echec')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+
+    return (
+        <Modal show={modal === 'trans'} onHide={() => { setAction(null); handleModal() }} centered>
+            <Modal.Header>
+                <Modal.Title className='fs-5'>{title(action)} Transaction #{transaction.id_transaction}</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Body>
+                <ul className='list-group'>
+                    <li className='list-group-item'>
+                        Type
+                        <span className='float-end fw-semibold'>
+                            {type(transaction.type)}
+                        </span>
+                    </li>
+                    <li className='list-group-item'>
+                        Montant
+                        <span className='float-end fw-semibold'>
+                            {formatAmount(transaction.montant)}
+                        </span>
+                    </li>
+                    <li className='list-group-item'>
+                        Enreg. par :
+                        <span className='float-end fw-semibold'>
+                            {transaction.membre?.nom} {transaction.membre?.prenom}
+                        </span>
+                    </li>
+                    <li className='list-group-item'>
+                        {ApprovedOrRejected(transaction.statut)}
+                        <span className='float-end fw-semibold'>
+                            {transaction.membre_approuve?.nom} {transaction.membre_approuve?.prenom}
+                        </span>
+                    </li>
+                    <li className='list-group-item'>
+                        Date
+                        <span className='float-end'>{timeDate(transaction.createdAt)}</span>
+                    </li>
+                </ul>
+
+                {action === 'm' &&
+                    <Formik
+                        initialValues={initialValues}
+                        validationSchema={validationSchema}
+                        onSubmit={modifyOrDeleteTransaction}
+                    >
+                        <Form className='mt-3' >
+                            <hr />
+                            <FormInputWithLabel name={"montant"} title={"Montant"} placeholder={"Montant"} />
+                            <FormInputWithLabel name={"description"} title={"Descsription"} placeholder={"Description"} />
+                            <FormInputWithLabel name={"notes"} title={"Observation"} placeholder={"Observation"} />
+                            <Modal.Footer>
+                                {!loading &&
+                                    <button className="btn btn-danger btn-outline-danger" onClick={() => setAction(null)}>
+                                        Fermer
+                                    </button>}
+                                <LoadingButton2 color={"primary"} loading={loading} name={"Modifier"} type={"submit"} />
+                            </Modal.Footer>
+                        </Form>
+                    </Formik>
+                }
+
+                {action === 's' &&
+                    <Formik
+                        initialValues={{ notes: '' }}
+                        validationSchema={yup.object({ notes: yup.string().required('Ce champ est requis') })}
+                        onSubmit={modifyOrDeleteTransaction}
+                    >
+                        <Form className='mt-3' >
+                            <FormInputWithLabel name={"notes"} title={"Observation"} placeholder={"Observation"} />
+                            <Modal.Footer>
+                                {!loading &&
+                                    <button className="btn btn-danger btn-outline-danger" onClick={() => setAction(null)}>
+                                        Fermer
+                                    </button>}
+                                <LoadingButton2 color={"danger"} loading={loading} name={"Supprimer"} type={"submit"} />
+                            </Modal.Footer>
+                        </Form>
+                    </Formik>
+                }
+
+
+                {(action === 'r' || action === 'v') ?
+                    <Formik
+                        initialValues={{ notes: '' }}
+                        validationSchema={yup.object({ notes: yup.string().required('Ce champ est requis') })}
+                        onSubmit={validateOrRejectTransaction}
+                    >
+                        <Form className='mt-3' >
+                            <FormInputWithLabel name={"notes"} title={"Observation"} placeholder={"Observation"} />
+
+                            <Modal.Footer>
+                                {!loading &&
+                                    <button className="btn btn-outline-dark" onClick={() => setAction(null)}>
+                                        Fermer
+                                    </button>}
+                                <LoadingButton2
+                                    color={action === 'v' ? 'success' : 'danger'}
+                                    loading={loading}
+                                    name={<><FontAwesomeIcon icon={faCheckCircle} />{action === 'v' ? ' Valider' : ' Rejecter'}</>}
+                                    type={"submit"} />
+                            </Modal.Footer>
+                        </Form>
+                    </Formik> : ''
+                }
+            </Modal.Body>
+
+
+            {!transaction.id_parent && !action &&
+                <Modal.Footer>
+                    <ShowEditDeleteButtons trans={transaction}>
+                        <button className='btn btn-outline-dark rounded float-end mt-2'
+                            type='submit'
+                            onClick={() => setAction('m')}
+                        > <FontAwesomeIcon icon={faEdit} /> Modifier
+                        </button>
+
+                        <button className='btn btn-outline-danger rounded float-end mt-2'
+                            type='submit'
+                            onClick={() => setAction("s")}
+                        > <FontAwesomeIcon icon={faTrash} /> Supprimer
+                        </button>
+                    </ShowEditDeleteButtons>
+
+
+                    <ShowValidationButtons trans={transaction}>
+                        <ContentPermsWrapper requiredPerms={['confirmer_transaction']}>
+                            <button className='btn btn-outline-success rounded float-end mt-2'
+                                type='submit'
+                                onClick={() => setAction('v')}
+                            > <FontAwesomeIcon icon={faMoneyCheck} /> Valider
+                            </button>
+                            <button className='btn btn-outline-danger rounded float-end mt-2'
+                                type='submit'
+                                onClick={() => setAction('r')}
+                            > <FontAwesomeIcon icon={faCancel} /> Rejecter
+                            </button>
+                        </ContentPermsWrapper>
+                    </ShowValidationButtons>
+                </Modal.Footer>
+            }
+
+        </Modal>
+    )
+}
+
