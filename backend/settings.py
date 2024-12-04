@@ -62,6 +62,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
+        'auth_custom.auth.CustomPermissions',
         'rest_framework.permissions.AllowAny'
     ],
     'TEST_REQUEST_DEFAULT_FORMAT': 'json'

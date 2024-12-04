@@ -71,3 +71,35 @@ class Church(models.Model):
 
     def __str__(self):
         return f"{self.church_name}"
+    
+    
+    
+    def get_member_count_by_status(self):
+        
+        minister_count = self.church_member.filter(
+            status = "Ministre",
+            is_active = True
+        ).count()
+        
+        ouvrier_count = self.church_member.filter(
+            status = "Ouvrier",
+            is_active = True
+        ).count()
+        
+        member_count = self.church_member.filter(
+            status = "Membre",
+            is_active = True
+        ).count()
+        
+        visitor_count = self.church_member.filter(
+            status = "Visiteur",
+            is_active = True
+        ).count()
+        
+        return {
+            "ministre_count": minister_count,
+            "ouvrier_count": ouvrier_count,
+            "membre_count": member_count,
+            "visiteur_count": visitor_count
+        }
+    

@@ -8,34 +8,62 @@ from rest_framework.response import Response
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework import status
 from . import services
+from auth_custom.auth import CustomPermissions
 
 
 class CityListCreateView(ListCreateAPIView):
+    perms = {
+        "GET": [],
+        "POST": ["superadmin"],
+    }
     serializer_class = CitySerializer
     queryset = City.objects.prefetch_related("city_church")
 
 
 class CityRUDView(RetrieveUpdateDestroyAPIView):
+    perms = {
+        "GET": [],
+        "PUT": ["superadmin"],
+        "DELETE": ["superadmin"],
+    }
     serializer_class = CitySerializer
     queryset = City.objects.prefetch_related("city_church")
 
 
 class TypeListCreateView(ListCreateAPIView):
+    perms = {
+        "GET": [],
+        "POST": ["superadmin"],
+    }
     serializer_class = TypeSerializer
     queryset = Church_type.objects.prefetch_related("type_church")
 
 
 class TypeRUDView(RetrieveUpdateDestroyAPIView):
+    perms = {
+        "GET": [],
+        "PUT": ["superadmin"],
+        "DELETE": ["superadmin"],
+    }
     serializer_class = TypeSerializer
     queryset = Church_type.objects.prefetch_related("type_church")
 
 
 class ChurchListCreateView(ListCreateAPIView):
+    perms = {
+        "GET": [],
+        "POST": ["superadmin"],
+    }
     serializer_class = ChurchSerializer
     queryset = Church.objects.all()
 
 
 class ChurchRUDView(RetrieveUpdateDestroyAPIView):
+    perms = {
+        "GET": [],
+        "PUT": ["modifier_eglise"],
+        "DELETE": ["superadmin"],
+    }
     serializer_class = ChurchSerializer
     queryset = Church.objects.all()
 
@@ -45,9 +73,7 @@ class ChurchRUDView(RetrieveUpdateDestroyAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        id = kwargs['pk']
-        
-        
+        id = kwargs["pk"]
 
         metrics = {
             "sixMonthEventCount": services.TotalMembersForSixMonth(id),
@@ -57,10 +83,10 @@ class ChurchRUDView(RetrieveUpdateDestroyAPIView):
             "totalMembers": Member.objects.filter(church=id).count(),
             "ageRangeMemberCount": services.AgeRangeCount(id),
             "attendanceGraphMonth": services.AttendanceMonthGraph(id),
-            "attendanceGraphYear": [],
+            "attendanceGraphYear": services.AttendanceYearGraph(id),
             "Demo_Profession": services.Professions(id),
-            "Demo_Statut" : services.Marital_Status(id),
-            "Demo_Sexe" : services.Gender(id)
+            "Demo_Statut": services.Marital_Status(id),
+            "Demo_Sexe": services.Gender(id),
         }
 
         return Response({"church": serializer.data, "metrics": metrics})

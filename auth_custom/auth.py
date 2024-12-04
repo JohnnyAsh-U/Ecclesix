@@ -1,5 +1,6 @@
 import smtplib
 from rest_framework.authentication import BaseAuthentication, exceptions
+from rest_framework.permissions import BasePermission
 from django.contrib.auth import authenticate as login
 from django.contrib.auth.hashers import make_password
 from members.models import Member
@@ -149,8 +150,7 @@ class AuthBackend:
 class JWTAuthentication(BaseAuthentication):
 
     def authenticate(self, request):
-        request.user = "Sometheing"
-        setattr(request, "user", "Something")
+        print(request.META)
         return (Member.objects.get(id=1), None)
 
     # @staticmethod
@@ -202,9 +202,15 @@ class JWTAuthentication(BaseAuthentication):
         # return (user, None)
 
 
-# {"values":{"email":"johnashimedua@chms.com", "password":"1234"}}
-
-# {
-# "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG5hc2hpbWVkdWFAY2htcy5jb20iLCJmcm9tIjoiQ29ubmV4aW9uIiwibmV4dCI6Ik9UUCIsImV4cCI6MTczMjc5NzkwMX0.13hcExAWiXZD1UPurdVmidospXnn6DHulpfE_NX_fA0",
-# "values":{"otp_token": "471072"}
-# }
+class CustomPermissions(BasePermission):
+    def has_permission(self, request, view):
+        auth = request.META.get('HTTP_AUTHORIZATION', b'')
+        method = request.META.get('REQUEST_METHOD', 'None')
+        perms = getattr(view, 'perms', {})
+        
+        required_perms = perms.get(method, None)
+        print(required_perms)
+        """
+        Return `True` if permission is granted, `False` otherwise.
+        """
+        return True

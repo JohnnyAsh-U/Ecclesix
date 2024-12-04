@@ -21,6 +21,7 @@ class ChurchSerializer(serializers.ModelSerializer):
     type_name = serializers.SerializerMethodField()
     leader_name = serializers.SerializerMethodField()
     leader2_name = serializers.SerializerMethodField()
+    status_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Church
@@ -48,6 +49,9 @@ class ChurchSerializer(serializers.ModelSerializer):
             "name": obj.leader2.get_full_name()
         }
         return None
+    
+    def get_status_count(self, obj):
+        return obj.get_member_count_by_status()
         
 
 

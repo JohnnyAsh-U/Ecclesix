@@ -1,12 +1,12 @@
 from members.models import Member
-from event.models import Event, Event_Type
+from event.models import Event, Event_Type, Event_stats
 from .models import Church
 from backend.utils import time_date
 from datetime import date, datetime
-import calendar
 from dateutil.relativedelta import *
 from django.forms.models import model_to_dict
-from django.db.models import Sum, Count
+from django.db.models import Sum
+from functools import reduce
 
 
 def TotalMembersForSixMonth(id):
@@ -81,7 +81,7 @@ def AgeRangeCount(id):
         {"category": "Ados", "range": "13-20"},
         {"category": "Jeune", "range": "20-35"},
         {"category": "Adultes", "range": "35-50"},
-        {"category": "Agées", "range": ">50"},
+        {"category": "Agees", "range": ">50"},
     ]
     result = []
 
@@ -155,13 +155,45 @@ def AttendanceMonthGraph(id):
 
             events.append({"label": ev.event_type_name, "totals": totals})
 
-        results[f"{m-1} - {m+1}"] = {"period": period, "events": events}
+        results[f"{m-1}-{m+1}"] = {"period": period, "events": events}
 
     return results
 
 
-def AttendanceYearGraph():
-    return {"year": 2024, "result": {"2024": [{"id_type_evenement": "dk"}]}}
+def AttendanceYearGraph(id):
+    month_data = [0 for a in range(0, 12)]
+    result = {}
+
+    totalEvent = Event_stats.objects.filter(church_id=id)
+        
+    if totalEvent.count() == 0:
+        return {}
+    
+    oldest_event_stat =reduce(lambda x,y: min(x,y), [ev.year for ev in totalEvent])
+
+    for ev in totalEvent:
+        event_by_year = result.get(ev.year, None)
+        if not event_by_year:
+            result[ev.year] = []
+
+        found_event = next(
+            (event for event in result[ev.year] if event['id'] == ev.pk),
+            None,
+        )
+
+        if not found_event:
+            result[ev.year].append(
+                {"id": ev.pk, "event": ev.event_type_name, "data": [*month_data]}
+            )
+            
+            found_event = next(
+                (event for event in result[ev.year] if event['id'] == ev.pk),
+                None,
+            )
+        
+        found_event["data"][int(ev.month)-1] = int(ev.average)
+
+    return {"year": oldest_event_stat, **result}
 
 
 def Professions(id):
@@ -175,9 +207,7 @@ def Professions(id):
         ).count()
 
         percent = (
-            int((member_by_profession / all_member) * 100)
-            if all_member != 0
-            else 0
+            int((member_by_profession / all_member) * 100) if all_member != 0 else 0
         )
 
         result.append(
@@ -203,19 +233,11 @@ def Marital_Status(id):
         member_by_status = Member.objects.filter(
             church=id, is_active=True, marital_status=s["tag"]
         ).count()
-        
-        percent = (
-            int((member_by_status / all_member) * 100)
-            if all_member != 0
-            else 0
-        )
+
+        percent = int((member_by_status / all_member) * 100) if all_member != 0 else 0
 
         result.append(
-            {
-                "profession": s["statut"],
-                "count": member_by_status,
-                "percent": percent
-            }
+            {"statut": s["statut"], "count": member_by_status, "percent": percent}
         )
     return result
 
@@ -232,16 +254,12 @@ def Gender(id):
         member_by_gender = Member.objects.filter(
             church=id, is_active=True, gender=s["tag"]
         ).count()
-        
-        percent = (
-            int((member_by_gender / all_member) * 100)
-            if all_member != 0
-            else 0
-        )
+
+        percent = int((member_by_gender / all_member) * 100) if all_member != 0 else 0
 
         result.append(
             {
-                "profession": s["sexe"],
+                "sexe": s["sexe"],
                 "count": member_by_gender,
                 "percent": percent,
             }

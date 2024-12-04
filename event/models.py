@@ -27,4 +27,37 @@ class Event(models.Model):
         verbose_name_plural = "events"
         default_permissions = ()
         unique_together = ['event_date', 'event_type', 'church']
+        
+        
+        
+
+
+class Event_stats(models.Model):
+    event_type_name = models.CharField(max_length=20)
+    month = models.CharField("month", max_length=50)
+    year = models.CharField("year", max_length=50)
+    church_id = models.CharField("church", max_length=50)
+    totals = models.CharField("total", max_length=50)
+    average = models.CharField("average", max_length=50) 
+    
+    class Meta:
+        verbose_name = "event_stat"
+        verbose_name_plural = "event_stats"
+        default_permissions = ()
+        managed = False
+        db_table = "events_stats"
+
+
+#This is the sql for the event_stat view for sqlite3
+
+# CREATE VIEW events_stats AS
+# SELECT event_event_type.id, event_event_type.event_type_name, STRFTIME('%m', event_event.event_date) AS month, STRFTIME('%Y', event_event.event_date) AS year, event_event.church_id, SUM(event_event.total) AS totals, ROUND(AVG(event_event.total), 0) AS average
+# FROM event_event_type 
+# JOIN event_event ON event_event_type.id = event_event.event_type_id
+# WHERE event_event_type.weekly_event = True
+# GROUP BY STRFTIME('%m', event_event.event_date), STRFTIME('%Y', event_event.event_date), event_event_type.id, 
+# event_event.church_id
+# ORDER BY event_event_type.id, event_event.church_id, MONTH, YEAR
+
+
     

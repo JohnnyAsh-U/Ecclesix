@@ -51,6 +51,7 @@ const MainChart = ({ monthData, yearData, eglise, sexe }) => {
     //for dropdown years to create a list of year from present year and oldest event year
     const years = Array.from({ length: presentYear - yearData.year + 1 }, (_, index) => presentYear - index)
 
+
     return (
         <div className='row'>
             <div className="col-xl-8 col-sm-12">
@@ -140,7 +141,7 @@ const MainChart = ({ monthData, yearData, eglise, sexe }) => {
                 </div>
             </div>
             <div className='col-xl-4 col-sm-12'>
-                <div key={eglise.id_eglise} className={`card custom-shadow mb-2`}>
+                <div key={eglise.id} className={`card custom-shadow mb-2`}>
                     <div className='card-header d-flex align-items-center'>
                        <h5 className='card-header-title'>Information</h5> 
                     </div>
@@ -149,32 +150,33 @@ const MainChart = ({ monthData, yearData, eglise, sexe }) => {
                             <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                 <h6 className="mb-0">Eglise</h6>
                                 <span className="text-secondary">
-                                    {eglise.lib_eglise}
+                                    {eglise.church_name}
                                 </span>
                             </li>
                             <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                 <h6 className="mb-0">Type</h6>
                                 <span className="text-secondary">
-                                    {eglise.type ? eglise.type.lib_type : <i className="small font-italic"> Pas de type</i>}
+                                    {eglise.type_name ? eglise.type_name : <i className="small font-italic"> Pas de type</i>}
                                 </span>
                             </li>
                             <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                 <h6 className="mb-0">Ville</h6>
                                 <span className="text-secondary">
-                                    {eglise.ville ? eglise.ville.lib_ville : 'Pas de Ville'}
+                                    {eglise.city_name ? eglise.city_name : 'Pas de Ville'}
                                 </span>
                             </li>
                             <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                 <h6 className="mb-0">Addresse</h6>
                                 <span className="text-secondary">
-                                    {eglise.situation_geographique}
+                                    {eglise.address}
                                 </span>
                             </li>
                             <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                 <h6 className="mb-0">Pasteur</h6>
                                 <span className="text-secondary">
-                                    <LinkProfile to={`/membres/profile/${eglise.ministre?.id}`} className="text-decoration-none text-dark hover">
-                                        {eglise.ministre ? capitalizeFirstLetter(eglise.ministre?.nom) + ' ' + capitalizeFirstLetter(eglise.ministre?.prenom) : ''}
+                                    <LinkProfile to={`/membres/profile/${eglise.leader}`} className="text-decoration-none text-dark hover">
+                                        {/* {eglise.ministre ? capitalizeFirstLetter(eglise.ministre?.nom) + ' ' + capitalizeFirstLetter(eglise.ministre?.prenom) : ''} */}
+                                        { eglise.leader_name.name}
                                     </LinkProfile>
                                 </span>
                             </li>
@@ -182,14 +184,15 @@ const MainChart = ({ monthData, yearData, eglise, sexe }) => {
                                 <h6 className="mb-0">Assistant</h6>
                                 <span className="text-secondary">
                                     <LinkProfile to={`/membres/profile/${eglise.assistant_ministre?.id}`} className="text-decoration-none text-dark hover">
-                                        {eglise.assistant_ministre ? capitalizeFirstLetter(eglise.assistant_ministre?.nom) + ' ' + capitalizeFirstLetter(eglise.assistant_ministre?.prenom) : ''}
+                                        {/* {eglise.assistant_ministre ? capitalizeFirstLetter(eglise.assistant_ministre?.nom) + ' ' + capitalizeFirstLetter(eglise.assistant_ministre?.prenom) : ''} */}
+                                        { eglise.leader2_name.name}
                                     </LinkProfile>
                                 </span>
                             </li>
                             <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                 <h6 className="mb-0">Date</h6>
                                 <span className="text-secondary">
-                                    {formatDate(eglise.date_ouverture)}
+                                    {formatDate(eglise.opening_date)}
                                 </span>
                             </li>
                         </ul>

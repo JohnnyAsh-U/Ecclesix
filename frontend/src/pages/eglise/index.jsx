@@ -18,9 +18,9 @@ const Eglises = () => {
     const { eglises } = AppGlobalContext()
     const [modal, setModal] = useState(false)
     let id_eglise = useParams().id
-    let egliseName = eglises.find(d => d.id_eglise == id_eglise)?.lib_eglise
+    let egliseName = eglises.find(d => d.id == id_eglise)?.church_name
     const { data, error, loading, reload } = useFetch(`/eglise/${id_eglise}`, 'get');
-    const { eglise, metrics } = data || {}
+    const { church, metrics } = data || {}
 
     if (loading) {
         return <LoadingPage />
@@ -52,22 +52,22 @@ const Eglises = () => {
             <MainChart
                 monthData={metrics.attendanceGraphMonth}
                 yearData={metrics.attendanceGraphYear}
-                eglise={eglise}
+                eglise={church}
                 sexe={metrics.Demo_Sexe}
             />
 
             <Demographics
                 data={metrics.ageRangeMemberCount}
-                ministres={eglise.ministre_nombre}
-                ouvriers={eglise.ouvrier_nombre}
-                membres={eglise.membre_nombre}
-                visiteurs={eglise.visiteur_nombre}
+                ministres={church.status_count.ministre_count}
+                ouvriers={church.status_count.ouvrier_count}
+                membres={church.status_count.membre_count}
+                visiteurs={church.status_count.visiteur_count}
                 metier={metrics.Demo_Profession}
                 statut_m={metrics.Demo_Statut}
             />
 
             <ModifierModal
-                eglise={eglise}
+                eglise={church}
                 modal={modal}
                 setModal={setModal}
             // fetch={fetchEglise}
