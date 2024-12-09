@@ -12,7 +12,9 @@ from auth_custom.auth import CustomPermissions
 
 
 class CityListCreateView(ListCreateAPIView):
+    
     perms = {
+        "OPTIONS": ['superadmin'],
         "GET": [],
         "POST": ["superadmin"],
     }
@@ -22,16 +24,19 @@ class CityListCreateView(ListCreateAPIView):
 
 class CityRUDView(RetrieveUpdateDestroyAPIView):
     perms = {
+        "OPTIONS": ['superadmin'],
         "GET": [],
         "PUT": ["superadmin"],
         "DELETE": ["superadmin"],
     }
     serializer_class = CitySerializer
     queryset = City.objects.prefetch_related("city_church")
+    
 
 
 class TypeListCreateView(ListCreateAPIView):
     perms = {
+        "OPTIONS": ['superadmin'],
         "GET": [],
         "POST": ["superadmin"],
     }
@@ -41,6 +46,7 @@ class TypeListCreateView(ListCreateAPIView):
 
 class TypeRUDView(RetrieveUpdateDestroyAPIView):
     perms = {
+        "OPTIONS": ['superadmin'],
         "GET": [],
         "PUT": ["superadmin"],
         "DELETE": ["superadmin"],
@@ -51,6 +57,7 @@ class TypeRUDView(RetrieveUpdateDestroyAPIView):
 
 class ChurchListCreateView(ListCreateAPIView):
     perms = {
+        "OPTIONS": ['superadmin'],
         "GET": [],
         "POST": ["superadmin"],
     }
@@ -60,6 +67,7 @@ class ChurchListCreateView(ListCreateAPIView):
 
 class ChurchRUDView(RetrieveUpdateDestroyAPIView):
     perms = {
+        "OPTIONS": ['superadmin'],
         "GET": [],
         "PUT": ["modifier_eglise"],
         "DELETE": ["superadmin"],

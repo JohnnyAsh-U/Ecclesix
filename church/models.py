@@ -36,37 +36,42 @@ class Church(models.Model):
 
     city = models.ForeignKey(
         City,
+        on_delete=models.SET_NULL,
         related_name="city_church",
         related_query_name="city",
-        on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank = True
     )
     type = models.ForeignKey(
         Church_type,
+        on_delete=models.SET_NULL,
         related_name="type_church",
         related_query_name="type",
-        on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True
     )
     leader = models.ForeignKey(
         Member,
+        on_delete=models.SET_NULL,
         related_name="leader_church",
         related_query_name="leader",
-        on_delete=models.SET_NULL,
-        null=True
+        null=True, 
+        blank=True
     )
     leader2 = models.ForeignKey(
         Member,
+        on_delete=models.SET_NULL,
         related_name="leader2_church",
         related_query_name="leader2",
-        on_delete=models.SET_NULL,
-        null=True
+        null=True,
+        blank=True
     )
 
     class Meta:
         verbose_name = "Church"
         verbose_name_plural = "Churches"
         default_permissions = ()
+        permissions = [("modifier_eglise", "Modifier Eglise")]
         
 
     def __str__(self):

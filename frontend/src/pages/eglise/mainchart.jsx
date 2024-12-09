@@ -176,7 +176,7 @@ const MainChart = ({ monthData, yearData, eglise, sexe }) => {
                                 <span className="text-secondary">
                                     <LinkProfile to={`/membres/profile/${eglise.leader}`} className="text-decoration-none text-dark hover">
                                         {/* {eglise.ministre ? capitalizeFirstLetter(eglise.ministre?.nom) + ' ' + capitalizeFirstLetter(eglise.ministre?.prenom) : ''} */}
-                                        { eglise.leader_name.name}
+                                        { eglise.leader_name?.name}
                                     </LinkProfile>
                                 </span>
                             </li>
@@ -185,7 +185,7 @@ const MainChart = ({ monthData, yearData, eglise, sexe }) => {
                                 <span className="text-secondary">
                                     <LinkProfile to={`/membres/profile/${eglise.assistant_ministre?.id}`} className="text-decoration-none text-dark hover">
                                         {/* {eglise.assistant_ministre ? capitalizeFirstLetter(eglise.assistant_ministre?.nom) + ' ' + capitalizeFirstLetter(eglise.assistant_ministre?.prenom) : ''} */}
-                                        { eglise.leader2_name.name}
+                                        { eglise.leader2_name?.name}
                                     </LinkProfile>
                                 </span>
                             </li>

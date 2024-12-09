@@ -20,26 +20,26 @@ export const ModifierModal = ({ modal, eglise, setModal }) => {
     const { data: data2, error: error2, loading: loading3 } = useFetch(`/membre/liste?${query}`, 'get')
     const { data, error, loading: loading2 } = useFetch('/eglise/type', 'get')
     const { data: data1, error: error1, loading: loading1 } = useFetch('/eglise/ville', 'get')
-    const { res: lesMinistres } = data2 || {}
+    const lesMinistres = data2 || {}
     const types  = data || {}
     const villes = data1 || {}
 
     const initialValues = {
         // id_eglise : props.eglise.id_eglise,
         church_name: eglise.church_name,
-        type: eglise.type,
-        city: eglise.city,
-        leader: eglise.leader,
-        leader2: eglise.leader2,
+        type: eglise.type ?? 0,
+        city: eglise.city ?? 0,
+        leader: eglise.leader ?? 0,
+        leader2: eglise.leader2 ?? 0,
         opening_date: eglise.opening_date,
         address: eglise.address
     }
     const validationSchema = yup.object({
         church_name: yup.string().required('Ce champ est requis'),
-        type: yup.string().required('Ce champ est requis'),
-        city: yup.string().required('Ce champ est requis'),
-        leader: yup.string().required('Ce champ est requis'),
-        leader2: yup.string().required('Ce champ est requis'),
+        type: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+        city: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+        leader: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+        leader2: yup.string().notOneOf(['0'], 'Ce champ est requis'),
         opening_date: yup.string().required('Ce champ est requis'),
         address: yup.string().required('Ce champ est requis'),
     })

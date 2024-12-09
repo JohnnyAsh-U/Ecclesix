@@ -132,9 +132,21 @@ class Member(User):
         verbose_name = "member"
         verbose_name_plural = "members"
         unique_together = ["email", "first_name", "last_name"]
-        
+        default_permissions = ()
+        permissions = [
+            ("ajouter_membre", "Ajouter Membre"),
+            ("modifier_membre", "Modifier Membre"),
+            ("voir_membre", "Voir Membre"),
+            ("voir_touts_membres", "Voir Touts Les Membres"),
+        ]
+
     def __str__(self):
         return self.get_full_name()
+    
+    def belongs_to_church(self, church_id):
+        return True if self.church_id == church_id else False
+    
+
 
 
 class Relationship(models.Model):
@@ -160,5 +172,4 @@ class Relationship(models.Model):
         verbose_name = "Relationship"
         verbose_name_plural = "Relationships"
         default_permissions = ()
-        unique_together = ['from_member', 'to_member']
-
+        unique_together = ["from_member", "to_member"]

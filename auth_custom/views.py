@@ -17,6 +17,7 @@ email_token_secret = os.getenv("EMAIL_TOKEN")
 
 class Register(APIView):
     authentication_classes = []
+    permission_classes = []
 
     def post(self, request, format=None):
         values = request.data.get("values", {})
@@ -66,6 +67,7 @@ class Register(APIView):
 
 class Login(APIView):
     authentication_classes = []
+    permission_classes = []
 
     def post(self, request, format=None):
         values = request.data.get("values", {})
@@ -179,6 +181,7 @@ class Login(APIView):
 
 class Reinitialization(APIView):
     authentication_classes = []
+    permission_classes = []
 
     def post(self, request, format=None):
         email = request.data.get("values", {}).get("email", None)
@@ -209,6 +212,8 @@ class Reinitialization(APIView):
 class ConfirmReinitialization(APIView):
 
     authentication_classes = []
+    permission_classes = []
+    
 
     def get(self, request, format=None):
         try:
@@ -227,6 +232,8 @@ class ConfirmReinitialization(APIView):
 class ResetPassword(APIView):
 
     authentication_classes = []
+    permission_classes = []
+    
 
     def post(self, request, format=None):
         try:
@@ -259,6 +266,8 @@ class ResetPassword(APIView):
 class VerifyEmail(APIView):
 
     authentication_classes = []
+    permission_classes = []
+    
 
     def post(self, request):
 
@@ -288,6 +297,8 @@ class VerifyEmail(APIView):
 
 class SetupOTP(APIView):
     authentication_classes = []
+    permission_classes = []
+    
 
     def post(self, request):
 
@@ -320,6 +331,8 @@ class SetupOTP(APIView):
 
 class VerifyOTP(APIView):
     authentication_classes = []
+    permission_classes = []
+    
 
     def post(self, request, format=None):
 
@@ -366,6 +379,8 @@ class VerifyOTP(APIView):
 
 class RefreshToken(APIView):
     authentication_classes = []
+    permission_classes = []
+    
 
     def post(self, request, format=None):
         refresh_token = getRefreshToken(self.request)
@@ -407,7 +422,6 @@ class RefreshToken(APIView):
 class Logout(APIView):
     
     #add jwt auth check in permission classes
-    authentication_classes = []
     permission_classes = []
     
     

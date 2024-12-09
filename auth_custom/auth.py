@@ -1,18 +1,24 @@
 import smtplib
 from rest_framework.authentication import BaseAuthentication, exceptions
-from rest_framework.permissions import BasePermission
+from rest_framework import permissions
 from django.contrib.auth import authenticate as login
 from django.contrib.auth.hashers import make_password
 from members.models import Member
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
-from .utils import jwtEncode, jwtDecode, generate_random_hash, compare_hash
+from .utils import (
+    jwtEncode,
+    jwtDecode,
+    generate_random_hash,
+    compare_hash,
+)
 from members.models import Member
 import os, pyotp
 
 temp_token_secret = os.getenv("TEMP_TOKEN")
-email_token_secret = os.getenv('EMAIL_TOKEN')
-domain_name = os.getenv('URL')
+email_token_secret = os.getenv("EMAIL_TOKEN")
+access_token_secret = os.getenv("ACCESS_TOKEN")
+domain_name = os.getenv("URL")
 
 
 class AuthBackend:
@@ -127,7 +133,9 @@ class AuthBackend:
             payload = {"id": self.user.id, "email": self.user.email}
             token = jwtEncode(payload, age=60, secret=email_token_secret)
             verification_link = f"{domain_name}/reset?token={token}"
-            content = render_to_string("reset_password.html", context={"token_link": verification_link})
+            content = render_to_string(
+                "reset_password.html", context={"token_link": verification_link}
+            )
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,
@@ -139,78 +147,64 @@ class AuthBackend:
             return True
         except Exception:
             return False
-        
+
     def change_password(self, password):
         self.user.password = make_password(password)
         self.user.save()
 
 
-
-
 class JWTAuthentication(BaseAuthentication):
 
+    www_authenticate_realm = "401"
+
     def authenticate(self, request):
-        print(request.META)
-        return (Member.objects.get(id=1), None)
+        # return (Member.objects.get(id=1), None)
+        try:
+            header_token = str(request.META.get("HTTP_AUTHORIZATION", b""))
+            access_token = header_token.split()[1]
 
-    # @staticmethod
-    # def verify_refresh_token(token, secret):
-    #     payload = jwtDecode(token, secret)
-    #     return JWTAuthentication()
+            if not access_token:
+                raise exceptions.AuthenticationFailed("AuthFailed")
 
-    def get_user():
-        pass
-        # auth = get_authorization_header(request).split()
+            verification: dict = jwtDecode(access_token, access_token_secret)
+            if not verification:
+                raise exceptions.AuthenticationFailed("AuthFailed")
 
-        # if not auth or auth[0].lower() != b'basic':
-        #     return None
+            id = verification["id"]
+            device_id = verification["device_id"]
 
-        # if len(auth) == 1:
-        #     msg = _('Invalid basic header. No credentials provided.')
-        #     raise exceptions.AuthenticationFailed(msg)
-        # elif len(auth) > 2:
-        #     msg = _('Invalid basic header. Credentials string should not contain spaces.')
-        #     raise exceptions.AuthenticationFailed(msg)
+            user = Member.objects.get(id=id, is_active=True, is_admin=True)
 
-        # try:
-        #     try:
-        #         auth_decoded = base64.b64decode(auth[1]).decode('utf-8')
-        #     except UnicodeDecodeError:
-        #         auth_decoded = base64.b64decode(auth[1]).decode('latin-1')
+            if device_id != user.device_id:
+                raise exceptions.AuthenticationFailed("AuthFailed")
 
-        #     userid, password = auth_decoded.split(':', 1)
-        # except (TypeError, ValueError, UnicodeDecodeError, binascii.Error):
-        #     msg = _('Invalid basic header. Credentials not correctly base64 encoded.')
-        #     raise exceptions.AuthenticationFailed(msg)
+            return (user, None)
+        except:
+            raise exceptions.AuthenticationFailed("AuthFailed")
 
-        # return self.authenticate_credentials(userid, password, request)
-
-    def authenticate_credentials(self, userid, password, request=None):
-        """
-        Authenticate the userid and password against username and password
-        with optional request for context.
-        """
-        # credentials = {get_user_model().USERNAME_FIELD: userid, "password": password}
-        # user = authenticate(request=request, **credentials)
-
-        # if user is None:
-        #     raise exceptions.AuthenticationFailed(_("Invalid username/password."))
-
-        # if not user.is_active:
-        #     raise exceptions.AuthenticationFailed(_("User inactive or deleted."))
-
-        # return (user, None)
+    def authenticate_header(self, request):
+        return 'Error"%s"' % self.www_authenticate_realm
 
 
-class CustomPermissions(BasePermission):
+class CustomPermissions(permissions.BasePermission):
+
     def has_permission(self, request, view):
-        auth = request.META.get('HTTP_AUTHORIZATION', b'')
-        method = request.META.get('REQUEST_METHOD', 'None')
-        perms = getattr(view, 'perms', {})
+        user: Member = request.user
+        all_required_perms = getattr(view, "perms", {})
+        method_required_perms = all_required_perms.get(request.method, None)
+        # if the method perms is not specified return false
+        if method_required_perms is None:
+            return False
         
-        required_perms = perms.get(method, None)
-        print(required_perms)
-        """
-        Return `True` if permission is granted, `False` otherwise.
-        """
-        return True
+        # if no perms in the method then return true
+        if len(method_required_perms) == 0:
+            return True
+
+        has_perm = next(
+            (True for perm in method_required_perms if user.has_perm_custom(perm)),
+            False,
+        )
+
+        return bool(
+            (has_perm or user.is_superuser) and user.is_active and user.is_admin
+        )

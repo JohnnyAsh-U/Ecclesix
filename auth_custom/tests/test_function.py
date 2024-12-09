@@ -7,6 +7,7 @@ from os import getenv
 import pyotp
 from rest_framework import exceptions
 
+
 class TestFunc(SimpleTestCase):
         
     def test_email_code_generator(self):
@@ -186,6 +187,8 @@ class TestAuthBackend(TestCase):
         self.assertEqual(generate_email, True)
         self.assertEqual(len(mail.outbox), 1)
         
+        
+
         
         
         

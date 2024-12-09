@@ -21,7 +21,7 @@ function AjouterModal({ setModal, modal }) {
     const { data: data2, error: error2, loading: loading3 } = useFetch(`/membre/liste?${query}`, 'get')
     const { data, error, loading: loading2 } = useFetch('/eglise/type', 'get')
     const { data: data1, error: error1, loading: loading1 } = useFetch('/eglise/ville', 'get')
-    const { res: lesMinistres } = data2 || {}
+    const  lesMinistres = data2 || {}
     const types = data || {}
     const villes  = data1 || {}
 

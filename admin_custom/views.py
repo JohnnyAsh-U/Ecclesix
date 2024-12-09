@@ -9,7 +9,8 @@ from church.serializers import ChurchSerializer
 # Create your views here.
 
 class AdminPermissions(APIView):
-    authentication_classes = [SessionAuthentication]
+    authentication_classes = []
+    permission_classes = []
     
     def get(self, request, format = None):
         serialized_church = ChurchSerializer(Church.objects.all(), many=True)
