@@ -157,7 +157,7 @@ class TestAuthBackend(TestCase):
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=otp_code, secret=otp_key)
         self.assertNotEqual(is_valid, False)
-        self.assertIsInstance(is_valid, Member)
+        self.assertIsInstance(is_valid[0], Member)
             
             
         #user has an otpkey in db
@@ -178,7 +178,7 @@ class TestAuthBackend(TestCase):
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=otp_code)
         self.assertNotEqual(is_valid, False)
-        self.assertIsInstance(is_valid, Member)
+        self.assertIsInstance(is_valid[0], Member)
         
         
     def test_sent_reset_password_email(self):

@@ -108,3 +108,5 @@ class Church(models.Model):
             "visiteur_count": visitor_count
         }
     
+    def total_members(self):
+        return self.church_member.count()

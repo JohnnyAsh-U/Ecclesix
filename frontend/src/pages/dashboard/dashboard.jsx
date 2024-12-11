@@ -32,11 +32,11 @@ const Dashboard = () => {
 
     return (
         <>
-        <BreadCrumb title={"Dashboard"}/>
+            <BreadCrumb title={"Dashboard"} />
             <div className='row'>
                 <Widgets data={widgetMetrics} />
                 <div className="col-md-12 col-xl-12 ">
-                    <Attendance years={years} year={year} setYear={setYear} data={demographics.yearTraffic} />
+                    {Object.keys(demographics.yearTraffic).length > 0 && <Attendance years={years} year={year} setYear={setYear} data={demographics.yearTraffic} />}
                 </div>
                 <div className='col-md-12 col-xl-12 mt-0'>
                     <DemographicsA data={demographics.statut} />

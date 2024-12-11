@@ -12,7 +12,7 @@ class Event_Type(models.Model):
 
 
 class Event(models.Model):
-    event_name = models.CharField("event name", max_length=50)
+    event_name = models.CharField("event name", max_length=50, null=True, blank=True)
     event_date = models.DateField("event date")
     event_type = models.ForeignKey(Event_Type, on_delete=models.CASCADE)
     men = models.IntegerField("men", default=0)
@@ -54,10 +54,10 @@ class Event_stats(models.Model):
 # This is the sql for the event_stat view for sqlite3
 
 # CREATE VIEW events_stats AS
-# SELECT event_event_type.id, event_event_type.event_type_name, STRFTIME('%m', event_event.event_date) AS month, STRFTIME('%Y', event_event.event_date) AS year, event_event.church_id, SUM(event_event.total) AS totals, ROUND(AVG(event_event.total), 0) AS average
+# SELECT event_event_type.id, event_event_type.event_type_name, month(event_event.event_date) AS month, year(event_event.event_date) AS year, event_event.church_id, SUM(event_event.total) AS totals, ROUND(AVG(event_event.total), 0) AS average
 # FROM event_event_type
 # JOIN event_event ON event_event_type.id = event_event.event_type_id
 # WHERE event_event_type.weekly_event = True
-# GROUP BY STRFTIME('%m', event_event.event_date), STRFTIME('%Y', event_event.event_date), event_event_type.id,
+# GROUP BY month(event_event.event_date), year( event_event.event_date), event_event_type.id,
 # event_event.church_id
 # ORDER BY event_event_type.id, event_event.church_id, MONTH, YEAR

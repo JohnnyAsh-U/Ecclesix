@@ -10,8 +10,8 @@ import { formatDate } from '../../utils/datetime/formatdate'
 import { timeFormat } from '../../utils/datetime/formattime'
 
 const Logs = () => {
-    const { loading, data, error, reload } = useFetch(`/log`, 'get')
-    const { logByDate: logs } = data || {}
+    const { loading, data, error, reload } = useFetch(`/admin/logs`, 'get')
+    const logs = data || {}
     const [viewAdminLog, setViewAdminLog] = useState(null)
     const [active, setActive] = useState('tout')
 
@@ -38,7 +38,7 @@ const Logs = () => {
         return <LoadingPage />
     }
 
-    const DayLogs = active === 'tout' ? logs : logs.filter(log => log.time_date == active)
+    const DayLogs = active === 'tout' ? logs : logs.filter(log => log.date_time == active)
 
     return (
         <div>
@@ -58,11 +58,11 @@ const Logs = () => {
                                 >
                                     Tout</li>
                                 {logs.map((log) =>
-                                    <li className={`list-group-item list-group-item-action ${active == log.time_date ? "active" : ""}`}
-                                        key={log.time_date}
+                                    <li className={`list-group-item list-group-item-action ${active == log.date_time ? "active" : ""}`}
+                                        key={log.date_time}
                                         style={{ cursor: 'pointer' }}
-                                        onClick={() => setActive(log.time_date)}>
-                                        {LogDay(log.time_date)}
+                                        onClick={() => setActive(log.date_time)}>
+                                        {LogDay(log.date_time)}
                                     </li>
                                 )}
                             </ul>
@@ -74,22 +74,22 @@ const Logs = () => {
                         <div className="card" key={id}>
                             <div className="card-header py-3" style={{ backgroundColor: '#cbd5e1' }}>
                                 <div className='card-header-title'>
-                                    <h6 className="mb-0">{LogDay(logs_by_date.time_date)}</h6>
+                                    <h6 className="mb-0">{LogDay(logs_by_date.date_time)}</h6>
                                 </div>
                             </div>
                             <div className='card-body mt-2'>
                                 <div className="card-body pt-1 border-end">
-                                    {logs_by_date.log && logs_by_date.log.map((log, index) =>
-                                        <div className="card-notification" key={index} onClick={() => setViewAdminLog(viewAdminLog === log.id_log ? null : log.id_log)}>
+                                    {logs_by_date.logs && logs_by_date.logs.map((log, index) =>
+                                        <div className="card-notification" key={index} onClick={() => setViewAdminLog(viewAdminLog === log.id ? null : log.id)}>
                                             <div className="card-noti-conatin m-b-20">
-                                                <small> {timeFormat(new Date(log.time_of_action))}</small>
+                                                <small> {timeFormat(new Date(log.action_time))}</small>
                                                 <div className="text-">{LogPhrase(log)}
-                                                    {log.type_log === 'UPDATE' && <FontAwesomeIcon className='ms-2' cursor={'pointer'} icon={faCaretDown} />}
-                                                    {log.type_log === 'UPDATE' && viewAdminLog === log.id_log &&
+                                                    {log.log_type === 'UPDATE' && <FontAwesomeIcon className='ms-2' cursor={'pointer'} icon={faCaretDown} />}
+                                                    {log.log_type === 'UPDATE' && viewAdminLog === log.id &&
                                                         <div className=''>
                                                             <pre>
                                                                 <strong>
-                                                                    {JSON.stringify(log.details.changes, null, 1)}
+                                                                    {JSON.stringify(log.detail.changes, null, 1)}
                                                                 </strong>
                                                             </pre>
                                                         </div>

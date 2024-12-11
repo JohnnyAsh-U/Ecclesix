@@ -1,6 +1,5 @@
 import React from 'react'
 import Badge from '../../components/buttons/badge'
-import { formatDate } from '../../utils/datetime/month'
 import { AgeCategory } from '../../utils/datetime/agecategory'
 import { useNavigate } from 'react-router-dom'
 
@@ -21,15 +20,25 @@ const NewMembers = ({ data }) => {
 
 
     const ActifStatut = (membre) => {
-        if (membre.profile_admin?.super_admin) {
+        if (membre.is_superuser) {
             return <Badge color='success' text={"SuperAdmin"} />
-        } else if (membre.admin) {
+        } else if (membre.is_admin) {
             return <Badge color='success' text={"Admin"} />
-        } else if (membre.estActif) {
+        } else if (membre.is_active) {
             return <Badge color='info' text={"Actif"} />
         } else {
             return <Badge color='dark' text={"Inactif"} />
         }
+    }
+
+    const formatDate = (date) => {
+        if (!date) return '';
+        let formatedDate = new Date(date)
+        let month = formatedDate.getMonth()
+        let year = formatedDate.getFullYear()
+        let day = formatedDate.getDate()
+        const mois = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre']
+        return day + ' ' + mois[month] + ' ' + year
     }
 
     return (
@@ -57,27 +66,27 @@ const NewMembers = ({ data }) => {
                             </thead>
                             <tbody>
 
-                            {data.map((membre, index) =>
-                                <tr style={{ cursor: 'pointer' }} key={index} onClick={() => navigate(`/membres/profile/${membre.id}`)}>
-                                    <td><i className={membre.sexe === 'H' ? "icofont icofont-business-man-alt-1 fs-4 ms-1" : "icofont icofont-girl-alt fs-4 ms-1"}></i>
-                                        <div className="table-contain">
-                                            <h6 className='fw-light'>{membre.prenom} {membre.nom}</h6>
-                                            {StatutBadge(membre.statut)}
-                                            {' '}
-                                            <p className="text-muted"> | {formatDate(membre.date_arrive)}</p>
-                                        </div>
-                                    </td>
-                                    <td>{membre.statut_matrimonial === 'V' && 'Veuf(ve)'}
-                                        {membre.statut_matrimonial === 'M' && 'Marie'}
-                                        {membre.statut_matrimonial === 'C' && 'Celibataire'}
-                                    </td>
-                                    <td>{membre.ville && membre.ville.lib_ville}</td>
-                                    <td>{membre.eglise && membre.eglise.lib_eglise}</td>
-                                    <td>{AgeCategory(membre.date_de_naissance)}</td>
-                                    <td>{membre.type_metier}</td>
-                                    <td>{ActifStatut(membre)}</td>
-                                </tr>
-                            )}
+                                {data.map((membre, index) =>
+                                    <tr style={{ cursor: 'pointer' }} key={index} onClick={() => navigate(`/membres/profile/${membre.id}`)}>
+                                        <td><i className={membre.gender === 'H' ? "icofont icofont-business-man-alt-1 fs-4 ms-1" : "icofont icofont-girl-alt fs-4 ms-1"}></i>
+                                            <div className="table-contain">
+                                                <h6 className='fw-light'>{membre.get_full_name}</h6>
+                                                {StatutBadge(membre.status)}
+                                                {' '}
+                                                <p className="text-muted"> | {formatDate(membre.date_joined)}</p>
+                                            </div>
+                                        </td>
+                                        <td>{membre.marital_status === 'V' && 'Veuf(ve)'}
+                                            {membre.marital_status === 'M' && 'Marie'}
+                                            {membre.marital_status === 'C' && 'Celibataire'}
+                                        </td>
+                                        <td>{membre.city_name}</td>
+                                        <td>{membre.church_name}</td>
+                                        <td>{AgeCategory(membre.birthdate)}</td>
+                                        <td>{membre.profession_type}</td>
+                                        <td>{ActifStatut(membre)}</td>
+                                    </tr>
+                                )}
 
                             </tbody>
                         </table>

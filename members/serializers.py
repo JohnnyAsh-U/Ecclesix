@@ -63,7 +63,7 @@ class MemberSerializer(serializers.ModelSerializer):
             'baptism_date', 'marital_status', 'category', 'status',
             'city', 'city_name', 'church', 'church_name', 'role',
             'role_name', 'followed_up_by', 'followed_up_by_name',
-            'relations', 'get_full_name'
+            'relations', 'get_full_name', 'is_superuser'
         ]
         
     def get_city_name(self, obj):

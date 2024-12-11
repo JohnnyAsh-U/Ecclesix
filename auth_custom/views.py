@@ -5,7 +5,7 @@ from members.models import Member
 from django.utils import timezone
 from django.contrib.auth import logout
 from .auth import AuthBackend
-from .auth import JWTAuthentication
+from .services import auth_logger
 from .utils import getRefreshToken, jwtEncode, jwtDecode, generate_tokens
 import os, pyotp, uuid
 
@@ -148,6 +148,10 @@ class Login(APIView):
             }
             access, refresh = generate_tokens(new_payload)
 
+            ip = request.META.get("REMOTE_ADDR", None)
+
+            auth_logger(admin=user, resource="Connexion", ip=ip)
+
             response = Response({"next": "Dashboard", "token": access})
             response.set_cookie(
                 "refreshToken",
@@ -213,7 +217,6 @@ class ConfirmReinitialization(APIView):
 
     authentication_classes = []
     permission_classes = []
-    
 
     def get(self, request, format=None):
         try:
@@ -221,9 +224,7 @@ class ConfirmReinitialization(APIView):
             payload = jwtDecode(token, email_token_secret) or {}
             email = payload["email"]
             id = payload["id"]
-            user = Member.objects.get(
-                email=email, id=id, is_admin=True, is_active=True
-            )
+            user = Member.objects.get(email=email, id=id, is_admin=True, is_active=True)
             return Response({"email": email, "name": user.get_full_name()})
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -233,7 +234,6 @@ class ResetPassword(APIView):
 
     authentication_classes = []
     permission_classes = []
-    
 
     def post(self, request, format=None):
         try:
@@ -247,9 +247,7 @@ class ResetPassword(APIView):
             payload = jwtDecode(token, email_token_secret) or {}
             email = payload["email"]
             id = payload["id"]
-            user = Member.objects.get(
-                email=email, id=id, is_admin=True, is_active=True
-            )
+            user = Member.objects.get(email=email, id=id, is_admin=True, is_active=True)
             auth_instance = AuthBackend(user)
             auth_instance.change_password(password)
 
@@ -267,7 +265,6 @@ class VerifyEmail(APIView):
 
     authentication_classes = []
     permission_classes = []
-    
 
     def post(self, request):
 
@@ -298,7 +295,6 @@ class VerifyEmail(APIView):
 class SetupOTP(APIView):
     authentication_classes = []
     permission_classes = []
-    
 
     def post(self, request):
 
@@ -332,7 +328,6 @@ class SetupOTP(APIView):
 class VerifyOTP(APIView):
     authentication_classes = []
     permission_classes = []
-    
 
     def post(self, request, format=None):
 
@@ -344,7 +339,7 @@ class VerifyOTP(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = AuthBackend.verify_otp(token, otp_token, secret=otp_key)
+            user, from_func = AuthBackend.verify_otp(token, otp_token, secret=otp_key)
             if not user:
                 return Response({"success": "false"})
 
@@ -363,6 +358,10 @@ class VerifyOTP(APIView):
 
             access, refresh = generate_tokens(payload)
 
+            ip = request.META.get("REMOTE_ADDR", None)
+
+            auth_logger(user, from_func, ip)
+
             response = Response({"success": "true", "token": access})
             response.set_cookie(
                 "refreshToken",
@@ -380,7 +379,6 @@ class VerifyOTP(APIView):
 class RefreshToken(APIView):
     authentication_classes = []
     permission_classes = []
-    
 
     def post(self, request, format=None):
         refresh_token = getRefreshToken(self.request)
@@ -420,11 +418,12 @@ class RefreshToken(APIView):
 
 
 class Logout(APIView):
-    
-    #add jwt auth check in permission classes
+
     permission_classes = []
-    
-    
+
     def post(self, request, format=None):
         logout(self.request)
+        ip = request.META.get("REMOTE_ADDR", None)
+
+        auth_logger(request.user, "Deconnexion", ip)
         return Response()

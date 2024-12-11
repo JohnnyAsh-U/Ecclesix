@@ -1,30 +1,48 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
 from .models import City, Church_type, Church
 from members.models import Member
+from admin_custom.models import Log
 from event.models import Event
 from .serializers import CitySerializer, TypeSerializer, ChurchSerializer
 from rest_framework.response import Response
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework import status
 from . import services
-from auth_custom.auth import CustomPermissions
+from admin_custom.services import ViewLogger
 
 
 class CityListCreateView(ListCreateAPIView):
-    
+
     perms = {
-        "OPTIONS": ['superadmin'],
+        "OPTIONS": ["superadmin"],
         "GET": [],
         "POST": ["superadmin"],
     }
     serializer_class = CitySerializer
     queryset = City.objects.prefetch_related("city_church")
+    
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        detail = {
+            "resource": 'Ville',
+            "id": serializer.data['id'],
+            "lib": serializer.data['city_name']
+        }
+        Log.objects.create(
+            admin_id = request.user.id,
+            log_type = "INSERT",
+            detail = detail
+        )
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 
 class CityRUDView(RetrieveUpdateDestroyAPIView):
     perms = {
-        "OPTIONS": ['superadmin'],
+        "OPTIONS": ["superadmin"],
         "GET": [],
         "PUT": ["superadmin"],
         "DELETE": ["superadmin"],
@@ -32,42 +50,122 @@ class CityRUDView(RetrieveUpdateDestroyAPIView):
     serializer_class = CitySerializer
     queryset = City.objects.prefetch_related("city_church")
     
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, context={"request": request}, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        detail = {"resource": "Ville", "id": instance.pk, "lib": str(instance)}
+        self.perform_destroy(instance)
+        Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TypeListCreateView(ListCreateAPIView):
     perms = {
-        "OPTIONS": ['superadmin'],
+        "OPTIONS": ["superadmin"],
         "GET": [],
         "POST": ["superadmin"],
     }
     serializer_class = TypeSerializer
     queryset = Church_type.objects.prefetch_related("type_church")
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        detail = {
+            "resource": 'TypeEglise',
+            "id": serializer.data['id'],
+            "lib": serializer.data['church_type_name']
+        }
+        Log.objects.create(
+            admin_id = request.user.id,
+            log_type = "INSERT",
+            detail = detail
+        )
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TypeRUDView(RetrieveUpdateDestroyAPIView):
     perms = {
-        "OPTIONS": ['superadmin'],
+        "OPTIONS": ["superadmin"],
         "GET": [],
         "PUT": ["superadmin"],
         "DELETE": ["superadmin"],
     }
     serializer_class = TypeSerializer
     queryset = Church_type.objects.prefetch_related("type_church")
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, context={"request": request}, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        detail = {"resource": "TypeEglise", "id": instance.pk, "lib": str(instance)}
+        self.perform_destroy(instance)
+        Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ChurchListCreateView(ListCreateAPIView):
     perms = {
-        "OPTIONS": ['superadmin'],
+        "OPTIONS": ["superadmin"],
         "GET": [],
         "POST": ["superadmin"],
     }
     serializer_class = ChurchSerializer
     queryset = Church.objects.all()
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        detail = {
+            "resource": 'Eglise',
+            "id": serializer.data['id'],
+            "lib": serializer.data['church_name']
+        }
+        Log.objects.create(
+            admin_id = request.user.id,
+            log_type = "INSERT",
+            detail = detail
+        )
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 
 class ChurchRUDView(RetrieveUpdateDestroyAPIView):
     perms = {
-        "OPTIONS": ['superadmin'],
+        "OPTIONS": ["superadmin"],
         "GET": [],
         "PUT": ["modifier_eglise"],
         "DELETE": ["superadmin"],
@@ -78,17 +176,42 @@ class ChurchRUDView(RetrieveUpdateDestroyAPIView):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, context={"request": request}, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        detail = {"resource": "Eglise", "id": instance.pk, "lib": str(instance)}
+        self.perform_destroy(instance)
+        Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         id = kwargs["pk"]
+        ViewLogger(request.user.id, detail={"resource" : 'Eglise'})
+        
 
         metrics = {
-            "sixMonthEventCount": services.TotalMembersForSixMonth(id),
-            "sixMonthMemberCount": services.TotalEventsForSixMonth(id),
+            "sixMonthEventCount": services.TotalEventsForSixMonth(id),
+            "sixMonthMemberCount": services.TotalMembersForSixMonth(id),
             "sixMonthAttendanceCount": services.TotalAttendanceForSixMonth(id),
-            "totalEvents": Event.objects.filter(church=id).count(),
-            "totalMembers": Member.objects.filter(church=id).count(),
+            "totalEvents": Event.objects.filter(church_id=id).count(),
+            "totalMembers": Member.objects.filter(church_id=id).count(),
             "ageRangeMemberCount": services.AgeRangeCount(id),
             "attendanceGraphMonth": services.AttendanceMonthGraph(id),
             "attendanceGraphYear": services.AttendanceYearGraph(id),
