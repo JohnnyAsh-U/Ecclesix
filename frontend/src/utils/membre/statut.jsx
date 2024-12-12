@@ -14,11 +14,11 @@ export const StatutBadge = (statut) => {
 
 
 export const ActifStatut = (membre) => {
-    if (membre.profile_admin?.super_admin) {
+    if (membre.is_superuser) {
         return <Badge color='success' text={"SuperAdmin"} />
-    } else if (membre.admin) {
+    } else if (membre.is_admin) {
         return <Badge color='success' text={"Admin"} />
-    } else if (membre.estActif) {
+    } else if (membre.is_active) {
         return <Badge color='info' text={"Actif"} />
     } else {
         return <Badge color='dark' text={"Inactif"} />

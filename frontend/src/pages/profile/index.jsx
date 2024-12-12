@@ -19,7 +19,11 @@ const Profile = () => {
   let { id } = useParams();
 
   const { loading, data, error, reload } = useFetch(`/membre/${id}`, 'get')
-  const { res: membre, liste_ville: ville, liste_role: roles } = data || {}
+  const membre = data || {}
+  const { loading : vloading, data: vdata, error:verror, reload: vreload } = useFetch(`/eglise/ville`, 'get')
+  const { loading: rloading, data: rdata, reload: rreload, error: rerror } = useFetch(`/admin/role`, 'get')
+  const ville = vdata || []
+  const roles = rdata || []
   window.scrollTo(0, 0)
 
 
@@ -42,7 +46,7 @@ const Profile = () => {
         <> <BreadCrumb title={'Profile'} />
           <div className="row">
             <div className="col-lg-12">
-              <Header membre={data.res} />
+              <Header membre={membre} />
             </div>
           </div>
 
@@ -52,10 +56,10 @@ const Profile = () => {
                 if (t.id == 1) {
                   return t;
                 }
-                if (t.id == 2 && membre.statut !== 'Visiteur' && membre.statut !== 'Membre') {
+                if (t.id == 2 && membre.status !== 'Visiteur' && membre.status !== 'Membre') {
                   return t
                 }
-                if (t.id == 3 && membre.admin && permissions.superAdmin) {
+                if (t.id == 3 && membre.is_admin && permissions.superAdmin) {
                   return t
                 }
                 return null

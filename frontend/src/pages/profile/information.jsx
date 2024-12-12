@@ -30,11 +30,12 @@ const Information = ({ membre, roles, ville, fetch }) => {
 
 
 
+
     //active or deactive member status toggler
     const desactivation = async (e) => {
         try {
             e.preventDefault();
-            await axios.post(`/membre/${desactivationMembre.id}`)
+            await axios.patch(`/membre/${desactivationMembre.id}`)
             toast.success('Success')
             fetch()
         } catch (err) {
@@ -55,6 +56,16 @@ const Information = ({ membre, roles, ville, fetch }) => {
         }
     }
 
+    const formatDate = (date) => {
+        if (!date) return '';
+        let formatedDate = new Date(date)
+        let month = formatedDate.getMonth()
+        let year = formatedDate.getFullYear()
+        let day = formatedDate.getDate()
+        const mois = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre']
+        return day + ' ' + mois[month] + ' ' + year
+    }
+
     useEffect(() => {
         return () => {
             clearTimeout(timerRef.current)
@@ -65,11 +76,11 @@ const Information = ({ membre, roles, ville, fetch }) => {
     return (
         <div className="row">
             <div className="col-xl-3">
-                <RoleDepartement
+                {/* <RoleDepartement
                     membre={membre}
                     roles={roles}
                     fetch={fetch} />
-                <Relation membre={membre} fetch={fetch} />
+                <Relation membre={membre} fetch={fetch} /> */}
             </div>
 
             <div className='col-xl-9'>
@@ -90,7 +101,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                 </Dropdown.Toggle>
                                                 <Dropdown.Menu>
 
-                                                    {membre.estActif &&
+                                                    {membre.is_active &&
                                                         <ContentPermsWrapper requiredPerms={['modifier_membre']}>
                                                             <Dropdown.Item onClick={() => setEdit(true)}>
                                                                 Modifier
@@ -101,7 +112,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                     {membre.id != admin.id &&
                                                         <ContentPermsWrapper requiredPerms={['modifier_membre']}>
                                                             <Dropdown.Item onClick={() => { setModal("statut"); setDesactivationMembre(membre) }}>{
-                                                                membre.estActif ? "Deactivation" : "Activation"
+                                                                membre.is_active ? "Deactivation" : "Activation"
                                                             }</Dropdown.Item>
                                                         </ContentPermsWrapper>}
 
@@ -122,32 +133,32 @@ const Information = ({ membre, roles, ville, fetch }) => {
                             <div className="card-body">
                                 {!edit &&
                                     <div id="view-info" className="row">
-                                        <div className="col-lg-6 col-md-12">
+                                        <div className="col-md-12">
                                             <table className="table table-responsive m-b-0">
                                                 <tbody>
                                                     <tr>
                                                         <th className="social-label b-none p-t-0">Nom</th>
                                                         <td className="social-user-name b-none p-t-0 text-muted">
-                                                            {capitalizeFirstLetter(membre.nom)}
+                                                            {capitalizeFirstLetter(membre.last_name)}
                                                         </td>
                                                     </tr>
                                                     <tr>
                                                         <th className="social-label b-none">Prenom</th>
                                                         <td className="social-user-name b-none text-muted">
-                                                            {capitalizeFirstLetter(membre.prenom)}
+                                                            {capitalizeFirstLetter(membre.first_name)}
                                                         </td>
                                                     </tr>
                                                     <tr>
                                                         <th className="social-label b-none">Sexe</th>
                                                         <td className="social-user-name b-none text-muted">
-                                                            {membre.sexe === 'H' && 'Homme'}
-                                                            {membre.sexe === 'F' && 'Femme'}
+                                                            {membre.gender === 'H' && 'Homme'}
+                                                            {membre.gender === 'F' && 'Femme'}
                                                         </td>
                                                     </tr>
                                                     <tr>
                                                         <th className="social-label b-none">Date Naissance</th>
                                                         <td className="social-user-name b-none text-muted">
-                                                            {formatDate(membre.date_de_naissance)}
+                                                            {formatDate(membre.birthdate)}
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -155,15 +166,15 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                             Statut Matrimonial
                                                         </th>
                                                         <td className="social-user-name b-none p-b-0 text-muted">
-                                                            {membre.statut_matrimonial === 'V' && 'Veuf(ve)'}
-                                                            {membre.statut_matrimonial === 'M' && 'Marie'}
-                                                            {membre.statut_matrimonial === 'C' && 'Celibataire'}
+                                                            {membre.marital_status === 'V' && 'Veuf(ve)'}
+                                                            {membre.marital_status === 'M' && 'Marie'}
+                                                            {membre.marital_status === 'C' && 'Celibataire'}
                                                         </td>
                                                     </tr>
                                                     <tr>
                                                         <th className="social-label b-none">Contact</th>
                                                         <td className="social-user-name b-none text-muted">
-                                                            {membre.numero_tel}
+                                                            {membre.phone}
                                                         </td>
                                                     </tr>
                                                     <tr>
@@ -190,14 +201,14 @@ const Information = ({ membre, roles, ville, fetch }) => {
                             </div>
                             <div className="card-body">
                                 <div id="contact-info" className="row">
-                                    <div className="col-lg-6 col-md-12">
+                                    <div className=" col-md-12">
                                         <table className="table table-responsive m-b-0">
                                             <tbody><tr>
                                                 <th className="social-label b-none p-t-0">
                                                     Ville
                                                 </th>
                                                 <td className="social-user-name b-none p-t-0 text-muted">
-                                                    {membre.ville?.lib_ville}
+                                                    {membre.city_name}
                                                 </td>
                                             </tr>
                                                 <tr>
@@ -205,7 +216,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                         Addresse
                                                     </th>
                                                     <td className="social-user-name b-none text-muted">
-                                                        {membre.addresse}
+                                                        {membre.address}
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -213,7 +224,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                         Type Metier
                                                     </th>
                                                     <td className="social-user-name b-none text-muted">
-                                                        {membre.type_metier}
+                                                        {membre.profession_type}
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -221,7 +232,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                         Metier
                                                     </th>
                                                     <td className="social-user-name b-none p-b-0 text-muted">
-                                                        {membre.metier}
+                                                        {membre.profession}
                                                     </td>
                                                 </tr>
                                             </tbody></table>
@@ -248,7 +259,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                     Eglise
                                                 </th>
                                                 <td className="social-user-name b-none p-t-0 text-muted">
-                                                    {membre.eglise?.lib_eglise}
+                                                    {membre.church_name}
                                                 </td>
                                             </tr>
                                                 <tr>
@@ -256,7 +267,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                         Categorie
                                                     </th>
                                                     <td className="social-user-name b-none text-muted">
-                                                        {AgeCategory(membre.date_de_naissance)}
+                                                        {AgeCategory(membre.birthdate)}
                                                     </td>
                                                 </tr>
                                                 <tr>
@@ -264,7 +275,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                         Statut
                                                     </th>
                                                     <td className="social-user-name b-none p-b-0 text-muted">
-                                                        {StatutBadge(membre.statut)}
+                                                        {StatutBadge(membre.status)}
                                                     </td>
                                                 </tr>
 
@@ -273,17 +284,17 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                         Date Bapteme
                                                     </th>
                                                     <td className="social-user-name b-none p-b-0 text-muted">
-                                                        {formatDate(membre.annee_bapt)}
+                                                        {formatDate(membre.baptism_date)}
                                                     </td>
                                                 </tr>
 
                                                 <tr>
                                                     <th className="social-label b-none">
-                                                        {membre.statut === 'Visiteur' ? 'Suivi(e) par' : 'Etait suivi(e) par'}
+                                                        {membre.status === 'Visiteur' ? 'Suivi(e) par' : 'Etait suivi(e) par'}
                                                     </th>
                                                     <td className="social-user-name b-none p-b-0 text-muted">
-                                                        <Link to={'/membres/profile/' + membre.suivi_par?.id}>
-                                                            {membre.suivi_par?.nom} {membre.suivi_par?.prenom}
+                                                        <Link to={'/membres/profile/' + membre.followed_up_by_name?.id}>
+                                                            {membre.followed_up_by_name?.name}
                                                         </Link>
                                                     </td>
                                                 </tr>
@@ -293,7 +304,7 @@ const Information = ({ membre, roles, ville, fetch }) => {
                                                         Enreg. Le
                                                     </th>
                                                     <td className="social-user-name b-none p-b-0 text-muted">
-                                                        {membre.date_arrive ? formatDate(membre.date_arrive) : ''}
+                                                        {membre.date_joined ? formatDate(membre.date_joined) : ''}
                                                     </td>
                                                 </tr>
                                             </tbody></table>

@@ -52,7 +52,7 @@ class Member(User):
         max_length=20, choices=[("H", "Homme"), ("F", "Femme")], null=False, blank=False
     )
     birthdate = models.DateField(null=True, blank=True)
-    phone = models.CharField(max_length=15, null=True)
+    phone = models.CharField(max_length=15, null=True, blank=True)
     profession_type = models.CharField(
         max_length=20,
         choices=[
@@ -115,6 +115,7 @@ class Member(User):
         # related_query_name="role",
         on_delete=models.SET_NULL,
         null=True,
+        blank=True
     )
 
     relations = models.ManyToManyField(

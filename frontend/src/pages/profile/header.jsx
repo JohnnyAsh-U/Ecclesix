@@ -19,11 +19,11 @@ const Header = ({ membre }) => {
                     <div className="col-md-12">
                         <div className="media-left ">
                             <a href="#" className="profile-image">
-                                {membre.sexe === 'H' &&
+                                {membre.gender === 'H' &&
                                     <img className="user-img img-radius border border-primary-subtle"
                                         src={homme}
                                         alt="user-img" />}
-                                {membre.sexe === 'F' && <img className="user-img img-radius border border-primary-subtle"
+                                {membre.gender === 'F' && <img className="user-img img-radius border border-primary-subtle"
                                     src={femme}
                                     alt="user-img" />}
                             </a>
@@ -31,8 +31,8 @@ const Header = ({ membre }) => {
                         <div className="media-body row ">
                             <div className="col-lg-12">
                                 <div className="user-title">
-                                    <h2>{capitalizeFirstLetter(membre.prenom)} {capitalizeFirstLetter(membre.nom)}</h2>
-                                    <span className="text-white">{membre.eglise?.lib_eglise} {StatutBadge(membre.statut)}</span>
+                                    <h2>{membre.get_full_name}</h2>
+                                    <span className="text-white">{membre.church_name} {StatutBadge(membre.status)}</span>
                                 </div>
                             </div>
                             <div>

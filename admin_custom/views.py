@@ -1,12 +1,12 @@
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from church.models import Church
-from .models import Log
+from .models import Log, Role
 from church.serializers import ChurchSerializer
 from dateutil.relativedelta import relativedelta
 from datetime import date
-from .serializers import LogSerializer
+from .serializers import LogSerializer, RoleSerializer
 from dateutil.parser import parse
 
 
@@ -63,5 +63,14 @@ class AdminPermissions(APIView):
         ip = request.META.get("REMOTE_ADDR", None)
         print(ip)
         return Response(
-            {"permissions": {"superAdmin": True}, "eglises": serialized_church.data}
+            {"permissions": {"superAdmin": True}, "churches": serialized_church.data}
         )
+
+class RolesListCreateView(ListCreateAPIView):
+    serializer_class = RoleSerializer
+    queryset = Role.objects.all()
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["superadmin"],
+        "POST":["superadmin"]
+    }

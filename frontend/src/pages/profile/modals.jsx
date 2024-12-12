@@ -8,11 +8,11 @@ export const DesactiverModal = ({ membre, modal, handleSubmit, handleClose }) =>
             <form onSubmit={(e) => handleSubmit(e)}>
                 <Modal.Header closeButton>
                     <Modal.Title>
-                        {membre.estActif ? "Desactivation" : "Activation"}
+                        {membre.is_active ? "Desactivation" : "Activation"}
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    {membre.estActif ? "Desactivation" : "Activation"} du Profil {membre.nom} {membre.prenom}
+                    {membre.is_active ? "Desactivation" : "Activation"} du Profil {membre.get_full_name}
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-inverse btn-outline-inverse rounded btn-sm`} onClick={() => handleClose()}>
@@ -34,11 +34,11 @@ export const SupprimerModal = ({ membre, modal, handleSubmit, handleClose }) => 
             <form onSubmit={(e) => handleSubmit(e)}>
                 <Modal.Header closeButton>
                     <Modal.Title>
-                        Supprimer {membre.nom} {membre.prenom}
+                        Supprimer {membre.get_full_name}
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous supprimer ce profil: {membre.nom} {membre.prenom}
+                    Voulez vous supprimer ce profil: {membre.get_full_name}
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-inverse btn-outline-inverse rounded btn-sm`} onClick={() => handleClose()}>

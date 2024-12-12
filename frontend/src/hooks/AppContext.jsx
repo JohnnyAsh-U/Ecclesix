@@ -50,7 +50,7 @@ const AppContext = ({ children }) => {
         axios.get('/admin/permissions')
             .then(({ data }) => {
                 setPermissions(data.permissions)
-                setEglises(data.eglises)
+                setEglises(data.churches)
             })
             .catch(err => {
                 localStorage.removeItem('chms')

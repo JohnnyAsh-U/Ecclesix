@@ -2,34 +2,10 @@ import React from 'react'
 import Badge from '../../components/buttons/badge'
 import { AgeCategory } from '../../utils/datetime/agecategory'
 import { useNavigate } from 'react-router-dom'
+import {ActifStatut, StatutBadge} from '../../utils/membre/statut'
 
 const NewMembers = ({ data }) => {
     const navigate = useNavigate()
-
-    const StatutBadge = (statut) => {
-        if (statut == 'Ministre') {
-            return <Badge color="success" text={statut} />
-        } else if (statut == 'Ouvrier') {
-            return <Badge color="primary" text={statut} />
-        } else if (statut == 'Membre') {
-            return <Badge color="warning" text={statut} />
-        } else {
-            return <Badge color="danger" text={statut} />
-        }
-    }
-
-
-    const ActifStatut = (membre) => {
-        if (membre.is_superuser) {
-            return <Badge color='success' text={"SuperAdmin"} />
-        } else if (membre.is_admin) {
-            return <Badge color='success' text={"Admin"} />
-        } else if (membre.is_active) {
-            return <Badge color='info' text={"Actif"} />
-        } else {
-            return <Badge color='dark' text={"Inactif"} />
-        }
-    }
 
     const formatDate = (date) => {
         if (!date) return '';

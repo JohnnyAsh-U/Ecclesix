@@ -18,7 +18,7 @@ const Membres = () => {
         statut_matrimonial: 'tout',
         type_metier: 'tout',
         eglise: (permissions.superAdmin || permissions.perms.includes('voir_touts_membres')) ?
-            'tout' : admin.id_eglise,
+            'tout' : admin.church_id,
         Ministre: true,
         Ouvrier: true,
         Membre: true,

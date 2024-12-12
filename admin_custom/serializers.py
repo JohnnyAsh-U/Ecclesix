@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Log
+from .models import Log, Role
 
 
 class LogSerializer(serializers.ModelSerializer):
@@ -13,3 +13,9 @@ class LogSerializer(serializers.ModelSerializer):
         if obj.admin:
             return {"id": obj.admin.id, "name": obj.admin.get_full_name()}
         return None
+    
+    
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = "__all__"

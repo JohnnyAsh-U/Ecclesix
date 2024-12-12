@@ -27,14 +27,14 @@ const NommerAdmin = ({ membre }) => {
 
     return (
         <>
-            {parseInt(membre.id) !== parseInt(admin.id) && membre.estActif && membre.id != 1 &&
+            {parseInt(membre.id) !== parseInt(admin.id) && membre.is_active && membre.id != 1 &&
                 <ContentPermsWrapper requiredPerms={['superAdmin']}>
                     <button type="button"
                         className="btn btn-primary  p-2 me-2 rounded"
                         onClick={() => setAdminModal(!adminModal)}
                     >
                         <FontAwesomeIcon icon={faUserGear} className='me-1' />
-                        {membre.admin ? 'Retirer Admin' : 'Ajouter Admin'}
+                        {membre.is_admin ? 'Retirer Admin' : 'Ajouter Admin'}
                     </button>
                 </ContentPermsWrapper>
             }
@@ -44,15 +44,15 @@ const NommerAdmin = ({ membre }) => {
                     className="icofont icofont-ui-messaging"></i>
                 Message
             </button>
-            <Modal show={adminModal} onHide={() => handleClose()} centered>
+            <Modal show={adminModal} onHide={() => setAdminModal(false)} centered>
                 <form onSubmit={(e) => handleAdmin(e)}>
                     <Modal.Header closeButton>
                         <Modal.Title>
-                            {membre.admin ? 'Retirer' : 'Nommer'} Admin
+                            {membre.is_admin ? 'Retirer' : 'Nommer'} Admin
                         </Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        {membre.admin ? "Retirer" : "Ajouter"} {membre.nom} {membre.prenom} en tant qu'Admin
+                        {membre.is_admin ? "Retirer" : "Ajouter"} {membre.get_full_name} en tant qu'Admin
                     </Modal.Body>
                     <Modal.Footer>
                         <button type="button" className={`btn btn-inverse btn-outline-inverse rounded btn-sm`} onClick={() => setAdminModal(false)}>

@@ -46,14 +46,15 @@ class ChurchSerializer(serializers.ModelSerializer):
                 if old_value != new_value:
                     changes["old"][field] = str(old_value)
                     changes["new"][field] = str(new_value)
-        details = {
-            "resource": "Eglise",
-            "id": instance.pk,
-            "lib": str(instance),
-            "changes": changes,
-        }
-        Log.objects.create(log_type="UPDATE", admin_id=admin, detail=details)
-        print(changes)
+
+        if len(changes["new"]) > 0 or len(changes["old"]) > 0:
+            details = {
+                "resource": "Eglise",
+                "id": instance.pk,
+                "lib": str(instance),
+                "changes": changes,
+            }
+            Log.objects.create(log_type="UPDATE", admin_id=admin, detail=details)
         return super().update(instance, validated_data)
 
     def get_city_name(self, obj):
@@ -78,7 +79,7 @@ class ChurchSerializer(serializers.ModelSerializer):
 
     def get_status_count(self, obj):
         return obj.get_member_count_by_status()
-    
+
     def get_total_members(self, obj):
         return obj.total_members()
 

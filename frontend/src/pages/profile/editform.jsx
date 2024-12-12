@@ -15,54 +15,58 @@ const EditForm = ({ membre, ville, handleClose }) => {
     const [loading, setLoading] = useState(false)
 
 
-
     const initialValues = {
         id: membre.id,
-        nom: membre.nom,
-        prenom: membre.prenom,
-        numero_tel: membre.numero_tel ? membre.numero_tel : '',
+        first_name: membre.first_name,
+        last_name: membre.last_name,
+        gender: membre.gender,
+        birthdate: membre.birthdate,
+        phone: membre.phone,
+        city: membre.city || '0',
+        date_joined: membre.date_joined,
         email: membre.email,
-        id_ville: membre.id_ville ? membre.id_ville : '0',
-        sexe: membre.sexe,
-        statut_matrimonial: membre.statut_matrimonial,
-        annee_bapt: membre.annee_bapt ? membre.annee_bapt : '',
-        date_de_naissance: membre.date_de_naissance ? membre.date_de_naissance : '',
-        date_arrive: membre.date_arrive,
-        statut: membre.statut,
-        categorie: membre.categorie,
-        metier: membre.metier ? membre.metier : '',
-        id_eglise: membre.id_eglise ? membre.id_eglise : '0',
-        type_metier: membre.type_metier,
-        addresse: membre.addresse,
-        id_suivi_par: membre.id_suivi_par || '0'
-    }
+        baptism_date: membre.baptism_date,
+        marital_status: membre.marital_status,
+        category: membre.category,
+        status: membre.status,
+        church: membre.church || '0',
+        profession_type: membre.profession_type,
+        profession: membre.profession,
+        address: membre.address,
+        followed_up_by: membre.followed_up_by || '0',
+      }
+
+      const validationSchema = yup.object({
+        first_name: yup.string().required('Ce champ est requis'),
+        last_name: yup.string().required('Ce champ est requis'),
+        gender: yup.string().required('Ce champ est requis'),
+        birthdate: yup.string().notRequired(),
+        phone: yup.string().notRequired(),
+        city: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+        date_joined: yup.string().required('Ce champ est requis'),
+        email: yup.string().email("Email Invalide").notRequired(),
+        baptism_date: yup.string().notRequired(),
+        marital_status: yup.string().required('Ce champ est requis'),
+        profession_type: yup.string().required('Ce champ est requis'),
+        category: yup.string().required('Ce champ est requis'),
+        status: yup.string().required('Ce champ est requis'),
+        church: yup.string().notOneOf(['0'],'Ce champ est requis'),
+        profession: yup.string().required('Ce champ est requis'),
+        address: yup.string().required('Ce champ est requis'),
+        followed_up_by: yup.string().notRequired()
+      })
 
 
-    const validationSchema = yup.object({
-        nom: yup.string().required('Ce Champ est requis'),
-        prenom: yup.string().required('Ce Champ est requis'),
-        numero_tel: yup.string().notRequired(),
-        email: yup.string().email('Email Invalid'),
-        id_ville: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-        date_de_naissance: yup.string().notRequired(),
-        date_arrive: yup.string().required('Ce champ est requis'),
-        annee_bapt: yup.string().notRequired(),
-        type_metier: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-        id_eglise: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-        metier: yup.string().required('Ce champ est requis'),
-        addresse: yup.string().required('Ce champ est requis'),
-        id_suivi_par: yup.string().notRequired()
-    })
 
     const fetchMembres = async () => {
         const query = new URLSearchParams({
             Ministre: true,
             Ouvrier: true,
-            eglise: membre.id_eglise
+            eglise: membre.church
         }).toString()
         try {
             const { data } = await axios.get(`/membre/liste?${query}`);
-            setListeSuiviPar(data.res)
+            setListeSuiviPar(data)
         } catch (err) {
             toast.error('Impossible de charger les donnees')
         }
@@ -76,8 +80,13 @@ const EditForm = ({ membre, ville, handleClose }) => {
 
     const onSubmit = async (values) => {
         setLoading(true)
+        for (let val in values){
+            if (values[val] == "" || values[val] == '0'){
+                delete values[val]
+            }
+        }
         try {
-            const { data } = await axios.put(`/membre/${membre.id}`,{ values });
+            const { data } = await axios.put(`/membre/${membre.id}`,values );
             toast.success('Success')
             window.location.reload()
         } catch (err) {
@@ -96,22 +105,22 @@ const EditForm = ({ membre, ville, handleClose }) => {
                 onSubmit={onSubmit}>
                 <Form>
                     <div className="col-sm-12 px-3">
-                        <FormInputWithLabel title={"Nom"} name={"nom"} />
-                        <FormInputWithLabel title={"Prenom"} name={"prenom"} />
-                        <FormSelectWithLabel name={'sexe'} title={'Sexe'}>
+                        <FormInputWithLabel title={"Nom"} name={"last_name"} />
+                        <FormInputWithLabel title={"Prenom"} name={"first_name"} />
+                        <FormSelectWithLabel name={'gender'} title={'Sexe'}>
                             <option value="H">Homme</option>
                             <option value="F">Femme</option>
                         </FormSelectWithLabel>
-                        <FormInputWithLabel title={"Date De Naissance"} type={"date"} name={"date_de_naissance"}
+                        <FormInputWithLabel title={"Date De Naissance"} type={"date"} name={"birthdate"}
                         />
 
                         <FormInputWithLabel
                             title={"Contacte"}
                             type={"text"}
-                            name={"numero_tel"}
+                            name={"phone"}
                         />
 
-                        <FormSelectWithLabel name='type_metier' title={'Categorie Metier'}>
+                        <FormSelectWithLabel name='profession_type' title={'Categorie Metier'}>
                             <option value="Travailleur">Travailleur</option>
                             <option value="Entrepreneur">Entrepreneur</option>
                             <option value="Eleve/Etudiant">Elève/Etudiant</option>
@@ -121,18 +130,18 @@ const EditForm = ({ membre, ville, handleClose }) => {
                         <FormInputWithLabel
                             title={"Metier"}
                             type={"text"}
-                            name={"metier"}
+                            name={"profession"}
                         />
 
-                        <FormSelectWithLabel name='id_ville' title={'Ville'}>
+                        <FormSelectWithLabel name='city' title={'Ville'}>
                             <option disabled value={'0'}>Choississez la ville </option>
-                            {ville && ville.map((v) => <option value={v.id_ville} key={v.id_ville} >{v.lib_ville}</option>)}
+                            {ville && ville.map((v) => <option value={v.id} key={v.id} >{v.city_name}</option>)}
                         </FormSelectWithLabel>
 
                         <FormInputWithLabel
                             title={"Addresse"}
                             type={"addresse"}
-                            name={"addresse"}
+                            name={"address"}
                         />
 
                         <FormInputWithLabel
@@ -144,11 +153,11 @@ const EditForm = ({ membre, ville, handleClose }) => {
                         <FormInputWithLabel
                             title={"Annee Bapteme"}
                             type={"date"}
-                            name={"annee_bapt"}
+                            name={"baptism_date"}
                         />
 
 
-                        <FormSelectWithLabel name='statut_matrimonial' title={"Statut Matrimonial"}>
+                        <FormSelectWithLabel name='marital_status' title={"Statut Matrimonial"}>
                             <option value="M">Marié</option>
                             <option value="C">Celibataire</option>
                             <option value="V">Veuf(ve)</option>
@@ -156,13 +165,13 @@ const EditForm = ({ membre, ville, handleClose }) => {
 
 
 
-                        <FormSelectWithLabel name='categorie' title={"Categorie"}>
+                        <FormSelectWithLabel name='category' title={"Categorie"}>
                             <option value="Adulte">Adulte</option>
                             <option value="Jeunesse">Jeunesse</option>
                             <option value="Ecodim">Ecodim</option>
                         </FormSelectWithLabel>
 
-                        <FormSelectWithLabel name='statut' title={"Statut"}>
+                        <FormSelectWithLabel name='status' title={"Statut"}>
                             <option value="Ministre">Ministre</option>
                             <option value="Ouvrier">Ouvrier</option>
                             <option value="Membre">Membre</option>
@@ -170,14 +179,14 @@ const EditForm = ({ membre, ville, handleClose }) => {
                         </FormSelectWithLabel>
 
                         {permissions.superAdmin &&
-                            <FormSelectWithLabel name='id_eglise' title={"Eglise"}>
+                            <FormSelectWithLabel name='church' title={"Eglise"}>
                                 <option disabled value={'0'}>Choississez l'eglise</option>
-                                {eglises.map((eg) => <option key={eg.id_eglise} value={eg.id_eglise}>{eg.lib_eglise}</option>)}
+                                {eglises.map((eg) => <option key={eg.id} value={eg.id}>{eg.church_name}</option>)}
                             </FormSelectWithLabel>}
 
-                        <FormSelectWithLabel name='id_suivi_par' title={'Suivi(e) Par'}>
+                        <FormSelectWithLabel name='followed_up_by' title={'Suivi(e) Par'}>
                             <option disabled value={'0'}>Suivi(e) par</option>
-                            {listeSuiviPar.map((m) => <option value={m.id} disabled={m.id == membre.id} key={m.id} >{m.prenom} {m.nom}</option>)}
+                            {listeSuiviPar.map((m) => <option value={m.id} disabled={m.id == membre.id} key={m.id} >{m.get_full_name}</option>)}
                         </FormSelectWithLabel>
                     </div>
 

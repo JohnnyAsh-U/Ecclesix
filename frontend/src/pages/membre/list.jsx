@@ -17,8 +17,8 @@ const List = ({ filters, search }) => {
         page,
         limit: 200,
     }).toString()
-    const { loading, data, error } = useFetch(`/membre/?${query}`, 'get')
-    const { res: liste, totalPages, totalMembers: total } = data || {}
+    const { loading, data, error } = useFetch(`/membre?${query}`, 'get')
+    const { list: liste, total_pages: totalPages, total_members: total } = data || {}
     const navigate = useNavigate()
 
     const handlePageChange = async (num) => {
@@ -26,6 +26,16 @@ const List = ({ filters, search }) => {
     }
 
     let bg = { backgroundColor: '#cbd5e1' }
+
+    const formatDate = (date) => {
+        if (!date) return '';
+        let formatedDate = new Date(date)
+        let month = formatedDate.getMonth()
+        let year = formatedDate.getFullYear()
+        let day = formatedDate.getDate()
+        const mois = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre']
+        return day + ' ' + mois[month] + ' ' + year
+    }
 
  
     
@@ -66,22 +76,22 @@ const List = ({ filters, search }) => {
 
                             {liste && liste.map((membre, index) =>
                                 <tr style={{ cursor: 'pointer' }} key={index} onClick={() => navigate(`/membres/profile/${membre.id}`)}>
-                                    <td><i className={membre.sexe === 'H' ? "icofont icofont-business-man-alt-1 fs-4 ms-1" : "icofont icofont-girl-alt fs-4 ms-1"}></i>
+                                    <td><i className={membre.gender === 'H' ? "icofont icofont-business-man-alt-1 fs-4 ms-1" : "icofont icofont-girl-alt fs-4 ms-1"}></i>
                                         <div className="table-contain">
-                                            <h6 className='fw-light'>{membre.prenom} {membre.nom}</h6>
-                                            {StatutBadge(membre.statut)}
+                                            <h6 className='fw-light'>{membre.get_full_name}</h6>
+                                            {StatutBadge(membre.status)}
                                             {' '}
-                                            <p className="text-muted"> | {formatDate(membre.date_arrive)}</p>
+                                            <p className="text-muted"> | {formatDate(membre.date_joined)}</p>
                                         </div>
                                     </td>
-                                    <td>{membre.statut_matrimonial === 'V' && 'Veuf(ve)'}
-                                        {membre.statut_matrimonial === 'M' && 'Marie'}
-                                        {membre.statut_matrimonial === 'C' && 'Celibataire'}
+                                    <td>{membre.marital_status === 'V' && 'Veuf(ve)'}
+                                        {membre.marital_status === 'M' && 'Marie'}
+                                        {membre.marital_status === 'C' && 'Celibataire'}
                                     </td>
-                                    <td>{membre.ville && membre.ville.lib_ville}</td>
-                                    <td>{membre.eglise && membre.eglise.lib_eglise}</td>
-                                    <td>{AgeCategory(membre.date_de_naissance)}</td>
-                                    <td>{membre.type_metier}</td>
+                                    <td>{membre.city_name }</td>
+                                    <td>{membre.church_name }</td>
+                                    <td>{AgeCategory(membre.birthdate)}</td>
+                                    <td>{membre.profession_type}</td>
                                     <td>{ActifStatut(membre)}</td>
                                 </tr>
                             )}

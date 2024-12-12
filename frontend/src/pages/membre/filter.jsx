@@ -133,7 +133,7 @@ const Filter = ({ handleChange, search, handleSearchChange, filters, filterDefau
                                 <FormSelect name='eglise' onChange={(e) => handleChange('eglise', e.target.value)} value={filters.eglise}>
                                     <option value={"tout"}>Tout</option>
                                     {eglises.map(eglise =>
-                                        <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                        <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                     )}
                                 </FormSelect>
                             </div>

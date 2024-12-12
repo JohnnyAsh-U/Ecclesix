@@ -25,48 +25,48 @@ const AjouterMembre = () => {
 
 
   const initialValues = {
-    nom: '',
-    prenom: '',
-    sexe: '0',
-    date_de_naissance: '',
-    numero_tel: '',
-    id_ville: '0',
-    date_arrive: date_aujourdhui(new Date()),
+    first_name: '',
+    last_name: '',
+    gender: '',
+    birthdate: '',
+    phone: '',
+    city: '',
+    date_joined: date_aujourdhui(new Date()),
     email: '',
-    annee_bapt: '',
-    statut_matrimonial: '0',
-    categorie: '0',
-    statut: '0',
-    id_eglise: admin.id_eglise || '0',
-    type_metier: '0',
-    metier: '',
-    addresse: '',
-    id_suivi_par: '0',
+    baptism_date: '',
+    marital_status: '',
+    category: '',
+    status: '',
+    church: admin.church_id || '',
+    profession_type: '',
+    profession: '',
+    address: '',
+    followed_up_by: '',
   }
   const validationSchema = yup.object({
-    nom: yup.string().required('Ce champ est requis'),
-    prenom: yup.string().required('Ce champ est requis'),
-    sexe: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-    date_de_naissance: yup.string().notRequired(),
-    numero_tel: yup.string().notRequired(),
-    id_ville: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-    date_arrive: yup.string().required('Ce champ est requis'),
+    first_name: yup.string().required('Ce champ est requis'),
+    last_name: yup.string().required('Ce champ est requis'),
+    gender: yup.string().required('Ce champ est requis'),
+    birthdate: yup.string().notRequired(),
+    phone: yup.string().notRequired(),
+    city: yup.string().required('Ce champ est requis'),
+    date_joined: yup.string().required('Ce champ est requis'),
     email: yup.string().email("Email Invalide").notRequired(),
-    annee_bapt: yup.string().notRequired(),
-    statut_matrimonial: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-    type_metier: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-    categorie: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-    statut: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-    id_eglise: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-    metier: yup.string().required('Ce champ est requis'),
-    addresse: yup.string().required('Ce champ est requis'),
-    id_suivi_par: yup.string().notRequired()
+    baptism_date: yup.string().notRequired(),
+    marital_status: yup.string().required('Ce champ est requis'),
+    profession_type: yup.string().required('Ce champ est requis'),
+    category: yup.string().required('Ce champ est requis'),
+    status: yup.string().required('Ce champ est requis'),
+    church: yup.string().required('Ce champ est requis'),
+    profession: yup.string().required('Ce champ est requis'),
+    address: yup.string().required('Ce champ est requis'),
+    followed_up_by: yup.string().notRequired()
   })
 
   const submit = async (values) => {
     setLoading(true)
     try {
-      const { data } = await axios.post('/membre', { values });
+      const { data } = await axios.post('/membre', values );
       if (data) {
         toast.success('Success')
         timerRef.current = setTimeout(() => {
@@ -83,15 +83,15 @@ const AjouterMembre = () => {
 
   const fetchData = async () => {
     const query = new URLSearchParams({
-      eglise: admin.id_eglise,
+      eglise: admin.church_id,
       Ministre: true,
       Ouvrier: true
     }).toString()
     try {
       const { data } = await axios.get(`/eglise/ville`, { withCredentials: true });
       const { data: liste_suivi_par } = await axios.get(`/membre/liste?${query}`, { withCredentials: true })
-      setSuiveurs(liste_suivi_par.res)
-      setListeVille(data.res)
+      setSuiveurs(liste_suivi_par)
+      setListeVille(data)
     } catch (err) {
       toast.error("Impossible de charger les donnees")
     }
@@ -126,7 +126,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         addon={'N'}
                         color={'primary'}
-                        name={"nom"}
+                        name={"last_name"}
                         type="text"
                         placeholder="Nom" />
                     </div>
@@ -134,7 +134,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         addon={'P'}
                         color={'primary'}
-                        name={"prenom"}
+                        name={"first_name"}
                         type="text"
                         placeholder="Prenom" />
                     </div>
@@ -150,7 +150,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         addon={<FontAwesomeIcon icon={faPhone} />}
                         color={'primary'}
-                        name={"numero_tel"}
+                        name={"phone"}
                         type="text"
                         placeholder="Contact" />
                     </div>
@@ -160,9 +160,9 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={<FontAwesomeIcon icon={faUser} />}
-                        name={"sexe"}
+                        name={"gender"}
                       >
-                        <option disabled value="0">Sexe</option>
+                        <option disabled value="">Sexe</option>
                         <option value="H">Homme</option>
                         <option value="F">Femme</option>
                       </FormSelectAddOn>
@@ -172,7 +172,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         color={"primary"}
                         addon={<FontAwesomeIcon icon={faCalendarCheck} />}
-                        name={"date_de_naissance"}
+                        name={"birthdate"}
                         type={"date"}
                         placeholder={"Date De Naissance"}
                       />
@@ -182,9 +182,9 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={"S"}
-                        name={"statut_matrimonial"}
+                        name={"marital_status"}
                       >
-                        <option value={"0"} disabled>Statut Matrimoniale</option>
+                        <option value={""} disabled>Statut Matrimoniale</option>
                         <option value="M">Marié</option>
                         <option value="C">Celibataire</option>
                         <option value="V">Veuf(ve)</option>
@@ -198,11 +198,11 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={<FontAwesomeIcon icon={faCity} />}
-                        name={"id_ville"}
+                        name={"city"}
                       >
-                        <option value='0' disabled>Ville</option>
+                        <option value='' disabled>Ville</option>
                         {listeville.map((ville) =>
-                          <option value={ville.id_ville} key={ville.id_ville}>{ville.lib_ville}</option>
+                          <option value={ville.id} key={ville.id}>{ville.city_name}</option>
                         )}
                       </FormSelectAddOn>
                     </div>
@@ -211,7 +211,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         color={"primary"}
                         addon={<FontAwesomeIcon icon={faLocation} />}
-                        name={"addresse"}
+                        name={"address"}
                         type={"text"}
                         placeholder={"Addresse"}
                       />
@@ -223,10 +223,10 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={<FontAwesomeIcon icon={faBriefcase} />}
-                        name={"type_metier"}
+                        name={"profession_type"}
                         placeholder="Type Metier"
                       >
-                        <option value="0" disabled>Type Metier</option>
+                        <option value="" disabled>Type Metier</option>
                         <option value="Travailleur">Travailleur</option>
                         <option value="Entrepreneur">Entrepreneur</option>
                         <option value="Eleve/Etudiant">Eleve/Etudiant</option>
@@ -238,7 +238,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         color={"primary"}
                         addon={<FontAwesomeIcon icon={faBriefcase} />}
-                        name={"metier"}
+                        name={"profession"}
                         type={"text"}
                         placeholder={"Metier"}
                       />
@@ -251,13 +251,13 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={<FontAwesomeIcon icon={faChurch} />}
-                        name={"id_eglise"}
+                        name={"church"}
                         placeholder="Eglise"
                         disabled = {!permissions.superAdmin}
                       >
-                        <option value="0" disabled>Choississez l'eglise</option>
+                        <option value="" disabled>Choississez l'eglise</option>
                         {eglises.map((eglise) =>
-                          <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                          <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                         )}
                       </FormSelectAddOn>
                     </div>
@@ -266,9 +266,9 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={"C"}
-                        name={"categorie"}
+                        name={"category"}
                       >
-                        <option value="0" disabled>Categorie</option>
+                        <option value="" disabled>Categorie</option>
                         <option value="Adulte">Adulte</option>
                         <option value="Jeunesse">Jeunesse</option>
                         <option value="Ecodim">Ecodim</option>
@@ -279,9 +279,9 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={"S"}
-                        name={"statut"}
+                        name={"status"}
                       >
-                        <option value='0' disabled>Statut</option>
+                        <option value='' disabled>Statut</option>
                         <option value="Ministre">Ministre</option>
                         <option value="Ouvrier">Ouvrier</option>
                         <option value="Membre">Membre</option>
@@ -295,7 +295,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         color={"primary"}
                         addon={"Bapteme"}
-                        name={"annee_bapt"}
+                        name={"baptism_date"}
                         type={"date"}
                         placeholder={"Date De Bapteme"}
                       />
@@ -305,11 +305,11 @@ const AjouterMembre = () => {
                       <FormSelectAddOn
                         color={"primary"}
                         addon={"Suivi Par"}
-                        name={"id_suivi_par"}
+                        name={"followed_up_by"}
                       >
-                        <option value='0' disabled>Suivi(e) par</option>
+                        <option value='' disabled>Suivi(e) par</option>
                         {suiveurs.map((suiveur) =>
-                          <option value={suiveur.id} key={suiveur.id}>{suiveur.prenom} {suiveur.nom}</option>
+                          <option value={suiveur.id} key={suiveur.id}>{suiveur.get_full_name}</option>
                         )}
                       </FormSelectAddOn>
                     </div>
@@ -318,7 +318,7 @@ const AjouterMembre = () => {
                       <FormInputAddOn
                         color={"primary"}
                         addon={"Date"}
-                        name={"date_arrive"}
+                        name={"date_joined"}
                         type={"date"}
                         placeholder={"Date"}
                       />
