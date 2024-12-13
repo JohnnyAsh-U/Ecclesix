@@ -50,6 +50,7 @@ const AppContext = ({ children }) => {
         axios.get('/admin/permissions')
             .then(({ data }) => {
                 setPermissions(data.permissions)
+                console.log(data)
                 setEglises(data.churches)
             })
             .catch(err => {

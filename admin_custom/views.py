@@ -1,8 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, ListCreateAPIView, GenericAPIView
 from rest_framework.response import Response
-from .serializers import AdminMemberSerializer
+from .serializers import AdminMemberSerializer, SimpleChurchSerializer
 from rest_framework.mixins import UpdateModelMixin
+from django.forms.models import model_to_dict
 from .services import ViewLogger
 from rest_framework.exceptions import bad_request
 from rest_framework.decorators import api_view, permission_classes
@@ -10,7 +11,6 @@ from rest_framework import status
 from church.models import Church
 from members.models import Member
 from .models import Log, Role
-from church.serializers import ChurchSerializer
 from dateutil.relativedelta import relativedelta
 from datetime import date
 from .serializers import LogSerializer, RoleSerializer
@@ -69,16 +69,15 @@ class LogView(ListAPIView):
 
 class AdminListView(ListAPIView):
     serializer_class = AdminMemberSerializer
-    queryset = Member.objects.filter(is_admin = True)
+    queryset = Member.objects.filter(is_admin=True)
     perms = {
         "GET": ["superadmin"],
         "OPTIONS": ["superadmin"],
     }
-    
+
     def get(self, request, *args, **kwargs):
         ViewLogger(request.user.id, {"resource": "Admin"})
         return super().get(request, *args, **kwargs)
-    
 
 
 @api_view(["PATCH"])
@@ -130,16 +129,18 @@ def AddSuperAdmin(request, pk, *args, **kwargs):
 
 
 class AdminPermissions(APIView):
-    authentication_classes = []
     permission_classes = []
 
     def get(self, request, format=None):
-        serialized_church = ChurchSerializer(Church.objects.all(), many=True)
-        # print(self.request.META)
-        ip = request.META.get("REMOTE_ADDR", None)
-        print(ip)
+        serialized_church = SimpleChurchSerializer(Church.objects.all(), many=True)
+        user: Member = request.user
+        perms = []
+        user_perms = user.get_all_permissions()
+        for perm in user_perms:
+            perms.append(model_to_dict(perm)["codename"])
+        permissions = {"superAdmin": user.is_superuser, "perms": perms}
         return Response(
-            {"permissions": {"superAdmin": True}, "churches": serialized_church.data}
+            {"permissions": permissions, "churches": serialized_church.data}
         )
 
 

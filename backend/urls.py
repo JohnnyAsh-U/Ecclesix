@@ -17,5 +17,6 @@ urlpatterns = [
     path('api/membre', include('members.urls')),
     path('api/eglise', include('church.urls')),
     path('api/admin', include('admin_custom.urls')),
-    path('api/dashboard', include('dashboard.urls'))
+    path('api/dashboard', include('dashboard.urls')),
+    path('api/department', include('department.urls'))
 ]

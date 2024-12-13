@@ -87,7 +87,7 @@ export const LinkProfile = ({ children, ...rest }) => {
     if (permissions.superAdmin) {
         return <Link {...rest}>{children}</Link>
     }
-    if (permissions.perms.includes('voir_membre')) {
+    if (permissions.perms?.includes('voir_membre')) {
         return <Link {...rest}>{children}</Link>
     }
     return children

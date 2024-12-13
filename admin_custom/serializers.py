@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Log, Role
 from members.models import Member
+from church.models import Church
 
 
 class LogSerializer(serializers.ModelSerializer):
@@ -39,3 +40,8 @@ class AdminMemberSerializer(serializers.ModelSerializer):
             "is_admin",
             "is_superuser"
         ]
+        
+class SimpleChurchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Church
+        fields  = ['id', 'church_name']
