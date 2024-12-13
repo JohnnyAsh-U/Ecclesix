@@ -3,8 +3,16 @@ from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
     ListAPIView,
+    UpdateAPIView,
+    GenericAPIView,
 )
-from .serializers import MemberSerializer, SimpleMemberSerializer
+from members.models import Relationship
+from rest_framework.mixins import DestroyModelMixin, CreateModelMixin
+from .serializers import (
+    MemberSerializer,
+    SimpleMemberSerializer,
+    RelationshipSerializer,
+)
 from .models import Member
 from django.db.models import Q
 from rest_framework import status
@@ -71,6 +79,7 @@ class MemberListCreateView(ListCreateAPIView):
             limit > 50
             and not user.has_perm_custom("voir_membre")
             and not user.has_perm_custom("voir_touts_membres")
+            and not user.is_superuser
         ):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
@@ -145,7 +154,11 @@ class MemberListCreateView(ListCreateAPIView):
         total_members = queryset.count()
         total_pages = math.ceil(total_members / limit)
         queryset = queryset[offset : offset + limit]
-        serializer = self.get_serializer(queryset, many=True)
+        # for api call that needs only names and few details
+        if limit <= 50:
+            serializer = SimpleMemberSerializer(queryset, many=True)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
         return Response(
             {
                 "list": serializer.data,
@@ -182,7 +195,7 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
         "GET": [],
         "PATCH": ["modifier_membre"],
         "PUT": ["modifier_membre"],
-        "DELETE": ["superadmin"]
+        "DELETE": ["superadmin"],
     }
     serializer_class = MemberSerializer
     queryset = Member.objects.prefetch_related("relations")
@@ -191,6 +204,13 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
 
+        # to get the follow up members
+        follow_up = instance.members_followed_up.all()
+        serialized_follow_up = SimpleMemberSerializer(follow_up, many=True)
+
+        serialized_result = dict(serializer.data)
+        serialized_result["follow_up"] = serialized_follow_up.data
+
         # logging details
         detail = {
             "resource": "Profile",
@@ -198,7 +218,7 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
             "lib": serializer.data["get_full_name"],
         }
         ViewLogger(request.user.id, detail)
-        return Response(serializer.data)
+        return Response(data=serialized_result)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
@@ -271,7 +291,6 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
     def check_edit_profile_perms(self, request, obj):
         user: Member = request.user
         print(user.is_admin, obj.is_admin, user.church_id, obj.church_id)
-        
 
         # First Super admin can edit and delete any account
         if user.is_superuser and user.id == 1:
@@ -306,10 +325,132 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
         # Superadmin can delete other nonsuperuser profile
         if user.is_superuser and not obj.is_superuser:
             return
+        self.permission_denied(
+            request,
+            message="Denied",
+            code="401",
+        )
 
+
+class MemberRoleUpdateView(UpdateAPIView):
+    queryset = Member.objects.all()
+    serializer_class = MemberSerializer
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "PATCH": ["modifier_membre"],
+    }
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response()
+
+    def check_object_permissions(self, request, obj):
+        """
+        Check if the admin should be permitted to view profile object.
+        """
+        user: Member = request.user
+        if user.is_superuser or user.has_perm_custom("voir_touts_membres"):
+            return
+        if user.has_perm_custom("voir_membre") and obj.church_id == user.church_id:
+            return
+        if user.pk == obj.pk:
+            return
 
         self.permission_denied(
             request,
             message="Denied",
             code="401",
         )
+
+
+class RelationshipUpdateDeleteView(CreateModelMixin, DestroyModelMixin, GenericAPIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "POST": ["modifier_membre"],
+        "DELETE": ["superadmin"],
+    }
+    queryset = Relationship.objects.all()
+    serializer_class = RelationshipSerializer
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        id = kwargs["pk"]
+        instance = Relationship.objects.filter(id=id).first()
+        reverse_instance = Relationship.objects.filter(
+            from_member_id=instance.to_member_id,
+            to_member_id=instance.from_member_id,
+        )
+        self.logger(request, RelationshipSerializer(instance).data, "DELETE")
+        self.perform_destroy(instance)
+        self.perform_destroy(reverse_instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def create(self, request, *args, **kwargs):
+        to_member = kwargs["pk"]
+        from_member = request.data.get("from_member", None)
+        relationship = request.data.get("relationship", None)
+        data = {
+            "to_member": to_member,
+            "from_member": from_member,
+            "relationship": relationship,
+        }
+        reverse = relationship
+
+        # reverse relationship
+        if relationship == "Parent":
+            reverse = "Enfant"
+        elif relationship == "Enfant":
+            reverse = "Parent"
+        else:
+            reverse = relationship
+
+        reverse_data = {
+            "to_member": from_member,
+            "from_member": to_member,
+            "relationship": reverse,
+        }
+
+        serializer = self.get_serializer(data=data)
+        serializer_reverse = self.get_serializer(data=reverse_data)
+
+        serializer.is_valid(raise_exception=True)
+        serializer_reverse.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+        self.perform_create(serializer_reverse)
+
+        self.logger(request, serializer.data, "INSERT")
+        headers = self.get_success_headers(serializer.data)
+        return Response(status=status.HTTP_201_CREATED)
+
+    def logger(self, request, instance, action):
+        changes = {
+            "membre": instance["to_member_info"]["name"],
+            "relation": instance["from_member_info"]["name"],
+            "type": instance["relationship"],
+        }
+        detail = {
+            "resource": "Membre-Relation",
+            "id": instance["id"],
+            "lib": instance["to_member_info"]["name"],
+            "changes": changes,
+            "action" : action
+        }
+        Log.objects.create(log_type="UPDATE", detail=detail, admin=request.user)

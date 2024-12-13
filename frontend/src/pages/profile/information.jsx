@@ -76,11 +76,11 @@ const Information = ({ membre, roles, ville, fetch }) => {
     return (
         <div className="row">
             <div className="col-xl-3">
-                {/* <RoleDepartement
+                <RoleDepartement
                     membre={membre}
                     roles={roles}
                     fetch={fetch} />
-                <Relation membre={membre} fetch={fetch} /> */}
+                <Relation membre={membre} fetch={fetch} />
             </div>
 
             <div className='col-xl-9'>

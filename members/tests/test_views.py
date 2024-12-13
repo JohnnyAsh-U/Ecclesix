@@ -310,23 +310,33 @@ class TestMemberEditDelete(APITestCase):
         self.assertEqual(res.status_code, 403)
 
     def test_superuser_delete_superuser(self):
-        # # first superadmin cannot delete their account
-        # superadmin = Member.objects.get(id=1)
-        # url = reverse("member-rud", kwargs={"pk": self.superadmin.pk})
-        # payload = {
-        #     "id": superadmin.pk,
-        #     "username": superadmin.first_name,
-        #     "church_id": superadmin.church_id,
-        #     "device_id": superadmin.device_id,
-        # }
-        # access = jwtEncode(payload, age=60, secret=getenv("ACCESS_TOKEN"))
-        # self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        # first superadmin cannot delete their account
+        superadmin, created = Member.objects.get_or_create(
+            id=1,
+            defaults={
+                "first_name": "Superuser",
+                "last_name": "Superuser",
+                "church": self.church,
+                "email": "super@email.com",
+                "is_superuser": True,
+                "is_admin": True,
+            },
+        )
+        url = reverse("member-rud", kwargs={"pk": superadmin.pk})
+        payload = {
+            "id": superadmin.pk,
+            "username": superadmin.first_name,
+            "church_id": superadmin.church_id,
+            "device_id": superadmin.device_id,
+        }
+        access = jwtEncode(payload, age=60, secret=getenv("ACCESS_TOKEN"))
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
 
-        # res = self.client.delete(
-        #     url,
-        #     format="json",
-        # )
-        # self.assertEqual(res.status_code, 403)
+        res = self.client.delete(
+            url,
+            format="json",
+        )
+        self.assertEqual(res.status_code, 403)
 
         # superadmin cannot delete any other superadmin account
         url = reverse("member-rud", kwargs={"pk": self.superadmin.pk})
@@ -362,23 +372,33 @@ class TestMemberEditDelete(APITestCase):
         )
         self.assertEqual(res.status_code, 204)
 
-        # # first superadmin can delete any other superadmin account
-        # superadmin = Member.objects.get(id=1)
-        # url = reverse("member-rud", kwargs={"pk": self.superadmin2.pk})
-        # payload = {
-        #     "id": superadmin.pk,
-        #     "username": superadmin.first_name,
-        #     "church_id": superadmin.church_id,
-        #     "device_id": superadmin.device_id,
-        # }
-        # access = jwtEncode(payload, age=60, secret=getenv("ACCESS_TOKEN"))
-        # self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        # first superadmin can delete any other superadmin account
+        superadmin, created = Member.objects.get_or_create(
+            id=1,
+            defaults={
+                "first_name": "Superuser",
+                "last_name": "Superuser",
+                "church": self.church,
+                "email": "super@email.com",
+                "is_superuser": True,
+                "is_admin": True,
+            },
+        )
+        url = reverse("member-rud", kwargs={"pk": self.superadmin2.pk})
+        payload = {
+            "id": superadmin.pk,
+            "username": superadmin.first_name,
+            "church_id": superadmin.church_id,
+            "device_id": superadmin.device_id,
+        }
+        access = jwtEncode(payload, age=60, secret=getenv("ACCESS_TOKEN"))
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
 
-        # res = self.client.delete(
-        #     url,
-        #     format="json",
-        # )
-        # self.assertEqual(res.status_code, 204)
+        res = self.client.delete(
+            url,
+            format="json",
+        )
+        self.assertEqual(res.status_code, 204)
 
         # admin can't delete admin account or delete members account
         required_perm1 = Permission.objects.get(codename="voir_membre")
@@ -401,12 +421,11 @@ class TestMemberEditDelete(APITestCase):
             format="json",
         )
         self.assertEqual(res.status_code, 401)
-        
-        #member account
+
+        # member account
         url = reverse("member-rud", kwargs={"pk": self.member2.pk})
         res = self.client.delete(
             url,
             format="json",
         )
         self.assertEqual(res.status_code, 401)
-        

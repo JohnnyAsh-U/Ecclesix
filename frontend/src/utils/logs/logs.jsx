@@ -53,6 +53,14 @@ export const LogPhrase = (log) => {
         } else if (resource == "Transaction" && log.detail.statut == 'Rejected') {
             return <>{nom} a rejecté {resource} {objet}</>
         }
+        if(resource =="Membre-Relation"){
+            if(log.detail.action == "INSERT"){
+                return <>{nom} a ajouté une relation dans le profile de {objet}</>
+            }
+            if(log.detail.action == "DELETE"){
+                return <>{nom} a supprimé une relation dans le profile de {objet}</>
+            }
+        }
 
         return <>{nom} a modifié {resource} {objet}</>
 

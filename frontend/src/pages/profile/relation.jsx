@@ -21,7 +21,15 @@ const Relation = ({ membre, fetch }) => {
 
 
     const fetchMembre = async (search) => {
-        const filter = {}
+        const filter = {
+            Ministre: true,
+            Ouvrier: true,
+            Membre: true,
+            Visiteur: true,
+            baptise: true,
+            non_baptise: true,
+            actif: true
+        }
         const query = new URLSearchParams({
             ...filter,
             search,
@@ -31,20 +39,26 @@ const Relation = ({ membre, fetch }) => {
         try {
             const { data } = await axios.get(`/membre?${query}`);
 
-            const membrefiltrer = data.res.filter((m) => m.id != membre.id)
+            const membrefiltrer = data.list.filter((m) => m.id != membre.id)
             //removes the relations id from options
-            const nouvelleListeDesMembres = _.differenceBy(membrefiltrer, membre.relation, 'id')
+            // const nouvelleListeDesMembres = _.differenceBy(membrefiltrer, membre.relations.to_member_info, 'id')
+            // const nouvelleListeDesMembres = membrefiltrer.filter((item) => !membre.relations.some(rel => item.id == rel.from_member_info.id))
 
-            const options = nouvelleListeDesMembres.map((item) => ({ value: item.id, label: item.nom + ' ' + item.prenom }))
+            const options = membrefiltrer.map((item) => ({ value: item.id, label: item.get_full_name }))
             return options
         } catch (err) { }
     }
 
 
+
     const ajouterRelation = async (e) => {
+        let data = {
+            to_member: membre.id,
+            from_member: relation.relation_id.value,
+            relationship: relation.type.value
+        }
         e.preventDefault()
-        axios.post(`/membre/${membre.id}/relation`,
-            { id_relation: relation.relation_id.value, type_relation: relation.type.value })
+        axios.post(`/membre/${membre.id}/relation`, data)
             .then(data => {
                 toast.success('Success')
                 setModifierRelation(false)
@@ -61,7 +75,8 @@ const Relation = ({ membre, fetch }) => {
     const suppresionRelation = async (e) => {
         e.preventDefault()
         try {
-            const { data } = await axios.delete(`/membre/${membre.id}/relation/${supprimerRelation}`);
+            // const { data } = await axios.delete(`/membre/${membre.id}/relation/${supprimerRelation}`);
+            const { data } = await axios.delete(`/membre/${supprimerRelation}/relation`);
             setRelation({ relation_id: '', type: '' })
             toast.success('Success')
             setModal(false)
@@ -98,18 +113,18 @@ const Relation = ({ membre, fetch }) => {
 
             <div className="card-body">
                 <ul className="list-group list-group-flush">
-                    {membre.relation.map((lien) =>
+                    {membre.relations && membre.relations.map((lien) =>
                         <li className="list-group-item d-flex justify-content-between align-items-center m-b-10" key={lien.id}>
-                            <a className='d-flex justify-content-start align-items-center' href={`/membres/profile/${lien.id}`}>
+                            <a className='d-flex justify-content-start align-items-center' href={`/membres/profile/${lien.from_member_info.id}`}>
                                 <div className="media-left m-0" >
                                     <FontAwesomeIcon icon={faUser} size='2xl' />
                                 </div>
                                 <div className="media-body">
                                     <div className="chat-header">
-                                        {capitalizeFirstLetter(lien.nom)} {capitalizeFirstLetter(lien.prenom)}
+                                        {lien.from_member_info?.name}
                                     </div>
                                     <div className="text-muted social-designation">
-                                        {lien.RelationMembres.type_relation}
+                                        {lien.relationship}
                                     </div>
                                 </div>
                             </a>
@@ -147,24 +162,24 @@ const Relation = ({ membre, fetch }) => {
 
             </div>
 
-            <Modal show={modal} onHide={()=> setModal(false)}  centered>
+            <Modal show={modal} onHide={() => setModal(false)} centered>
                 <form onSubmit={suppresionRelation}>
-                <Modal.Header closeButton>
-                    <Modal.Title>
-                       Supprimer
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    Supprimer Cette Relation ?
-                </Modal.Body>
-                <Modal.Footer>
-                    <button type="button" className={`btn btn-inverse btn-outline-inverse rounded btn-sm`} onClick={()=>setModal(false)}>
-                        Fermer
-                    </button>
-                    <button type="submit" className={`btn btn-danger hor-grd btn-grd-danger btn-sm waves-effect waves-light rounded`}>
-                        Ok
-                    </button>
-                </Modal.Footer>
+                    <Modal.Header closeButton>
+                        <Modal.Title>
+                            Supprimer
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        Supprimer Cette Relation ?
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <button type="button" className={`btn btn-inverse btn-outline-inverse rounded btn-sm`} onClick={() => setModal(false)}>
+                            Fermer
+                        </button>
+                        <button type="submit" className={`btn btn-danger hor-grd btn-grd-danger btn-sm waves-effect waves-light rounded`}>
+                            Ok
+                        </button>
+                    </Modal.Footer>
                 </form>
             </Modal>
         </div>

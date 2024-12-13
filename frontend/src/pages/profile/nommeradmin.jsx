@@ -16,7 +16,7 @@ const NommerAdmin = ({ membre }) => {
     const handleAdmin = async (e) => {
         e.preventDefault()
         try {
-            const { data } = await axios.post(`/admin/option`, { estAdmin: membre.admin, id: membre.id });
+            const { data } = await axios.patch(`/admin/${membre.id}`);
             setAdminModal(false)
             toast.success("Success");
             window.location.reload()

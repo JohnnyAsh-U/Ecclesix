@@ -15,7 +15,7 @@ const Admins = () => {
 
   const { data, error, loading, reload } = useFetch('/admin', 'get')
 
-  const { liste: listeAdmin } = data || {}
+  const listeAdmin = data || []
   let bg = { backgroundColor: '#cbd5e1' }
 
 
@@ -52,39 +52,17 @@ const Admins = () => {
                 {listeAdmin && listeAdmin.map((membre, index) => (
                   <tr style={{ cursor: 'pointer' }} key={index} className='custom' onClick={() => navigate(`/membres/profile/${membre.id}`)}>
                     <td>
-                      {capitalizeFirstLetter(membre.nom)} {capitalizeFirstLetter(membre.prenom)}
+                      {membre.get_full_name}
                     </td>
                     <td>{membre.email}</td>
-                    <td>{membre.eglise?.lib_eglise}</td>
-                    <td>{membre.numero_tel}</td>
-                    <td>{capitalizeFirstLetter(membre.role?.lib_role)}</td>
-                    <td> {membre.profile_admin && timeFormat(membre.profile_admin?.deniere_connexion)}</td>
-                    <td>{membre.profile_admin && membre.profile_admin.super_admin ?
+                    <td>{membre.church}</td>
+                    <td>{membre.phone}</td>
+                    <td>{membre.role}</td>
+                    <td> {timeFormat(membre.last_login)}</td>
+                    <td>{membre.is_superuser ?
                       <Badge color='success' className='me-1' text={"SuperAdmin"} /> : <Badge color='info' text={"Admin"} />}</td>
                   </tr>
                 ))}
-
-                {/* {liste && liste.map((membre, index) =>
-                                <tr style={{ cursor: 'pointer' }} key={index} onClick={() => navigate(`/membres/profile/${membre.id}`)}>
-                                    <td><i className={membre.sexe === 'H' ? "icofont icofont-business-man-alt-1 fs-4 ms-1" : "icofont icofont-girl-alt fs-4 ms-1"}></i>
-                                        <div className="table-contain">
-                                            <h6 className='fw-light'>{membre.prenom} {membre.nom}</h6>
-                                            {StatutBadge(membre.statut)}
-                                            {' '}
-                                            <p className="text-muted"> | {formatDate(membre.date_arrive)}</p>
-                                        </div>
-                                    </td>
-                                    <td>{membre.statut_matrimonial === 'V' && 'Veuf(ve)'}
-                                        {membre.statut_matrimonial === 'M' && 'Marie'}
-                                        {membre.statut_matrimonial === 'C' && 'Celibataire'}
-                                    </td>
-                                    <td>{membre.ville && membre.ville.lib_ville}</td>
-                                    <td>{membre.eglise && membre.eglise.lib_eglise}</td>
-                                    <td>{AgeCategory(membre.date_de_naissance)}</td>
-                                    <td>{membre.type_metier}</td>
-                                    <td>{ActifStatut(membre)}</td>
-                                </tr>
-                            )} */}
               </tbody>
             </table>
           </div>

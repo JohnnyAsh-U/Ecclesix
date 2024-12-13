@@ -21,9 +21,10 @@ const Profile = () => {
   const { loading, data, error, reload } = useFetch(`/membre/${id}`, 'get')
   const membre = data || {}
   const { loading : vloading, data: vdata, error:verror, reload: vreload } = useFetch(`/eglise/ville`, 'get')
-  const { loading: rloading, data: rdata, reload: rreload, error: rerror } = useFetch(`/admin/role`, 'get')
+  const { loading: rloading, data: rdata, reload: rreload, error: rerror } = useFetch(`/admin/roles`, 'get')
   const ville = vdata || []
   const roles = rdata || []
+  console.log(roles, ville)
   window.scrollTo(0, 0)
 
 

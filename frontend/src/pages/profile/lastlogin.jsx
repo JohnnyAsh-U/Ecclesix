@@ -5,7 +5,7 @@ import { toast } from 'react-toastify'
 import Modal from 'react-bootstrap/Modal'
 import axios from 'axios'
 
-const LastLogin = ({ lastLogin, membre, superAdmin }) => {
+const LastLogin = ({ membre }) => {
     const { admin, permissions } = AppGlobalContext()
     const [modal, setModal] = useState(false)
 
@@ -13,7 +13,7 @@ const LastLogin = ({ lastLogin, membre, superAdmin }) => {
     const NommersuperAdmin = async (e) => {
         e.preventDefault()
         try {
-            const { data } = await axios.post(`/admin/superadmin`, { id: membre.id });
+            const { data } = await axios.patch(`/admin/${membre.id}/su`);
             setModal(false)
             toast.success('Success')
             window.location.reload()
@@ -27,13 +27,13 @@ const LastLogin = ({ lastLogin, membre, superAdmin }) => {
             <ul className='list-group list-group-flush'>
                 <li className='list-group-item d-flex justify-content-between align-items-center flex-wrap'>
                     <div>En Ligne</div>
-                    <div>{timeFormat(lastLogin)}</div>
+                    <div>{timeFormat(membre.last_login)}</div>
                 </li>
             </ul>
             <hr />
-            {permissions.superAdmin && admin.id == 1 && membre.id != 1 && lastLogin &&
+            {permissions.superAdmin && admin.id == 1 && membre.id != 1 &&
                 <button className='btn btn-default btn-outline-success p-1 float-end rounded' onClick={() => setModal(true)}>
-                    {superAdmin ? 'Retirer SuperAdmin' : 'Nommer SuperAdmin'}
+                    {membre.is_superuser ? 'Retirer SuperAdmin' : 'Nommer SuperAdmin'}
                 </button>
             }
 
@@ -41,11 +41,11 @@ const LastLogin = ({ lastLogin, membre, superAdmin }) => {
                 <form onSubmit={(e) => NommersuperAdmin(e)}>
                     <Modal.Header closeButton>
                         <Modal.Title>
-                            {superAdmin ? 'Retirer' : 'Ajouter'} SuperAdmin
+                            {membre.is_superuser ? 'Retirer' : 'Ajouter'} SuperAdmin
                         </Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        {superAdmin? "Retirer": "Ajouter"} {membre.nom} {membre.prenom} en tant que SuperAdmin
+                        {membre.is_superuser ? "Retirer": "Ajouter"} {membre.get_full_name} en tant que SuperAdmin
                     </Modal.Body>
                     <Modal.Footer>
                         <button type="button" className={`btn btn-inverse btn-outline-inverse rounded btn-sm`} onClick={() => setModal(false)}>

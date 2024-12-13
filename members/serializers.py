@@ -14,12 +14,18 @@ class RelationshipSerializer(serializers.ModelSerializer):
     )
 
     # from_member_info = serializers.SerializerMethodField()
+    from_member_info = serializers.SerializerMethodField()
     to_member_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Relationship
         fields = "__all__"
 
+    def get_from_member_info(self, obj):
+        if obj.from_member:
+            return {"id": obj.from_member.id, "name": obj.from_member.get_full_name()}
+        return None
+    
     def get_to_member_info(self, obj):
         if obj.to_member:
             return {"id": obj.to_member.id, "name": obj.to_member.get_full_name()}
@@ -59,7 +65,6 @@ class MemberSerializer(serializers.ModelSerializer):
     followed_up_by_name = serializers.SerializerMethodField()
     relations = serializers.SerializerMethodField()
 
-    # members_followed_up = serializers.SerializerMethodField()
 
     class Meta:
         model = Member
@@ -150,7 +155,3 @@ class MemberSerializer(serializers.ModelSerializer):
         relations = Relationship.objects.filter(to_member=obj)
         if relations:
             return RelationshipSerializer(relations, many=True).data
-
-    # # def get_members_followed_up(self, obj):
-    # #     res = obj.members_followed_up.all()
-    # #     return FollowMemberSerializer(res, many =True).data
