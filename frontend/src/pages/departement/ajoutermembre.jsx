@@ -20,6 +20,9 @@ const AjouterMembre = ({ departement, activeEglise, fetch }) => {
             Ouvrier: true,
             Membre: false,
             Visiteur: false,
+            actif : true,
+            baptise:true,
+            non_baptise:true
         }
         const query = new URLSearchParams({
             ...filter,
@@ -29,9 +32,9 @@ const AjouterMembre = ({ departement, activeEglise, fetch }) => {
         }).toString()
         try {
             const { data } = await axios.get(`/membre?${query}`);
-            const nouvelleListeDesMembres = _.differenceBy(data.res, departement.membres, 'id')
+            const nouvelleListeDesMembres = _.differenceBy(data.list, departement.member, 'id')
             //nouvelle liste pour l'ajout
-            const options = nouvelleListeDesMembres.map((item) => ({ value: item.id, label: item.nom + ' ' + item.prenom }))
+            const options = nouvelleListeDesMembres.map((item) => ({ value: item.id, label: item.get_full_name }))
             return options
         } catch (err) {
             toast.error("Erreur")
@@ -44,9 +47,9 @@ const AjouterMembre = ({ departement, activeEglise, fetch }) => {
         e.preventDefault()
         if (membreAjouter.length == 0) return
         setAddLoading(true)
-        let id_groupe = departement.id_groupe
-        axios.post(`/departement/${id_groupe}/ajouter`,
-            { id_membre: membreAjouter.value })
+        let id = departement.id
+        axios.post(`/departement/${id}/ajouter`,
+            { member: membreAjouter.value })
             .then((data) => {
                 setMembreAjouter([]);
                 toast.success("Success")
@@ -68,7 +71,7 @@ const AjouterMembre = ({ departement, activeEglise, fetch }) => {
         if (permissions.superAdmin) {
             return children
         }
-        if (permissions.perms.includes('modifier_departement') && eglise == admin.id_eglise) {
+        if (permissions.perms.includes('modifier_departement') && eglise == admin.church_id) {
             return children
         }
         if (permissions.perms.includes('chef_departement') && id_chef === admin.id) {
@@ -79,7 +82,7 @@ const AjouterMembre = ({ departement, activeEglise, fetch }) => {
 
 
     return (
-        <AddRemoveMembersWrapper id_chef={departement.id_chef} eglise={departement.id_eglise}>
+        <AddRemoveMembersWrapper id_chef={departement.departement_head} eglise={departement.church}>
             <form onSubmit={(e) => ajouterMembreAuGroupe(e)} className='d-flex flex-row align-items-start justify-content-center'>
                 <AsyncSelect styles={{ control: (provided) => ({ ...provided, minWidth: 200, height: 40 }) }}
                     cacheOptions

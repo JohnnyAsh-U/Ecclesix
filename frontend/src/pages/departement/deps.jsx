@@ -46,7 +46,7 @@ const Deps = ({ eglises, deps, departement, activeDep, setActiveDep, activeEglis
                                 {dep.department_name}
                                 <span className='float-end fw-bold'>
                                     {/* {activeDep == dep.id && */}
-                                        <Badge color='primary' text={dep.member?.length} />
+                                        <Badge color='primary' text={dep.member} />
                                     {/* } */}
                                 </span>
                             </li>

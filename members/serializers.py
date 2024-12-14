@@ -46,6 +46,10 @@ class SimpleMemberSerializer(serializers.ModelSerializer):
             "status",
             "date_joined",
             "get_full_name",
+            "marital_status",
+            "profession_type",
+            "phone",
+            "birthdate"
         ]
 
 

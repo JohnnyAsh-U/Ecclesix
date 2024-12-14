@@ -21,23 +21,22 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
 
     const formik = useFormik({
         initialValues: {
-            lib_groupe: '',
+            department_name: '',
             description: '',
-            id_eglise: admin.id_eglise || '0',
-            id_chef: '0',
-            date_de_creation: date_aujourdhui(new Date()),
-            id_c: { value: '', label: '' }
+            church: admin.church_id || '',
+            department_head: '',
+            // id_c: { value: '', label: '' }
         },
         validationSchema: yup.object({
-            lib_groupe: yup.string().required('Ce champ est requis'),
-            id_eglise: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            department_name: yup.string().required('Ce champ est requis'),
+            church: yup.string().required('Ce champ est requis'),
             description: yup.string().notRequired(),
-            id_chef: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            date_de_creation: yup.string().required('Ce champ est requis'),
+            department_head: yup.string().required('Ce champ est requis'),
+            // date_de_creation: yup.string().required('Ce champ est requis'),
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/departement`, { values }).then(data => {
+            axios.post(`/departement`, values).then(data => {
                 toast.success("Success")
                 formik.resetForm()
                 handleModal(false)
@@ -57,11 +56,11 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
         const query = new URLSearchParams({
             Ministre: true,
             Ouvrier: true,
-            eglise: formik.values.id_eglise
+            eglise: formik.values.church
         }).toString()
         try {
             const { data } = await axios.get(`/membre/liste?${query}`)
-            setOptions(data.res.map((item) => ({ value: item.id, label: item.prenom + ' ' + item.nom })))
+            setOptions(data.map((item) => ({ value: item.id, label: item.get_full_name })))
         } catch (err) {
         }
     }
@@ -78,12 +77,12 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
                 </Modal.Header>
                 <Modal.Body>
                     <div className="form-group row mb-3">
-                        <label htmlFor="lib_groupe" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="department_name" className="fw-bold col-sm-3 col-form-label">
                             Nom
                         </label>
                         <div className="col-sm-9">
-                            <input type="text" className='form-control' name="lib_groupe" id="lib_groupe" placeholder='Nom' {...formik.getFieldProps('lib_groupe')} />
-                            {formik.touched.lib_groupe && formik.errors.lib_groupe ? (<small className='text-danger'>{formik.errors.lib_groupe}</small>) : null}
+                            <input type="text" className='form-control' name="department_name" id="department_name" placeholder='Nom' {...formik.getFieldProps('department_name')} />
+                            {formik.touched.department_name && formik.errors.department_name ? (<small className='text-danger'>{formik.errors.department_name}</small>) : null}
                         </div>
                     </div>
 
@@ -99,17 +98,17 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
 
                     {permissions.superAdmin &&
                         <div className="form-group row mb-3">
-                            <label htmlFor="id_eglise" className="fw-bold col-sm-3 col-form-label">
+                            <label htmlFor="church" className="fw-bold col-sm-3 col-form-label">
                                 Eglise
                             </label>
                             <div className="col-sm-9">
-                                <select type="text" className='form-control form-select' name="id_eglise" id="id_eglise" placeholder='Nom' {...formik.getFieldProps('id_eglise')}>
+                                <select type="text" className='form-control form-select' name="church" id="church" placeholder='Eglise' {...formik.getFieldProps('church')}>
                                     <option value={0} disabled>Eglise </option>
                                     {eglises.map((eglise) =>
-                                        <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                        <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                     )}
                                 </select>
-                                {formik.touched.id_eglise && formik.errors.id_eglise ? (<small className='text-danger'>{formik.errors.id_eglise}</small>) : null}
+                                {formik.touched.church && formik.errors.church ? (<small className='text-danger'>{formik.errors.church}</small>) : null}
                             </div>
                         </div>
                     }
@@ -119,21 +118,11 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
                             Chef
                         </label>
                         <div className="col-sm-9">
-                            <Select name='id_chef' id='id_chef' options={options} value={options ? options.find(option => option.value === formik.values.id_chef) : ''}
-                                onChange={(option) => formik.setFieldValue('id_chef', option.value)}
+                            <Select name='department_head' id='department_head' options={options} value={options ? options.find(option => option.value === formik.values.department_head) : ''}
+                                onChange={(option) => formik.setFieldValue('department_head', option.value)}
                                 placeholder={"Chef departement"}
                                 onMenuOpen={() => loadMembers()} />
-                            {formik.touched.id_chef && formik.errors.id_chef ? (<small className='text-danger'>{formik.errors.id_chef}</small>) : null}
-                        </div>
-                    </div>
-
-                    <div className="form-group row mb-3">
-                        <label htmlFor="date_de_creation" className="fw-bold col-sm-3 col-form-label">
-                            Date
-                        </label>
-                        <div className="col-sm-9">
-                            <input type="date" className='form-control' name="date_de_creation" id="date_de_creation" placeholder='Date' {...formik.getFieldProps('date_de_creation')} />
-                            {formik.touched.date_de_creation && formik.errors.date_de_creation ? (<small className='text-danger'>{formik.errors.date_de_creation}</small>) : null}
+                            {formik.touched.department_head && formik.errors.department_head ? (<small className='text-danger'>{formik.errors.department_head}</small>) : null}
                         </div>
                     </div>
 
@@ -162,34 +151,32 @@ export const ModifierModal = ({ groupe, setModal, modal, fetch }) => {
             const query = new URLSearchParams({
                 Ministre: true,
                 Ouvrier: true,
-                eglise: groupe.id_eglise
+                eglise: groupe.church
             }).toString()
             try {
                 const { data } = await axios.get(`/membre/liste?${query}`)
-                setOptions(data.res.map((item) => ({ value: item.id, label: item.prenom + ' ' + item.nom })))
+                setOptions(data.map((item) => ({ value: item.id, label: item.get_full_name })))
             } catch (err) {
             }
         }
-        if (groupe.id_eglise) loadMembers();
-    }, [groupe.id_eglise])
+        if (groupe.church) loadMembers();
+    }, [groupe.church])
 
     const initialValues = {
-        lib_groupe: groupe.lib_groupe,
+        department_name: groupe.department_name,
         description: groupe.description,
-        id_eglise: groupe.id_eglise,
-        id_chef: groupe.id_chef ? groupe.id_chef : '0',
+        church: groupe.church || '',
+        department_head: groupe.department_head || '',
     }
     const validationSchema = yup.object({
-        lib_groupe: yup.string().required('Ce champ est requis'),
-        id_eglise: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+        department_name: yup.string().required('Ce champ est requis'),
+        church: yup.string().required('Ce champ est requis'),
         description: yup.string().notRequired(),
-        id_chef: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+        department_head: yup.string().required( 'Ce champ est requis'),
     })
     const submit = (values) => {
         setLoading(true)
-        axios.put(`/departement/${groupe.id_groupe}`, {
-            values
-        }).then(data => {
+        axios.patch(`/departement/${groupe.id}`,values).then(data => {
             toast.success('Modifié');
             setModal(false)
             fetch()
@@ -216,35 +203,35 @@ export const ModifierModal = ({ groupe, setModal, modal, fetch }) => {
                     onSubmit={submit} >
                     <Form >
 
-                        <FormInputWithLabel name={"lib_groupe"} title={"Nom"} />
+                        <FormInputWithLabel name={"department_name"} title={"Departement"} />
                         <FormInputWithLabel name={"description"} title={"Description"} />
                         {permissions.superAdmin &&
-                            <FormSelectWithLabel name={'id_eglise'} title={"Eglise"} disabled={true}>
+                            <FormSelectWithLabel name={'church'} title={"Eglise"} disabled={true}>
                                 <option disabled value={0}>Choississez le eglise </option>
                                 {eglises.map((eglise) =>
-                                    <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                    <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                 )}
                             </FormSelectWithLabel>
                         }
 
 
                         <div className='form-group row mb-2'>
-                            <label htmlFor="id_chef" className="fw-bold col-sm-3 col-form-label">
+                            <label htmlFor="department_head" className="fw-bold col-sm-3 col-form-label">
                                 Chef
                             </label>
                             <div className="col-sm-9">
-                                <Field name='id_chef'>
+                                <Field name='department_head'>
                                     {({ field, form }) => (
                                         <Select {...field}
-                                            name='id_chef'
+                                            name='department_head'
                                             options={options}
-                                            value={options ? options.find(option => option.value === form.values.id_chef) : ''}
+                                            value={options ? options.find(option => option.value === form.values.department_head) : ''}
                                             placeholder={"Choisissez le chef"}
-                                            onChange={(option) => form.setFieldValue('id_chef', option.value)}
+                                            onChange={(option) => form.setFieldValue('department_head', option.value)}
                                         />
                                     )}
                                 </Field>
-                                <small className='text-danger'><ErrorMessage name="id_chef" /></small>
+                                <small className='text-danger'><ErrorMessage name="department_head" /></small>
                             </div>
                         </div>
 
@@ -270,7 +257,7 @@ export function SupprimerModal({ groupe, modal, setModal }) {
     const suppression = async (e) => {
         setLoading(true)
         e.preventDefault()
-        axios.delete(`/departement/${groupe.id_groupe}`)
+        axios.delete(`/departement/${groupe.id}`)
             .then((data) => {
                 setModal(null);
                 toast.success("Success")
@@ -289,7 +276,7 @@ export function SupprimerModal({ groupe, modal, setModal }) {
                     <Modal.Title>Supprimer Departement</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous supprimer ce departement: {groupe.lib_groupe}
+                    Voulez vous supprimer ce departement: {groupe.department_name}
                 </Modal.Body>
 
                 <Modal.Footer>
@@ -333,7 +320,7 @@ export function SupprimerModalMembre({ depMembre, modal, setModal, fetch }) {
                     <Modal.Title>Retirer Membre</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous retirer {depMembre.membre?.nom} {depMembre.membre?.prenom} du departement
+                    Voulez vous retirer {depMembre.membre?.get_full_name} du departement
                 </Modal.Body>
 
                 <Modal.Footer>

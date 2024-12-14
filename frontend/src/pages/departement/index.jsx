@@ -44,7 +44,7 @@ const Departements = () => {
         try {
             const { data } = await axios.get('/departement')
             setegliseDepartements(data);
-            let eglise = admin.id_eglise;
+            let eglise = admin.church_id;
             if (activeEglise == null) {
                 if (eglise && data.find(e => e.id == eglise && e.departments_list.length > 0)) {
                     handleChurchChange(data, eglise)

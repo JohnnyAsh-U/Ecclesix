@@ -107,7 +107,7 @@ const RoleDepartement = ({ membre, roles, ...props }) => {
                         Departements
                     </h6>
                     <ul className="list-group ">
-                        {membre.departments.map((dep) =>
+                        {membre.departments && membre.departments.map((dep) =>
                             <li className="list-group-item justify-content-between" key={dep.id}>
                                 {dep.name}
                                 <span className="float-end">{dep.head == membre.id ? "Responsable" : ''}</span>
