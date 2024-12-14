@@ -86,6 +86,9 @@ def AddAdmin(request, pk, *args, **kwargs):
     admin = request.user
     if admin.is_superuser:
         instance = Member.objects.get(id=pk)
+        #admin cannot remove or add his profile as admin
+        if admin.id == instance.id:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         # toggling of admin field keep superadmin field false
         instance.is_superuser = False
         instance.is_admin = not instance.is_admin
@@ -110,8 +113,12 @@ def AddSuperAdmin(request, pk, *args, **kwargs):
     admin = request.user
     if admin.is_superuser:
         instance = Member.objects.get(id=pk)
-        if not instance.is_admin:
-            raise bad_request(request)
+        #admin cannot add or remove his profile as superuser
+        if admin.id == instance.id:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        if not instance.is_admin or admin.id !=1 :
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         instance.is_superuser = not instance.is_superuser
         instance.save()
         detail = {

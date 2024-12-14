@@ -101,20 +101,20 @@ const RoleDepartement = ({ membre, roles, ...props }) => {
                 </div>
                 <hr className='my-1' />
 
-                {/* <div className="card-body groups-contact ">
+                <div className="card-body groups-contact ">
                     <h6 className="card-title f-w-500 mb-4">
                         <FontAwesomeIcon icon={faUserGroup} className='me-1'/>
                         Departements
                     </h6>
                     <ul className="list-group ">
-                        {membre.departement.map((dep) =>
-                            <li className="list-group-item justify-content-between" key={dep.id_groupe}>
-                                {dep.lib_groupe}
-                                <span className="float-end">{dep.id_chef == membre.id ? "Responsable" : ''}</span>
+                        {membre.departments.map((dep) =>
+                            <li className="list-group-item justify-content-between" key={dep.id}>
+                                {dep.name}
+                                <span className="float-end">{dep.head == membre.id ? "Responsable" : ''}</span>
                             </li>
                         )}
                     </ul>
-                </div> */}
+                </div>
             </div>
         </>
     )

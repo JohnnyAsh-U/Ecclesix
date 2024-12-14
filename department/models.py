@@ -11,7 +11,7 @@ class Department(models.Model):
     church = models.ForeignKey(
         Church,
         related_name="departments",
-        related_query_name="church",
+        related_query_name="church_department",
         on_delete=models.CASCADE,
     )
     department_head = models.ForeignKey(

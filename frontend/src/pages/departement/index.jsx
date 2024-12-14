@@ -32,9 +32,9 @@ const Departements = () => {
     const handleChurchChange = (egliseDeps, id) => {
         setActiveEglise(id)
         if (egliseDeps.length > 0) {
-            let deps = egliseDeps.find(eg => eg.id_eglise == id).departements
+            let deps = egliseDeps.find(eg => eg.id == id).departments_list
             setListeDep(deps)
-            setActiveDep(deps[0].id_groupe)
+            setActiveDep(deps[0].id)
         }
     }
 
@@ -42,14 +42,14 @@ const Departements = () => {
     const fetchEgliseDep = async () => {
         setLoading(true)
         try {
-            const { data } = await axios.get('/departement/liste')
-            setegliseDepartements(data.res);
+            const { data } = await axios.get('/departement')
+            setegliseDepartements(data);
             let eglise = admin.id_eglise;
             if (activeEglise == null) {
-                if (eglise && data.res.find(e => e.id_eglise == eglise && e.departements.length > 0)) {
-                    handleChurchChange(data.res, eglise)
+                if (eglise && data.find(e => e.id == eglise && e.departments_list.length > 0)) {
+                    handleChurchChange(data, eglise)
                 } else {
-                    handleChurchChange(data.res, data.res[0]?.id_eglise)
+                    handleChurchChange(data, data[0]?.id)
                 }
             }
         } catch (err) {

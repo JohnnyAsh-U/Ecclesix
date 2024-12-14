@@ -64,6 +64,7 @@ class MemberSerializer(serializers.ModelSerializer):
     role_name = serializers.SerializerMethodField()
     followed_up_by_name = serializers.SerializerMethodField()
     relations = serializers.SerializerMethodField()
+    departments = serializers.SerializerMethodField()
 
 
     class Meta:
@@ -96,6 +97,7 @@ class MemberSerializer(serializers.ModelSerializer):
             "followed_up_by",
             "followed_up_by_name",
             "relations",
+            "departments",
             "get_full_name",
             "is_superuser",
         ]
@@ -155,3 +157,15 @@ class MemberSerializer(serializers.ModelSerializer):
         relations = Relationship.objects.filter(to_member=obj)
         if relations:
             return RelationshipSerializer(relations, many=True).data
+        
+    def get_departments(self, obj):
+        deps = obj.departments.all()
+        if deps:
+            res = []
+            for dep in deps:
+                res.append({
+                    "id": dep.id,
+                    "name": dep.department_name,
+                    "head": dep.department_head_id
+                })
+            return res

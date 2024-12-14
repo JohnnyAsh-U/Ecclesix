@@ -27,7 +27,7 @@ const Deps = ({ eglises, deps, departement, activeDep, setActiveDep, activeEglis
                                     name='eglise' onChange={(e) => handleChurchChange(eglises, e.target.value)} value={activeEglise}
                                 >
                                     {eglises.map(eglise =>
-                                        <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                        <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                     )}
                                 </FormSelect>
                             </div>
@@ -38,16 +38,16 @@ const Deps = ({ eglises, deps, departement, activeDep, setActiveDep, activeEglis
                     <ul className='list-group list-group-flush'>
                         {deps.map((dep) =>
                             <li as={'button'}
-                                key={dep.id_groupe}
-                                onClick={() => { setActiveDep(dep.id_groupe); }}
+                                key={dep.id}
+                                onClick={() => { setActiveDep(dep.id); }}
                                 style={{ cursor: 'pointer' }}
-                                className={`list-group-item list-group-item-action ${dep.id_groupe === departement.id_groupe ? 'state btn-active' : 'state'}`}
+                                className={`list-group-item list-group-item-action ${dep.id === departement.id ? 'state btn-active' : 'state'}`}
                             >
-                                {dep.lib_groupe}
+                                {dep.department_name}
                                 <span className='float-end fw-bold'>
-                                    {activeDep == dep.id_groupe &&
-                                        <Badge color='primary' text={departement.membres?.length} />
-                                    }
+                                    {/* {activeDep == dep.id && */}
+                                        <Badge color='primary' text={dep.member?.length} />
+                                    {/* } */}
                                 </span>
                             </li>
                         )}

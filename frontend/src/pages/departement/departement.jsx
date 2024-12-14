@@ -60,7 +60,7 @@ const Departement = ({ activeDep, activeEglise, setDepartement, departement, mod
             <div className="card mb-0" style={{ height: '72vh', overflowY: 'auto' }}>
                 <div className="card-header py-2 d-flex align-items-center justify-content-between custom" style={{ backgroundColor: bg.backgroundColor }}>
                     <h5>  <FontAwesomeIcon icon={faUserGroup} className='me-2' />
-                        {departement?.lib_groupe}
+                        {departement?.department_name}
                         {(permissions.superAdmin || departement.id_eglise == admin.id_eglise)
                             && <ContentPermsWrapper requiredPerms={['modifier_departement', 'supprimer_departement']}>
                                 <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
