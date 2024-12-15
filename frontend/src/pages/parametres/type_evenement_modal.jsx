@@ -15,16 +15,16 @@ export function AjouterType({ fetch, modal, handleModal }) {
 
     const formik = useFormik({
         initialValues: {
-            lib_type_evenement: '',
-            evenement_ordinaire: 'none'
+            event_type_name: '',
+            weekly_event: 'none'
         },
         validationSchema: yup.object({
-            lib_type_evenement: yup.string().required('Ce champ est requis'),
-            evenement_ordinaire: yup.string().notOneOf(['none'], 'Ce champ est requis')
+            event_type_name: yup.string().required('Ce champ est requis'),
+            weekly_event: yup.string().notOneOf(['none'], 'Ce champ est requis')
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/evenement/type`, { values }).then(data => {
+            axios.post(`/evenement/type`, values ).then(data => {
                 formik.resetForm()
                 handleModal()
                 toast.success("Success")
@@ -48,26 +48,26 @@ export function AjouterType({ fetch, modal, handleModal }) {
                 </Modal.Header>
                 <Modal.Body>
                     <div className="form-group row mb-3">
-                        <label htmlFor="lib_type_evenement" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="event_type_name" className="fw-bold col-sm-3 col-form-label">
                             Evenement
                         </label>
                         <div className="col-sm-9">
-                            <input type="text" className='form-control' name="lib_type_evenement" id="lib_type_evenement" placeholder='Evenement' {...formik.getFieldProps('lib_type_evenement')} />
-                            {formik.touched.lib_type_evenement && formik.errors.lib_type_evenement ? (<small className='text-danger'>{formik.errors.lib_type_evenement}</small>) : null}
+                            <input type="text" className='form-control' name="event_type_name" id="event_type_name" placeholder='Evenement' {...formik.getFieldProps('event_type_name')} />
+                            {formik.touched.event_type_name && formik.errors.event_type_name ? (<small className='text-danger'>{formik.errors.event_type_name}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="evenement_ordinaire" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="weekly_event" className="fw-bold col-sm-3 col-form-label">
                             Type
                         </label>
                         <div className="col-sm-9">
-                            <select type="text" className='form-control form-select' name="evenement_ordinaire" id="evenement_ordinaire" placeholder='Nom' {...formik.getFieldProps('evenement_ordinaire')}>
+                            <select type="text" className='form-control form-select' name="weekly_event" id="weekly_event" placeholder='Nom' {...formik.getFieldProps('weekly_event')}>
                                 <option value={"none"} disabled>Type... </option>
                                 <option value={1}>Culte Ordinaire</option>
                                 <option value={0}>Culte/Evenement Special</option>
                             </select>
-                            {formik.touched.evenement_ordinaire && formik.errors.evenement_ordinaire ? (<small className='text-danger'>{formik.errors.evenement_ordinaire}</small>) : null}
+                            {formik.touched.weekly_event && formik.errors.weekly_event ? (<small className='text-danger'>{formik.errors.weekly_event}</small>) : null}
                         </div>
                     </div>
                 </Modal.Body>
@@ -91,18 +91,18 @@ export const ModifierType = ({ type, modal, handleModal, fetch }) => {
     const [loading, setLoading] = useState(false)
 
     const initialValues = {
-        lib_type_evenement: type.lib_type_evenement,
-        evenement_ordinaire: type.evenement_ordinaire
+        event_type_name: type.event_type_name,
+        weekly_event: type.weekly_event
     }
 
     const validationSchema = yup.object({
-        lib_type_evenement: yup.string().required('Ce champ est requis'),
-        evenement_ordinaire: yup.string().notOneOf(['none'], 'Ce champ est requis')
+        event_type_name: yup.string().required('Ce champ est requis'),
+        weekly_event: yup.string().notOneOf(['none'], 'Ce champ est requis')
     })
 
     const submit = (values) => {
         setLoading(true)
-        axios.put(`/evenement/type/${type.id_type_evenement}`, { values }, { withCredentials: true }).then(data => {
+        axios.put(`/evenement/type/${type.id}`, values, { withCredentials: true }).then(data => {
             handleModal()
             toast.success("Success")
             fetch()
@@ -127,8 +127,8 @@ export const ModifierType = ({ type, modal, handleModal, fetch }) => {
                     validationSchema={validationSchema}
                     onSubmit={submit} >
                     <Form>
-                        <FormInputWithLabel name={"lib_type_evenement"} title={"Type"} />
-                        <FormSelectWithLabel name={'evenement_ordinaire'} title={"Type"}>
+                        <FormInputWithLabel name={"event_type_name"} title={"Libelle"} />
+                        <FormSelectWithLabel name={'weekly_event'} title={"Type"}>
                             <option value={"none"} disabled>Type... </option>
                             <option value={"true"}>Culte Ordinaire</option>
                             <option value={"false"}>Culte/Evenement Special</option>
@@ -155,7 +155,7 @@ export function SupprimerType({ type, modal, handleModal, fetch }) {
     const suppression = async (e) => {
         setLoading(true)
         e.preventDefault()
-        axios.delete(`/evenement/type/${type.id_type_evenement}`)
+        axios.delete(`/evenement/type/${type.id}`)
             .then((data) => {
                 handleModal()
                 toast.success("Success")
@@ -173,7 +173,7 @@ export function SupprimerType({ type, modal, handleModal, fetch }) {
                     <Modal.Title className='fs-5'>Supprimer Type Evenement</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous supprimer ce type : {type.lib_type_evenement} ?
+                    Voulez vous supprimer ce type : {type.event_type_name} ?
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-inverse btn-outline-inverse btn-sm`} onClick={() => handleModal(null)}>

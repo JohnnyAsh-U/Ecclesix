@@ -15,7 +15,7 @@ import AjouterModal from './modals'
 const Evenements = () => {
     const { admin, permissions } = AppGlobalContext()
     const { loading, data, error, reload } = useFetch(`/evenement/type`, 'get')
-    const { liste: listetype, listeEglise: listeEglise, first_event: firstDate } = data || {}
+    const {list: listetype, first_event_date :firstDate} = data || {}
 
     let filter = {
         type_evenement: 'tout',

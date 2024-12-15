@@ -9,6 +9,9 @@ class Event_Type(models.Model):
         verbose_name = "event_type"
         verbose_name_plural = "event_types"
         default_permissions = ()
+        
+    def __str__(self):
+        return f"{self.event_type_name}"
 
 
 class Event(models.Model):
@@ -49,6 +52,8 @@ class Event_stats(models.Model):
         default_permissions = ()
         managed = False
         db_table = "events_stats"
+        
+        
 
 
 # This is the sql for the event_stat view for sqlite3

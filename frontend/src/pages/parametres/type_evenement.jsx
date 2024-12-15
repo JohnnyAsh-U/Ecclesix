@@ -14,7 +14,7 @@ const TypeEvenement = () => {
     const [modal, setModal] = useState(null)
     const [type, setType] = useState({})
     const { loading, data, error, reload } = useFetch(`/evenement/type`, 'get')
-    const { liste: listetype } = data || {}
+    const { list: listetype } = data || {}
 
     const handleModal = () => {
         setModal(null)
@@ -58,9 +58,9 @@ const TypeEvenement = () => {
                         <tbody>
                             {!loading && listetype.map((type, id) =>
                                 <tr key={id} className='custom'>
-                                    <td> {type.id_type_evenement}</td>
-                                    <td> {type.lib_type_evenement}</td>
-                                    <td> {type.evenement_ordinaire && <FontAwesomeIcon icon={faCheck} />}</td>
+                                    <td> {type.id}</td>
+                                    <td> {type.event_type_name}</td>
+                                    <td> {type.weekly_event && <FontAwesomeIcon icon={faCheck} />}</td>
                                     <td >
                                         <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
                                             <button className='btn btn-default btn-sm btn-outline-default p-1 mx-2' onClick={() => { setType(type); setModal('modifier') }}>

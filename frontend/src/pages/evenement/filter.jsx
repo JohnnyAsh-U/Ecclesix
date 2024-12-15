@@ -41,7 +41,7 @@ const Filter = ({ handleChange, firstDate, listetype, filters, filterDefault }) 
                                 name='type_evenement'>
                                 <option value={"tout"}>Tout</option>
                                 {listetype.map((type) =>
-                                    <option value={type.id_type_evenement} key={type.id_type_evenement}>{type.lib_type_evenement}</option>
+                                    <option value={type.id} key={type.id}>{type.event_type_name}</option>
                                 )}
                             </FormSelect>
                         </div>
@@ -57,7 +57,7 @@ const Filter = ({ handleChange, firstDate, listetype, filters, filterDefault }) 
                                 <FormSelect name='eglise' onChange={(e) => handleChange('eglise', e.target.value)} value={filters.eglise}>
                                     <option value={"tout"}>Tout</option>
                                     {eglises.map(eglise =>
-                                        <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                        <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                     )}
                                 </FormSelect>
                             </div>

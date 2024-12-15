@@ -25,7 +25,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
         ...filters,
     }).toString()
     const { loading, data, error, reload } = useFetch(`/evenement?${query}`, 'get')
-    const { liste: evenements, totalPages, totalevents: totalEvents } = data || {}
+    const { list: evenements, total_pages: totalPages, total_events: totalEvents } = data || {}
 
     const handlePageChange = async (num) => {
         setPage(num)
@@ -82,28 +82,28 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                             {!loading && evenements.length > 0 && evenements.map((evenement, index) => (
                                 <tr key={index}>
                                     <td>
-                                        {evenement.type_evenement.lib_type_evenement}
-                                        {evenement.lib_evenement && <><br /> <span className="p-1 fw-normal small">{evenement.lib_evenement}</span></>}
+                                        {evenement.event_type}
+                                        {evenement.event_name && <><br /> <span className="p-1 fw-normal small">{evenement.event_name}</span></>}
                                     </td>
 
                                     <td >
-                                        {formatDate(evenement.date_evenement)}
+                                        {formatDate(evenement.event_date)}
                                     </td>
 
                                     <td >
-                                        {evenement.eglise.lib_eglise}
+                                        {evenement.church}
                                     </td>
 
                                     <td>
-                                        {evenement.hommes}
+                                        {evenement.men}
                                     </td>
 
                                     <td>
-                                        {evenement.femmes}
+                                        {evenement.women}
                                     </td>
 
                                     <td >
-                                        {evenement.enfants}
+                                        {evenement.children}
                                     </td>
                                     <td >
                                         {evenement.total}
@@ -113,7 +113,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                                         {diffInDaysFromNow(evenement.date_evenement) <= 7 &&
                                             <ContentPermsWrapper requiredPerms={['modifier_evenement', 'supprimer_evenement']}>
                                                 {/* Checks if the admin is superadin or the event belong to the admin church events  */}
-                                                {(permissions.superAdmin || evenement.id_eglise == admin.id_eglise)
+                                                {(permissions.superAdmin || evenement.id == admin.church_id)
                                                     &&
                                                     <Dropdown direction="dropend" className="m-0">
                                                         <Dropdown.Toggle variant='link' className='btn  btn-outline-default py-0 rounded' as={"button"}>
