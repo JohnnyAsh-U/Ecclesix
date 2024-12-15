@@ -82,7 +82,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                             {!loading && evenements.length > 0 && evenements.map((evenement, index) => (
                                 <tr key={index}>
                                     <td>
-                                        {evenement.event_type}
+                                        {evenement.event_type_name}
                                         {evenement.event_name && <><br /> <span className="p-1 fw-normal small">{evenement.event_name}</span></>}
                                     </td>
 
@@ -91,7 +91,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                                     </td>
 
                                     <td >
-                                        {evenement.church}
+                                        {evenement.church_name}
                                     </td>
 
                                     <td>
@@ -110,7 +110,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                                     </td>
 
                                     <td>
-                                        {diffInDaysFromNow(evenement.date_evenement) <= 7 &&
+                                        {diffInDaysFromNow(evenement.event_date) <= 7 &&
                                             <ContentPermsWrapper requiredPerms={['modifier_evenement', 'supprimer_evenement']}>
                                                 {/* Checks if the admin is superadin or the event belong to the admin church events  */}
                                                 {(permissions.superAdmin || evenement.id == admin.church_id)

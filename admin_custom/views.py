@@ -1,5 +1,11 @@
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView, ListCreateAPIView, GenericAPIView
+from django.contrib.auth.models import Permission
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    UpdateAPIView,
+    DestroyAPIView,
+)
 from rest_framework.response import Response
 from .serializers import AdminMemberSerializer, SimpleChurchSerializer
 from rest_framework.mixins import UpdateModelMixin
@@ -13,7 +19,7 @@ from members.models import Member
 from .models import Log, Role
 from dateutil.relativedelta import relativedelta
 from datetime import date
-from .serializers import LogSerializer, RoleSerializer
+from .serializers import LogSerializer, RoleSerializer, PermissionSerializer
 from dateutil.parser import parse
 
 
@@ -86,7 +92,7 @@ def AddAdmin(request, pk, *args, **kwargs):
     admin = request.user
     if admin.is_superuser:
         instance = Member.objects.get(id=pk)
-        #admin cannot remove or add his profile as admin
+        # admin cannot remove or add his profile as admin
         if admin.id == instance.id:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         # toggling of admin field keep superadmin field false
@@ -113,11 +119,11 @@ def AddSuperAdmin(request, pk, *args, **kwargs):
     admin = request.user
     if admin.is_superuser:
         instance = Member.objects.get(id=pk)
-        #admin cannot add or remove his profile as superuser
+        # admin cannot add or remove his profile as superuser
         if admin.id == instance.id:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
-        if not instance.is_admin or admin.id !=1 :
+
+        if not instance.is_admin or admin.id != 1:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         instance.is_superuser = not instance.is_superuser
         instance.save()
@@ -155,3 +161,94 @@ class RolesListCreateView(ListCreateAPIView):
     serializer_class = RoleSerializer
     queryset = Role.objects.all()
     perms = {"OPTIONS": ["superadmin"], "GET": [], "POST": ["superadmin"]}
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        perms = PermissionSerializer(
+            Permission.objects.all().exclude(content_type_id__in=[1, 2, 3, 4, 5]),
+            many=True,
+        )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"roles": serializer.data, "perms": perms.data})
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        detail = {
+            "resource": "Role",
+            "id": serializer.data["id"],
+            "lib": serializer.data["role_name"],
+        }
+        Log.objects.create(admin=request.user, log_type="INSERT", detail=detail)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+
+class RoleUpdateDestroyView(UpdateAPIView, DestroyAPIView):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "PATCH": ["superadmin"],
+        "DELETE": ["superadmin"],
+    }
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, context={"request": request}, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        detail = {
+            "resource": "Role",
+            "id": instance.pk,
+            "lib": instance.role_name,
+        }
+        self.perform_destroy(instance)
+        Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["POST"])
+@permission_classes([])
+def AddPermissionToRole(request, pk, *args, **kwargs):
+    admin = request.user
+    if not admin.is_superuser:
+        return Response(status=status.HTTP_403_FORBIDDEN)
+    role = Role.objects.get(id=pk)
+    old_perms = [perm.name for perm in role.permission.all()]
+    
+    perms_args = request.data
+    new_perms_instances = [Permission.objects.get(id=perm['value']) for perm in perms_args]
+    
+    role.permission.set(new_perms_instances)
+    
+    new_perms = [perm.name for perm in role.permission.all()]
+
+    detail = {
+        "resource": "Role-Permissions",
+        "id": role.pk,
+        "lib": role.role_name,
+        "changes": {
+            "old": {"permissions": old_perms},
+            "new": {"permissions": new_perms},
+        },
+    }
+    Log.objects.create(admin=admin, log_type="UPDATE", detail=detail)
+    return Response(status=status.HTTP_200_OK)

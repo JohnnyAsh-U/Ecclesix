@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Event_Type(models.Model):
@@ -21,8 +22,9 @@ class Event(models.Model):
     men = models.IntegerField("men", default=0)
     women = models.IntegerField("women", default=0)
     children = models.IntegerField("children", default=0)
-    total = models.IntegerField("total")
+    total = models.IntegerField("total", default=0)
     church = models.ForeignKey("church.Church", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         verbose_name = "event"
@@ -36,6 +38,9 @@ class Event(models.Model):
             ("voir_touts_evenements", "Voir Touts Les Evenements"),
             ("supprimer_evenement", "Supprimer Evenement"),
         ]
+        
+    def __str__(self):
+        return f"{self.event_date}"
 
 
 class Event_stats(models.Model):

@@ -109,7 +109,6 @@ class CitySerializer(serializers.ModelSerializer):
             "changes": changes,
         }
         Log.objects.create(log_type="UPDATE", admin_id=admin, detail=details)
-        print(changes)
         return super().update(instance, validated_data)
 
 
@@ -138,5 +137,4 @@ class TypeSerializer(serializers.ModelSerializer):
             "changes": changes,
         }
         Log.objects.create(log_type="UPDATE", admin_id=admin, detail=details)
-        print(changes)
         return super().update(instance, validated_data)

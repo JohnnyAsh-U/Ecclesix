@@ -21,20 +21,20 @@ export function AjouterRole({ fetch, modal, listePerms, handleModal, eglises }) 
 
     const formik = useFormik({
         initialValues: {
-            lib_role: '',
+            role_name: '',
             description: ''
         },
         validationSchema: yup.object({
-            lib_role: yup.string().required('Ce champ est requis'),
+            role_name: yup.string().required('Ce champ est requis'),
             description: yup.string().required('Ce champ est requis')
         }),
         onSubmit: async (values) => {
             setLoading(true)
             try {
-                const { data: role } = await axios.post('/admin/roles/', { values }, { withCredentials: true })
+                const { data: role } = await axios.post('/admin/roles', values )
                 let data
                 if (permissions.length > 0) {
-                    data = await axios.post(`/admin/roles/${role.id_role}/permissions`, { permissions }, { withCredentials: true })
+                    data = await axios.post(`/admin/roles/${role.id}/permissions`,  permissions)
                 }
                 formik.resetForm()
                 setPermissions([])
@@ -51,7 +51,7 @@ export function AjouterRole({ fetch, modal, listePerms, handleModal, eglises }) 
         }
     })
 
-    const options = listePerms && listePerms.map(obj => ({ label: obj.description, value: obj.id_permission }))
+    const options = listePerms && listePerms.map(obj => ({ label: obj.name, value: obj.id }))
 
 
     return (
@@ -64,12 +64,12 @@ export function AjouterRole({ fetch, modal, listePerms, handleModal, eglises }) 
                 </Modal.Header>
                 <Modal.Body>
                     <div className="form-group row mb-3">
-                        <label htmlFor="lib_role" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="role_name" className="fw-bold col-sm-3 col-form-label">
                             Role
                         </label>
                         <div className="col-sm-9">
-                            <input type="text" className='form-control' name="lib_role" id="lib_role" placeholder='Role' {...formik.getFieldProps('lib_role')} />
-                            {formik.touched.lib_role && formik.errors.lib_role ? (<small className='text-danger'>{formik.errors.lib_role}</small>) : null}
+                            <input type="text" className='form-control' name="role_name" id="role_name" placeholder='Role' {...formik.getFieldProps('role_name')} />
+                            {formik.touched.role_name && formik.errors.role_name ? (<small className='text-danger'>{formik.errors.role_name}</small>) : null}
                         </div>
                     </div>
 
@@ -111,16 +111,16 @@ export function AjouterRole({ fetch, modal, listePerms, handleModal, eglises }) 
 export const ModifierRole = ({ role, listePerms, modal, handleModal, fetch }) => {
     const [loading, setLoading] = useState(false)
 
-    const rolePerms = role.permissions?.map(perm => ({ label: perm.description, value: perm.id_permission }))
+    const rolePerms = role.permission?.map(perm => ({ label: perm.name, value: perm.id }))
 
     const [permissions, setPermissions] = useState(rolePerms)
 
     const initialValues = {
-        lib_role: role?.lib_role,
+        role_name: role?.role_name,
         description: role?.description
     }
     const validationSchema = yup.object({
-        lib_role: yup.string().required('Ce champ est requis'),
+        role_name: yup.string().required('Ce champ est requis'),
         description: yup.string().required('Ce champ est requis')
     })
 
@@ -128,8 +128,8 @@ export const ModifierRole = ({ role, listePerms, modal, handleModal, fetch }) =>
     const submit = async (values) => {
         setLoading(true)
         try {
-            const { data } = await axios.put(`/admin/roles/${role.id_role}`, { values }, { withCredentials: true })
-            const { data: data1 } = await axios.post(`/admin/roles/${role.id_role}/permissions`, { permissions }, { withCredentials: true })
+            const { data } = await axios.patch(`/admin/roles/${role.id}`, values )
+            const { data: data1 } = await axios.post(`/admin/roles/${role.id}/permissions`, permissions)
             setPermissions([])
             handleModal()
             toast.success("Success")
@@ -141,7 +141,7 @@ export const ModifierRole = ({ role, listePerms, modal, handleModal, fetch }) =>
             setLoading(false)
         }
     }
-    const options = listePerms && listePerms.map(obj => ({ label: obj.description, value: obj.id_permission }))
+    const options = listePerms && listePerms.map(obj => ({ label: obj.name, value: obj.id }))
 
     return (
         <Modal show={modal === 'modifier'} onHide={() => handleModal(null)} centered>
@@ -156,7 +156,7 @@ export const ModifierRole = ({ role, listePerms, modal, handleModal, fetch }) =>
                     validationSchema={validationSchema}
                     onSubmit={submit} >
                     <Form>
-                        <FormInputWithLabel name={"lib_role"} title={"Role"} placeholder={"Role"} />
+                        <FormInputWithLabel name={"role_name"} title={"Role"} placeholder={"Role"} />
                         <FormInputWithLabel name={"description"} title={"Description"} placeholder={"Description"} />
                         <div className="form-group row mb-2">
                             <label className="col-sm-3 col-form-label fw-bold">Permissions</label>
@@ -186,7 +186,7 @@ export function SupprimerRole({ role, modal, handleModal, fetch }) {
     const suppression = async (e) => {
         setLoading(true)
         e.preventDefault()
-        axios.delete(`/admin/roles/${role.id_role}`)
+        axios.delete(`/admin/roles/${role.id}`)
             .then((data) => {
                 handleModal()
                 toast.success("Success")
@@ -204,7 +204,7 @@ export function SupprimerRole({ role, modal, handleModal, fetch }) {
                     <Modal.Title className='fs-5'>Supprimer Ce role</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous supprimer ce role : <span className='text-danger'>{role?.lib_role}</span> ?
+                    Voulez vous supprimer ce role : <span className='text-danger'>{role?.role_name}</span> ?
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-inverse btn-outline-inverse btn-sm`} onClick={() => handleModal(null)}>

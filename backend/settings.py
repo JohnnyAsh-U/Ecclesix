@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "event",
     'dashboard',
     "department",
+    'finance',
     'seeders',
 ]
 

@@ -7,7 +7,6 @@ import {Link} from 'react-router-dom'
 const ChurchMemberCount = () => {
     const { loading, data, error, reload } = useFetch(`/eglise`, 'get')
     const res = data || {}
-    console.log(res)
 
     if (loading) {
         return

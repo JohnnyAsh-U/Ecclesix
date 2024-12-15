@@ -290,7 +290,6 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
 
     def check_edit_profile_perms(self, request, obj):
         user: Member = request.user
-        print(user.is_admin, obj.is_admin, user.church_id, obj.church_id)
 
         # First Super admin can edit and delete any account
         if user.is_superuser and user.id == 1:
@@ -306,7 +305,6 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
 
         # admin can edit ordinary member accounts of their church
         if user.is_admin and not obj.is_admin and user.church_id == obj.church_id:
-            print(user.is_admin, obj.is_admin, user.church_id, obj.church_id)
             return
 
         self.permission_denied(

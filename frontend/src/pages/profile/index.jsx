@@ -24,7 +24,6 @@ const Profile = () => {
   const { loading: rloading, data: rdata, reload: rreload, error: rerror } = useFetch(`/admin/roles`, 'get')
   const ville = vdata || []
   const roles = rdata || []
-  console.log(roles, ville)
   window.scrollTo(0, 0)
 
 

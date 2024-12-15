@@ -8,6 +8,7 @@ from django.utils import timezone
 class Role(models.Model):
 
     role_name = models.CharField(max_length=50)
+    description = models.CharField(max_length=200, default="")
     permission = models.ManyToManyField(
         Permission, related_name="role", related_query_name="permission"
     )

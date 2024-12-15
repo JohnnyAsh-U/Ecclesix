@@ -59,14 +59,14 @@ const RolesPerms = () => {
                         <tbody>
                             {!loading && listeRoles.map((role, id) =>
                                 <tr key={id} className='custom'>
-                                    <td> {role.id_role}</td>
-                                    <td> {role.lib_role}</td>
+                                    <td> {role.id}</td>
+                                    <td> {role.role_name}</td>
                                     <td>{role.description}</td>
                                     <td>
                                         <ul className='list-group list-group-horizontal flex-wrap'>
-                                            {role.permissions.map((perm) =>
-                                                <li className="list-group-item p-1 rounded" key={perm.id_permission}>
-                                                    <h6 className="mb-0 small">{perm.description}</h6>
+                                            {role.permission.map((perm) =>
+                                                <li className="list-group-item p-1 rounded" key={perm.id}>
+                                                    <h6 className="mb-0 small">{perm.name}</h6>
                                                 </li>
                                             )}
                                         </ul>
