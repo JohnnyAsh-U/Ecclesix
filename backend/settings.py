@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import dj_database_url
 
 load_dotenv()
 
@@ -131,16 +132,20 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        'ENGINE' : os.getenv('ENGINE'),
-        'NAME' :os.getenv('NAME'),
-        'USER' : os.getenv('USER'),
-        'PASSWORD': os.getenv('PASSWORD'),
-        'HOST' : os.getenv('HOST'),
-        'PORT' : os.getenv('PORT')
-        # "ENGINE": "django.db.backends.sqlite3",
-        # "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default= os.getenv('DATABASE_URL'),
+        conn_max_age=600
+    )
+    # "default": {
+    #     'ENGINE' : os.getenv('ENGINE'),
+    #     'NAME' :os.getenv('NAME'),
+    #     'USER' : os.getenv('USER'),
+    #     'PASSWORD': os.getenv('PASSWORD'),
+    #     'HOST' : os.getenv('HOST'),
+    #     'PORT' : os.getenv('PORT')
+    #     # "ENGINE": "django.db.backends.sqlite3",
+    #     # "NAME": BASE_DIR / "db.sqlite3",
+    # }
 }
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
