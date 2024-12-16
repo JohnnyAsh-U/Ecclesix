@@ -32,10 +32,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = True if os.getenv("DJANGO_ENV") == "development" else False
 
 
-ALLOWED_HOSTS = ["*"]
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split(',')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 
 
 
@@ -107,8 +103,11 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
+
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 CORS_ALLOW_CREDENTIALS = True
+
 
 
 ROOT_URLCONF = "backend.urls"
