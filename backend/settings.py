@@ -33,6 +33,10 @@ DEBUG = True if os.getenv("DJANGO_ENV") == "development" else False
 
 
 ALLOWED_HOSTS = ["*"]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+
 
 
 # Application definition
