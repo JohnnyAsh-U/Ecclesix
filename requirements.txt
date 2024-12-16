@@ -1,5 +1,6 @@
 asgiref==3.8.1
 attrs==24.2.0
+Brotli==1.1.0
 cffi==1.17.1
 click==8.1.7
 colorama==0.4.6
@@ -45,3 +46,4 @@ typing_extensions==4.12.2
 tzdata==2024.2
 uritemplate==4.1.1
 uvicorn==0.34.0
+whitenoise==6.8.2
