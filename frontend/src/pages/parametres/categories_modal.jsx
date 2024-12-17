@@ -15,18 +15,18 @@ export function AjouterCategorie({ fetch, modal, handleModal }) {
 
     const formik = useFormik({
         initialValues: {
-            lib_categorie: '',
-            type: '0',
+            category_name: '',
+            category_type: '0',
             description: ''
         },
         validationSchema: yup.object({
-            lib_categorie: yup.string().required('Ce champ est requis'),
-            type: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            category_name: yup.string().required('Ce champ est requis'),
+            category_type: yup.string().notOneOf(['0'], 'Ce champ est requis'),
             description: yup.string().required('Ce champ est requis'),
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/finance/categories`, { values }).then(data => {
+            axios.post(`/finance/categories`, values).then(data => {
                 formik.resetForm()
                 handleModal()
                 toast.success("Success")
@@ -50,27 +50,27 @@ export function AjouterCategorie({ fetch, modal, handleModal }) {
                 </Modal.Header>
                 <Modal.Body>
                     <div className="form-group row mb-3">
-                        <label htmlFor="lib_categorie" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="category_name" className="fw-bold col-sm-3 col-form-label">
                             Categorie
                         </label>
                         <div className="col-sm-9">
-                            <input type="text" className='form-control' name="lib_categorie" id="lib_categorie" placeholder='Categorie' {...formik.getFieldProps('lib_categorie')} />
-                            {formik.touched.lib_categorie && formik.errors.lib_categorie ? (<small className='text-danger'>{formik.errors.lib_categorie}</small>) : null}
+                            <input type="text" className='form-control' name="category_name" id="category_name" placeholder='Categorie' {...formik.getFieldProps('category_name')} />
+                            {formik.touched.category_name && formik.errors.category_name ? (<small className='text-danger'>{formik.errors.category_name}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="type" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="category_type" className="fw-bold col-sm-3 col-form-label">
                             Type
                         </label>
                         <div className="col-sm-9">
-                            <select type="text" className='form-control form-select' name="type" id="type" placeholder='Type' {...formik.getFieldProps('type')}>
+                            <select type="text" className='form-control form-select' name="category_type" id="category_type" placeholder='Type' {...formik.getFieldProps('category_type')}>
                                 <option value={0} disabled>Type... </option>
                                 <option value={"Credit"}>Collecte</option>
                                 <option value={"Debit"}>Depense</option>
                                 <option value={"Budget"}>Budget</option>
                             </select>
-                            {formik.touched.type && formik.errors.type ? (<small className='text-danger'>{formik.errors.type}</small>) : null}
+                            {formik.touched.category_type && formik.errors.category_type ? (<small className='text-danger'>{formik.errors.category_type}</small>) : null}
                         </div>
                     </div>
 
@@ -105,18 +105,18 @@ export const ModifierCategorie = ({ categorie, modal, handleModal, fetch }) => {
     const [loading, setLoading] = useState(false)
 
     const initialValues = {
-        lib_categorie: categorie?.lib_categorie,
+        category_name: categorie?.category_name,
         description: categorie?.description
     }
 
     const validationSchema = yup.object({
-        lib_categorie: yup.string().required('Ce champ est requis'),
+        category_name: yup.string().required('Ce champ est requis'),
         description: yup.string().required('Ce champ est requis'),
     })
 
     const submit = (values) => {
         setLoading(true)
-        axios.put(`/finance/categories/${categorie.id_categorie}`, { values }).then(data => {
+        axios.patch(`/finance/categories/${categorie.id}`, values ).then(data => {
             handleModal()
             toast.success("Success")
             fetch()
@@ -138,7 +138,7 @@ export const ModifierCategorie = ({ categorie, modal, handleModal, fetch }) => {
         <Modal show={modal === 'modifier'} onHide={() => handleModal(null)} centered>
             <Modal.Header closeButton>
                 <Modal.Title className='fs-5'>
-                    Modifier {type[categorie.type]}
+                    Modifier {type[categorie.category_type]}
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body>
@@ -147,7 +147,7 @@ export const ModifierCategorie = ({ categorie, modal, handleModal, fetch }) => {
                     validationSchema={validationSchema}
                     onSubmit={submit} >
                     <Form>
-                        <FormInputWithLabel name={"lib_categorie"} title={"Categorie"} placeholder={"Categorie"} />
+                        <FormInputWithLabel name={"category_name"} title={"Categorie"} placeholder={"Categorie"} />
                         <FormInputWithLabel name={"description"} title={"Description"} placeholder={"Description"} />
                         <Modal.Footer>
                             <button type="button" className={`btn btn-danger btn-outline-danger btn-sm`} onClick={() => handleModal()}>
@@ -171,7 +171,7 @@ export function SupprimerCategorie({ categorie, modal, handleModal, fetch }) {
     const suppression = async (e) => {
         setLoading(true)
         e.preventDefault()
-        axios.delete(`/finance/categories/${categorie.id_categorie}`)
+        axios.delete(`/finance/categories/${categorie.id}`)
             .then((data) => {
                 handleModal()
                 toast.success("Success")
@@ -194,10 +194,10 @@ export function SupprimerCategorie({ categorie, modal, handleModal, fetch }) {
         <Modal show={modal === 'supprimer'} onHide={() => handleModal()} centered>
             <form onSubmit={suppression}>
                 <Modal.Header>
-                    <Modal.Title className='fs-5'>Supprimer {type[categorie.type]}</Modal.Title>
+                    <Modal.Title className='fs-5'>Supprimer {type[categorie.category_type]}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous supprimer cette categorie : <span className='text-danger'>{categorie.lib_categorie}</span> ?
+                    Voulez vous supprimer cette categorie : <span className='text-danger'>{categorie.category_name}</span> ?
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-inverse btn-outline-inverse btn-sm`} onClick={() => handleModal(null)}>

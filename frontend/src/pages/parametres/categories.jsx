@@ -15,7 +15,7 @@ const Categories = () => {
     const [categorie, setCategorie] = useState({})
 
     const { loading, data, error, reload } = useFetch(`/finance/categories`, 'get')
-    const { res: listeCategories } = data || {}
+    const listeCategories = data || []
 
     const handleModal = () => {
         setModal(null)
@@ -26,9 +26,9 @@ const Categories = () => {
         return
     }
 
-    const collectes = !loading && listeCategories.filter(c => c.type === "Credit")
-    const depenses = !loading && listeCategories.filter(c => c.type === "Debit")
-    const budgets = !loading && listeCategories.filter(c => c.type === "Budget")
+    const collectes = !loading && listeCategories.filter(c => c.category_type === "Credit")
+    const depenses = !loading && listeCategories.filter(c => c.category_type === "Debit")
+    const budgets = !loading && listeCategories.filter(c => c.category_type === "Budget")
 
 
     return (
@@ -62,8 +62,8 @@ const Categories = () => {
                         <tbody>
                             {!loading && collectes.map((categorie, id) =>
                                 <tr key={id} className='custom'>
-                                    <td> {categorie.id_categorie}</td>
-                                    <td> {categorie.lib_categorie}</td>
+                                    <td> {categorie.id}</td>
+                                    <td> {categorie.category_name}</td>
                                     <td> {categorie.description}</td>
                                     <td >
                                         <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
@@ -96,8 +96,8 @@ const Categories = () => {
                         <tbody>
                             {!loading && depenses.map((categorie, id) =>
                                 <tr key={id} className='custom'>
-                                    <td> {categorie.id_categorie}</td>
-                                    <td> {categorie.lib_categorie}</td>
+                                    <td> {categorie.id}</td>
+                                    <td> {categorie.category_name}</td>
                                     <td> {categorie.description}</td>
                                     <td >
                                         <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
@@ -131,8 +131,8 @@ const Categories = () => {
                         <tbody>
                             {!loading && budgets.map((categorie, id) =>
                                 <tr key={id} className='custom'>
-                                    <td> {categorie.id_categorie}</td>
-                                    <td> {categorie.lib_categorie}</td>
+                                    <td> {categorie.id}</td>
+                                    <td> {categorie.category_name}</td>
                                     <td> {categorie.description}</td>
                                     <td >
                                         <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">

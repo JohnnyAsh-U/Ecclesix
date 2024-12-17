@@ -15,7 +15,7 @@ const Regles = () => {
     const [modal, setModal] = useState(null)
     const [regle, setRegle] = useState({})
     const { loading, data, error, reload } = useFetch(`/finance/regles`, 'get')
-    const { res: listeRegles, categories, comptes, eglises } = data || {}
+    const { rules: listeRegles, category : categories, account : comptes, church: eglises } = data || {}
 
 
     const handleModal = () => {
@@ -68,12 +68,12 @@ const Regles = () => {
                         <tbody>
                             {!loading && listeRegles.map((reg, id) =>
                                 <tr key={id} className='custom'>
-                                    <td> {reg.eglise.lib_eglise}</td>
-                                    <td> {reg.lib_regle}</td>
-                                    <td>  {reg.categorie.lib_categorie}</td>
-                                    <td> {reg.pourcentage} % </td>
-                                    <td> {reg.compte.lib_compte}</td>
-                                    <td>{dateFormat(reg.updatedAt)}</td>
+                                    <td> {reg.church_name}</td>
+                                    <td> {reg.rule_name}</td>
+                                    <td>  {reg.category_name}</td>
+                                    <td> {reg.percentage} % </td>
+                                    <td> {reg.account_name}</td>
+                                    <td>{dateFormat(reg.updated_at)}</td>
                                     <td >
                                         <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
                                             <button className='btn btn-default btn-sm btn-outline-default p-1 mx-2' onClick={() => { setRegle(reg); setModal('modifier') }}>

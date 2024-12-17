@@ -14,22 +14,22 @@ export function AjouterRegle({ fetch, modal, comptes, categories, handleModal, e
 
     const formik = useFormik({
         initialValues: {
-            lib_regle: '',
-            pourcentage: 0,
-            id_compte: '0',
-            id_eglise: '0',
-            id_categorie: '0'
+            rule_name: '',
+            percentage: 0,
+            account: '0',
+            church: '0',
+            category: '0'
         },
         validationSchema: yup.object({
-            lib_regle: yup.string().required('Ce champ est requis'),
-            id_eglise: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            id_compte: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            id_categorie: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            pourcentage: yup.number().max(100, 'Pas Valid').min(1, 'Pas Valid').not([0], 'Ce champ est requis')
+            rule_name: yup.string().required('Ce champ est requis'),
+            church: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            account: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            category: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            percentage: yup.number().max(100, 'Pas Valid').min(1, 'Pas Valid').not([0], 'Ce champ est requis')
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/finance/regles`, { values }).then(data => {
+            axios.post(`/finance/regles`,  values ).then(data => {
                 formik.resetForm()
                 handleModal()
                 toast.success("Success")
@@ -44,8 +44,8 @@ export function AjouterRegle({ fetch, modal, comptes, categories, handleModal, e
     })
 
     //filters compte by church
-    const church_main_account = comptes && comptes.find(c => (c.id_eglise == formik.values.id_eglise && c.compte_principal))
-    const filteredComptes = comptes && comptes.filter(c => c.id_compte != church_main_account?.id_compte)
+    const church_main_account = comptes && comptes.find(c => (c.church == formik.values.church && c.is_main))
+    const filteredComptes = comptes && comptes.filter(c => c.id != church_main_account?.id)
 
 
     return (
@@ -58,27 +58,27 @@ export function AjouterRegle({ fetch, modal, comptes, categories, handleModal, e
                 </Modal.Header>
                 <Modal.Body>
                     <div className="form-group row mb-3">
-                        <label htmlFor="lib_regle" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="rule_name" className="fw-bold col-sm-3 col-form-label">
                             Regle
                         </label>
                         <div className="col-sm-9">
-                            <input type="text" className='form-control' name="lib_regle" id="lib_regle" placeholder='Nom' {...formik.getFieldProps('lib_regle')} />
-                            {formik.touched.lib_regle && formik.errors.lib_regle ? (<small className='text-danger'>{formik.errors.lib_regle}</small>) : null}
+                            <input type="text" className='form-control' name="rule_name" id="rule_name" placeholder='Nom' {...formik.getFieldProps('rule_name')} />
+                            {formik.touched.rule_name && formik.errors.rule_name ? (<small className='text-danger'>{formik.errors.rule_name}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="id_eglise" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="church" className="fw-bold col-sm-3 col-form-label">
                             Eglise
                         </label>
                         <div className="col-sm-9">
-                            <select type="text" className='form-control form-select' name="id_eglise" id="id_eglise" placeholder='Eglise' {...formik.getFieldProps('id_eglise')}>
+                            <select type="text" className='form-control form-select' name="church" id="church" placeholder='Eglise' {...formik.getFieldProps('church')}>
                                 <option value={0} disabled>Choississez l'eglise </option>
                                 {eglises && eglises.map((eglise) =>
-                                    <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                    <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                 )}
                             </select>
-                            {formik.touched.id_eglise && formik.errors.id_eglise ? (<small className='text-danger'>{formik.errors.id_eglise}</small>) : null}
+                            {formik.touched.church && formik.errors.church ? (<small className='text-danger'>{formik.errors.church}</small>) : null}
                         </div>
                     </div>
 
@@ -87,38 +87,38 @@ export function AjouterRegle({ fetch, modal, comptes, categories, handleModal, e
                             Categorie
                         </label>
                         <div className="col-sm-9">
-                            <select type="text" className='form-control form-select' name="id_categorie" id="id_categorie" placeholder='Categorie' {...formik.getFieldProps('id_categorie')}>
+                            <select type="text" className='form-control form-select' name="category" id="category" placeholder='Categorie' {...formik.getFieldProps('category')}>
                                 <option value={0}>Choississez la Collecte </option>
                                 {categories && categories.map((categorie) =>
-                                    <option key={categorie.id_categorie} value={categorie.id_categorie}>{categorie.lib_categorie}</option>
+                                    <option key={categorie.id} value={categorie.id}>{categorie.category_name}</option>
                                 )}
                             </select>
-                            {formik.touched.id_categorie && formik.errors.id_categorie ? (<small className='text-danger'>{formik.errors.id_categorie}</small>) : null}
+                            {formik.touched.category && formik.errors.category ? (<small className='text-danger'>{formik.errors.category}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="type" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="account" className="fw-bold col-sm-3 col-form-label">
                             Compte
                         </label>
                         <div className="col-sm-9">
-                            <select type="text" className='form-control form-select' name="id_compte" id="id_compte" placeholder='Compte' {...formik.getFieldProps('id_compte')}>
+                            <select type="text" className='form-control form-select' name="account" id="account" placeholder='Compte' {...formik.getFieldProps('account')}>
                                 <option value={0}>Choississez le Compte Caisse </option>
                                 {filteredComptes && filteredComptes.map((compte) =>
-                                    <option key={compte.id_compte} value={compte.id_compte}>{compte.lib_compte}</option>
+                                    <option key={compte.id} value={compte.id}>{compte.account_name}</option>
                                 )}
                             </select>
-                            {formik.touched.id_compte && formik.errors.id_compte ? (<small className='text-danger'>{formik.errors.id_compte}</small>) : null}
+                            {formik.touched.account && formik.errors.account ? (<small className='text-danger'>{formik.errors.account}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="pourcentage" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="percentage" className="fw-bold col-sm-3 col-form-label">
                             %
                         </label>
                         <div className="col-sm-9">
-                            <input type="number" className='form-control' name="pourcentage" id="pourcentage" placeholder='Pourcentage' {...formik.getFieldProps('pourcentage')} />
-                            {formik.touched.pourcentage && formik.errors.pourcentage ? (<small className='text-danger'>{formik.errors.pourcentage}</small>) : null}
+                            <input type="number" className='form-control' name="percentage" id="percentage" placeholder='Pourcentage' {...formik.getFieldProps('percentage')} />
+                            {formik.touched.percentage && formik.errors.percentage ? (<small className='text-danger'>{formik.errors.percentage}</small>) : null}
                         </div>
                     </div>
                 </Modal.Body>
@@ -142,21 +142,21 @@ export const ModifierRegle = ({ regle, modal, handleModal, fetch }) => {
     const [loading, setLoading] = useState(false)
 
     const initialValues = {
-        lib_regle: regle?.lib_regle,
-        pourcentage: regle?.pourcentage,
+        rule_name: regle?.rule_name,
+        percentage: regle?.percentage,
     }
 
     const validationSchema = yup.object({
-        lib_regle: yup.string().required('Ce champ est requis'),
+        rule_name: yup.string().required('Ce champ est requis'),
         // pourcentage: yup.number().required('Ce champ est requis'),
-        pourcentage: yup.number().max(100, 'Pas Valid').min(1, 'Pas Valid').not([0], 'Ce champ est requis')
+        percentage: yup.number().max(100, 'Pas Valid').min(1, 'Pas Valid').not([0], 'Ce champ est requis')
     })
 
 
 
     const submit = (values) => {
         setLoading(true)
-        axios.put(`/finance/regles/${regle.id_regle}`, { values }).then(data => {
+        axios.patch(`/finance/regles/${regle.id}`, values).then(data => {
             handleModal()
             toast.success("Success")
             fetch()
@@ -181,8 +181,8 @@ export const ModifierRegle = ({ regle, modal, handleModal, fetch }) => {
                     validationSchema={validationSchema}
                     onSubmit={submit} >
                     <Form>
-                        <FormInputWithLabel name={"lib_regle"} title={"Regle"} placeholder={"Regle"} />
-                        <FormInputWithLabel name={"pourcentage"} title={"Pourcentage"} placeholder={"Pourcentage"} type={"number"}/>
+                        <FormInputWithLabel name={"rule_name"} title={"Regle"} placeholder={"Regle"} />
+                        <FormInputWithLabel name={"percentage"} title={"Pourcentage"} placeholder={"Pourcentage"} type={"number"}/>
                         <Modal.Footer>
                             <button type="button" className={`btn btn-danger btn-outline-danger btn-sm`} onClick={() => handleModal()}>
                                 Fermer
@@ -205,7 +205,7 @@ export function SupprimerRegle({ regle, modal, handleModal, fetch }) {
     const suppression = async (e) => {
         setLoading(true)
         e.preventDefault()
-        axios.delete(`/finance/regles/${regle.id_regle}`)
+        axios.delete(`/finance/regles/${regle.id}`)
             .then((data) => {
                 handleModal()
                 toast.success("Success")
@@ -223,7 +223,7 @@ export function SupprimerRegle({ regle, modal, handleModal, fetch }) {
                     <Modal.Title className='fs-5'>Supprimer Regle</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous supprimer cette regle : <span className='text-danger'>{regle.lib_regle}</span> ?
+                    Voulez vous supprimer cette regle : <span className='text-danger'>{regle.rule_name}</span> ?
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-inverse btn-outline-inverse btn-sm`} onClick={() => handleModal(null)}>

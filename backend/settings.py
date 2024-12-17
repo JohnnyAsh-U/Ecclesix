@@ -9,11 +9,10 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import dj_database_url
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import dj_database_url
 
 load_dotenv()
 
@@ -106,10 +105,10 @@ MIDDLEWARE = [
 
 
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split(',')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
+ALLOWED_HOSTS = ['*']
 CORS_ALLOW_CREDENTIALS = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS').split(',')
 
 
@@ -138,20 +137,20 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(
-        default= os.getenv('DATABASE_URL'),
-        conn_max_age=600
-    )
-    # "default": {
-    #     'ENGINE' : os.getenv('ENGINE'),
-    #     'NAME' :os.getenv('NAME'),
-    #     'USER' : os.getenv('USER'),
-    #     'PASSWORD': os.getenv('PASSWORD'),
-    #     'HOST' : os.getenv('HOST'),
-    #     'PORT' : os.getenv('PORT')
-    #     # "ENGINE": "django.db.backends.sqlite3",
-    #     # "NAME": BASE_DIR / "db.sqlite3",
-    # }
+    # "default": dj_database_url.config(
+    #     default= os.getenv('DATABASE_URL'),
+    #     # conn_max_age=600
+    # )
+    "default": {
+        'ENGINE' : os.getenv('ENGINE'),
+        'NAME' :os.getenv('NAME'),
+        'USER' : os.getenv('USER'),
+        'PASSWORD': os.getenv('PASSWORD'),
+        'HOST' : os.getenv('HOST'),
+        'PORT' : os.getenv('PORT')
+        # "ENGINE": "django.db.backends.sqlite3",
+        # "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
@@ -207,9 +206,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 
-if not DEBUG:
-    # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
-    # and renames the files with unique names for each version to support long-term caching
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# if not DEBUG:
+#     # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
+#     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+#     # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
+#     # and renames the files with unique names for each version to support long-term caching
+#     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

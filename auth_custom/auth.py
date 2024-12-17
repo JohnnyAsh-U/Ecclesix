@@ -61,7 +61,7 @@ class AuthBackend:
 
         user.otp_key = otp_key_secret
 
-        return (user, from_func) if is_valid else False
+        return (user, from_func) if is_valid else (None, from_func)
 
     @staticmethod
     def verify_email(token, email_code):

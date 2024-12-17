@@ -151,12 +151,12 @@ class TestAuthBackend(TestCase):
         #wrong otp code
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=otp_code+"1", secret=otp_key)
-        self.assertEqual(is_valid, False)
+        self.assertEqual(is_valid[0], None)
         
         #correct otp code
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=otp_code, secret=otp_key)
-        self.assertNotEqual(is_valid, False)
+        self.assertNotEqual(is_valid[0], None)
         self.assertIsInstance(is_valid[0], Member)
             
             
@@ -172,12 +172,12 @@ class TestAuthBackend(TestCase):
         #to make sure priority is given to the key in the db
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=new_otp_code, secret=new_otp_key)
-        self.assertEqual(is_valid, False)
+        self.assertEqual(is_valid[0],  None)
         
         #correct verification code using db otp key
         token = utils.jwtEncode({"email": self.login_user.user.email}, age=10, secret=getenv('TEMP_TOKEN'))
         is_valid = auth.AuthBackend.verify_otp(token, otp_code=otp_code)
-        self.assertNotEqual(is_valid, False)
+        self.assertNotEqual(is_valid[0], None)
         self.assertIsInstance(is_valid[0], Member)
         
         
