@@ -58,20 +58,20 @@ function Index() {
     const fetchEgliseCompte = async () => {
         if (!eglises.length) setLoading(true);
         try {
-            const { data } = await axios.get(`/finance/eglises`);
+            const { data } = await axios.get(`/finance`);
             setFirstDate(data.date)
-            setListeCategories(data.categorie)
-            setEvenements(data.evenements)
-            setToutComptes(data.toutComptes)
-            setEglises(data.res); //when the church is empty the comp doesn't load
+            setListeCategories(data.category)
+            setEvenements(data.events)
+            setToutComptes(data.account)
+            setEglises(data.church_account); //when the church is empty the comp doesn't load
 
-            if (data.res.length > 0) {
+            if (data.church_account.length > 0) {
                 //if admin church doesn't have an account we set it to the first church and first account
-                let adminEglise = data.res.find(eg => eg.id_eglise == admin.id_eglise) || data.res[0]
+                let adminEglise = data.church_account.find(eg => eg.id == admin.church_id) || data.church_account[0]
                 if (!currentEglise) {
-                    setCurrentEglise(adminEglise?.id_eglise)
+                    setCurrentEglise(adminEglise?.id)
                 }
-                setComptes(adminEglise?.comptes)
+                setComptes(adminEglise?.accounts)
             }
 
         } catch (err) {
@@ -87,16 +87,16 @@ function Index() {
 
     useEffect(() => {
         if (currentEglise) {
-            let adminEglise = eglises.find(eg => eg.id_eglise == currentEglise)
-            setComptes(adminEglise?.comptes)
+            let adminEglise = eglises.find(eg => eg.id == currentEglise)
+            setComptes(adminEglise?.accounts)
         }
     }, [currentEglise])
 
     const options = listeCategories.map(c => {
-        if (c.type == 'Credit') {
-            return { id_categorie: c.id_categorie, lib_categorie: `(Collecte) ${c.lib_categorie}` }
+        if (c.category_type == 'Credit') {
+            return { id_categorie: c.id, lib_categorie: `(Collecte) ${c.category_name}` }
         } else {
-            return { id_categorie: c.id_categorie, lib_categorie: `(Depense) ${c.lib_categorie}` }
+            return { id_categorie: c.id, lib_categorie: `(Depense) ${c.category_name}` }
         }
     })
 
@@ -109,7 +109,7 @@ function Index() {
                 <div>
                     <BreadCrumb title={"Finance - Transactions"} icon={<FontAwesomeIcon icon={faMoneyBillTransfer} />} >
                         <ContentPermsWrapper requiredPerms={['ajouter_transaction']}>
-                            {(permissions.superAdmin || admin.id_eglise == currentEglise) &&
+                            {(permissions.superAdmin || admin.church_id == currentEglise) &&
                                 <Dropdown direction="dropend" >
                                     <Dropdown.Toggle variant='link' className='btn  btn-outline-default py-0 rounded'>
                                         <div className='btn btn-round btn-primary btn-sm hor-grd btn-grd-primary'>
@@ -150,7 +150,7 @@ function Index() {
                                             </label>
                                             <FormSelect id='eglise' name='eglise' onChange={(e) => setCurrentEglise(e.target.value)} value={currentEglise}>
                                                 {eglises.map(eglise =>
-                                                    <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                                    <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                                 )}
                                             </FormSelect>
                                         </div>
@@ -218,7 +218,7 @@ function Index() {
 
                     </div>
 
-                    <Ajouter
+                    {/* <Ajouter
                         handleModal={handleModal}
                         modal={modal}
                         type={type}
@@ -238,7 +238,7 @@ function Index() {
                         modal={modal}
                         transaction={selectTransaction}
                         fetch={fetchEgliseCompte}
-                    />
+                    /> */}
                 </div>
             }
 

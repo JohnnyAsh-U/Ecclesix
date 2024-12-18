@@ -14,20 +14,20 @@ export function AjouterCompte({ fetch, modal, handleModal, eglises }) {
 
     const formik = useFormik({
         initialValues: {
-            lib_compte: '',
-            type: '0',
-            montant: '0.00',
-            id_eglise: '0'
+            account_name: '',
+            account_type: '0',
+            balance: '0.00',
+            church: '0'
         },
         validationSchema: yup.object({
-            lib_compte: yup.string().required('Ce champ est requis'),
-            type: yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            montant: yup.string().required('Ce champ est requis'),
-            id_eglise: yup.string().notOneOf(['0'], 'Ce champ est requis')
+            account_name: yup.string().required('Ce champ est requis'),
+            account_type: yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            balance: yup.string().required('Ce champ est requis'),
+            church: yup.string().notOneOf(['0'], 'Ce champ est requis')
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/finance/comptes`, { values }).then(data => {
+            axios.post(`/finance/comptes`, values).then(data => {
                 formik.resetForm()
                 handleModal()
                 toast.success("Success")
@@ -51,51 +51,51 @@ export function AjouterCompte({ fetch, modal, handleModal, eglises }) {
                 </Modal.Header>
                 <Modal.Body>
                     <div className="form-group row mb-3">
-                        <label htmlFor="lib_compte" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="account_name" className="fw-bold col-sm-3 col-form-label">
                             Nom
                         </label>
                         <div className="col-sm-9">
-                            <input type="text" className='form-control' name="lib_compte" id="lib_compte" placeholder='Nom' {...formik.getFieldProps('lib_compte')} />
-                            {formik.touched.lib_compte && formik.errors.lib_compte ? (<small className='text-danger'>{formik.errors.lib_compte}</small>) : null}
+                            <input type="text" className='form-control' name="account_name" id="account_name" placeholder='Nom' {...formik.getFieldProps('account_name')} />
+                            {formik.touched.account_name && formik.errors.account_name ? (<small className='text-danger'>{formik.errors.account_name}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="type" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="account_type" className="fw-bold col-sm-3 col-form-label">
                             Type
                         </label>
                         <div className="col-sm-9">
-                            <select type="text" className='form-control form-select' name="type" id="type" placeholder='Type' {...formik.getFieldProps('type')}>
+                            <select type="text" className='form-control form-select' name="account_type" id="account_type" placeholder='Type' {...formik.getFieldProps('account_type')}>
                                 <option value={0} disabled>Type... </option>
                                 <option value={"Caisse"}>Compte Caisse</option>
                                 <option value={"Bancaire"}>Compte Bancaire</option>
                             </select>
-                            {formik.touched.type && formik.errors.type ? (<small className='text-danger'>{formik.errors.type}</small>) : null}
+                            {formik.touched.account_type && formik.errors.account_type ? (<small className='text-danger'>{formik.errors.account_type}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="id_eglise" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="church" className="fw-bold col-sm-3 col-form-label">
                             Eglise
                         </label>
                         <div className="col-sm-9">
-                            <select type="text" className='form-control form-select' name="id_eglise" id="id_eglise" placeholder='Eglise' {...formik.getFieldProps('id_eglise')}>
+                            <select type="text" className='form-control form-select' name="church" id="church" placeholder='Eglise' {...formik.getFieldProps('church')}>
                                 <option value={0} disabled>Choississez l'eglise </option>
                                 {eglises && eglises.map((eglise) =>
-                                    <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                    <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                 )}
                             </select>
-                            {formik.touched.id_eglise && formik.errors.id_eglise ? (<small className='text-danger'>{formik.errors.id_eglise}</small>) : null}
+                            {formik.touched.church && formik.errors.church ? (<small className='text-danger'>{formik.errors.church}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-3">
-                        <label htmlFor="montant" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="balance" className="fw-bold col-sm-3 col-form-label">
                             Montant
                         </label>
                         <div className="col-sm-9">
-                            <input type="number" className='form-control' name="montant" id="montant" placeholder='Montant' {...formik.getFieldProps('montant')} />
-                            {formik.touched.montant && formik.errors.montant ? (<small className='text-danger'>{formik.errors.montant}</small>) : null}
+                            <input type="number" className='form-control' name="balance" id="balance" placeholder='Montant' {...formik.getFieldProps('balance')} />
+                            {formik.touched.balance && formik.errors.balance ? (<small className='text-danger'>{formik.errors.balance}</small>) : null}
                         </div>
                     </div>
                 </Modal.Body>
@@ -119,17 +119,17 @@ export const ModifierCompte = ({ compte, modal, handleModal, fetch }) => {
     const [loading, setLoading] = useState(false)
 
     const initialValues = {
-        lib_compte: compte?.lib_compte,
+        account_name: compte?.account_name,
     }
 
     const validationSchema = yup.object({
-        lib_compte: yup.string().required('Ce champ est requis'),
+        account_name: yup.string().required('Ce champ est requis'),
     })
 
 
     const submit = (values) => {
         setLoading(true)
-        axios.put(`/finance/comptes/${compte.id_compte}`, { values }).then(data => {
+        axios.patch(`/finance/comptes/${compte.id}`,  values).then(data => {
             handleModal()
             toast.success("Success")
             fetch()
@@ -154,7 +154,7 @@ export const ModifierCompte = ({ compte, modal, handleModal, fetch }) => {
                     validationSchema={validationSchema}
                     onSubmit={submit} >
                     <Form>
-                        <FormInputWithLabel name={"lib_compte"} title={"Compte"} placeholder={"Nom du Compte"}/>
+                        <FormInputWithLabel name={"account_name"} title={"Compte"} placeholder={"Nom du Compte"}/>
                         <Modal.Footer>
                             <button type="button" className={`btn btn-danger btn-outline-danger btn-sm`} onClick={() => handleModal()}>
                                 Fermer
@@ -177,7 +177,7 @@ export function SupprimerCompte({ compte, modal, handleModal, fetch }) {
     const suppression = async (e) => {
         setLoading(true)
         e.preventDefault()
-        axios.delete(`/finance/comptes/${compte.id_compte}`)
+        axios.delete(`/finance/comptes/${compte.id}`)
             .then((data) => {
                 handleModal()
                 toast.success("Success")
@@ -195,7 +195,7 @@ export function SupprimerCompte({ compte, modal, handleModal, fetch }) {
                     <Modal.Title className='fs-5'>Supprimer Compte</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    Voulez vous supprimer ce compte : <span className='text-danger'>{compte.lib_compte}</span> ?
+                    Voulez vous supprimer ce compte : <span className='text-danger'>{compte.account_name}</span> ?
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-inverse btn-outline-inverse btn-sm`} onClick={() => handleModal(null)}>

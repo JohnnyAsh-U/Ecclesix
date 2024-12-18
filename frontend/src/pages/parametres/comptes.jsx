@@ -21,7 +21,7 @@ const Comptes = () => {
   const [modal, setModal] = useState(null)
   const [compte, setCompte] = useState({})
   const { loading, data, error, reload } = useFetch(`/finance/comptes`, 'get')
-  const { res: listeComptes, eglises: eglises } = data || {}
+  const { accounts: listeComptes, church: eglises } = data || {}
 
 
   const handleModal = () => {
@@ -75,11 +75,11 @@ const Comptes = () => {
             <tbody>
               {!loading && listeComptes.map((com, id) =>
                 <tr key={id} className='custom'>
-                  <td> {com.eglise.lib_eglise}</td>
-                  <td> {com.lib_compte}</td>
-                  <td>  {com.compte_principal == true ? <strong>{com.type}</strong> : <>{com.type}</>}</td>
-                  <td>{formatAmount(com.montant)}</td>
-                  <td>{dateFormat(com.createdAt)}</td>
+                  <td> {com.church_name}</td>
+                  <td> {com.account_name}</td>
+                  <td>  {com.is_main == true ? <strong>{com.account_type}</strong> : <>{com.account_type}</>}</td>
+                  <td>{formatAmount(com.balance)}</td>
+                  <td>{dateFormat(com.created_at)}</td>
                   <td >
                     <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
                       <button className='btn btn-default btn-sm btn-outline-default p-1 mx-2' onClick={() => { setCompte(com); setModal('modifier') }}>

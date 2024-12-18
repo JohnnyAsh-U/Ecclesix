@@ -1,7 +1,8 @@
-from django.shortcuts import render
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from .serializers import CategorySerializer, RuleSerializer, AccountSerializer
-from .models import Category, Transaction_Rule, Account
+from .models import Category, Transaction_Rule, Account, Transaction, Monthly_Balance
+from event.models import Event
+from rest_framework.views import APIView
 from admin_custom.models import Log
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -10,6 +11,10 @@ from django.db.models import Sum
 from church.models import Church
 from church.serializers import SimpleChurchSerializer
 from decimal import Decimal
+from datetime import date
+from dateutil.relativedelta import *
+from members.models import Member
+from django.db import transaction
 
 
 class CategoryListCreateView(ListCreateAPIView):
@@ -173,4 +178,181 @@ class TransactionRuleRUDView(RetrieveUpdateDestroyAPIView):
                 raise ValidationError("Not Valid")
 
 
+class AccountCreateListView(ListCreateAPIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["superadmin"],
+        "POST": ["superadmin"],
+    }
+    serializer_class = AccountSerializer
+    queryset = Account.objects.all()
 
+    def create(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                self.check_church_main_account(serializer.data)
+                self.update_monthly_balance(serializer.data)
+                detail = {
+                    "resource": "Compte",
+                    "id": serializer.data["id"],
+                    "lib": f"{serializer.data['account_name']} ({serializer.data['church_name']})",
+                }
+                Log.objects.create(
+                    admin_id=request.user.id, log_type="INSERT", detail=detail
+                )
+                headers = self.get_success_headers(serializer.data)
+                return Response(
+                    serializer.data, status=status.HTTP_201_CREATED, headers=headers
+                )
+
+        except BaseException as m:
+            print(m)
+            return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        church = SimpleChurchSerializer(Church.objects.all(), many=True)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "accounts": serializer.data,
+                "church": church.data,
+            }
+        )
+
+    def check_church_main_account(self, data):
+        account = Account.objects.filter(
+            church_id=data["church"], account_type=data["account_type"], is_main=True
+        ).exists()
+        if not account:
+            acc = Account.objects.get(id=data["id"])
+            acc.is_main = True
+            acc.save()
+
+    def update_monthly_balance(self, data):
+        Monthly_Balance.objects.create(
+            month = date.today().month,
+            year = date.today().year,
+            account_id = data['id'],
+            balance = data['balance']
+        )
+
+
+class AccountRUDView(RetrieveUpdateDestroyAPIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "PATCH": ["superadmin"],
+        "DELETE": ["superadmin"],
+    }
+    serializer_class = AccountSerializer
+    queryset = Account.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance, data=request.data, context={"request": request}, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, "_prefetched_objects_cache", None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        detail = {
+            "resource": "Compte",
+            "id": instance.pk,
+            "lib": f"{instance.account_name}",
+        }
+        self.perform_destroy(instance)
+        Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ChurchAndAccounts(APIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["voir_finance", "voir_toutes_finances"],
+    }
+
+    def get(self, request, *args, **kwargs):
+        user: Member = request.user
+        event_queryset = Event.objects.filter(
+            event_date__range=(
+                date.today() + relativedelta(weeks=-1, weekday=MO(+1)),
+                date.today() + relativedelta(weekday=SU(+1)),
+            )
+        ).prefetch_related("church", "event_type")
+        church_queryset = Church.objects.prefetch_related("account_set")
+        if not user.is_superuser and not user.has_perm_custom("voir_toutes_finances"):
+            event_queryset = event_queryset.filter(
+                church=user.church,
+            )
+            church_queryset = church_queryset.filter(id=user.church_id)
+
+        # manual serializing
+        church_accounts = []
+        for church in church_queryset:
+            accounts = church.account_set.all()
+            if accounts:
+                ch_s = dict(SimpleChurchSerializer(church).data)
+                ch_s["accounts"] = []
+                for acc in accounts:
+                    acc_s = AccountSerializer(acc).data
+                    ch_s["accounts"].append(acc_s)
+                church_accounts.append(ch_s)
+
+        first_transaction_date = Transaction.objects.order_by("created_at").first()
+
+        account_serializer = AccountSerializer(Account.objects.all(), many=True)
+        category_serializer = CategorySerializer(Category.objects.all(), many=True)
+        event_list = [
+            {
+                "id": ev.id,
+                "event": f"{ev.church} - {ev.event_type} ({ev.event_date.strftime("%d-%m-%Y")})",
+            }
+            for ev in event_queryset
+        ]
+
+        return Response(
+            {
+                "events": event_list,
+                "date": getattr(first_transaction_date, "created_at", "01-01-2024"),
+                "category": category_serializer.data,
+                "account": account_serializer.data,
+                "church_account": church_accounts,
+            }
+        )
+
+
+class AccountsBalances(APIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["voir_finance", "voir_toutes_finances"],
+    }
+
+    def get(self, request, *args, **kwargs):
+        query_params = request.query_params
+        church = query_params.get("eglise", None)
+        account_type = query_params.get("type", None)
+
+        if church and account_type:
+            query_set = AccountSerializer(
+                Account.objects.filter(church_id=church, account_type=account_type),
+                many=True,
+            ).data
+            return Response(query_set)
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TransactionListCreateView(ListCreateAPIView):
+    pass

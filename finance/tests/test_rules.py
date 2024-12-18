@@ -48,7 +48,7 @@ class TestTransactionRules(APITestCase):
             obj = Account.objects.create(
                 account_name=acc,
                 account_type="Caisse",
-                amount=0.00,
+                balance=0.00,
                 is_main=True if acc == "Main" else False,
                 church=cls.church,
             )
