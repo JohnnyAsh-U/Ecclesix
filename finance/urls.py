@@ -10,5 +10,8 @@ urlpatterns = [
     path('/regles/<int:pk>', views.TransactionRuleRUDView.as_view(), name="rule-rud"),
     path('/comptes', views.AccountCreateListView.as_view(), name="account-create-list"),
     path('/comptes/<int:pk>', views.AccountRUDView.as_view(), name="account-rud"),
-    path('/transactions', views.AccountRUDView.as_view(), name="account-rud"),
+    path('/transactions', views.TransactionListCreateView.as_view(), name="transaction-create-list"),
+    path('/transactions/<int:pk>/action', views.TransactionValidateOrReject.as_view(), name="transaction-action"),
+    path('/transactions-logs/filters', views.TransactionLogTableData.as_view(), name="transaction-log-data"),
+    path('/transactions-logs', views.TransactionLogTable.as_view(), name="transaction-log"),
 ]

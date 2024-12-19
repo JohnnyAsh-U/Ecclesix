@@ -33,25 +33,26 @@ export default function Ajouter({ type, eglise, categorie, handleModal, modal, t
     const formik = useFormik({
         initialValues: {
             description: '',
-            montant: 0.00,
-            id_eglise: eglise || 0,
-            id_compte: 0,
-            au_compte: 0,
-            id_categorie: 0,
-            id_evenement: '0',
-            id_membre: eglise || admin.id,
+            amount: 0.00,
+            from_account: 0,
+            to_account: 0,
+            category: 0,
+            event: '0',
+            added_by: admin.id,
         },
         validationSchema: yup.object({
             description: yup.string().notRequired(),
             montant: yup.number().min(1, 'Ce champ est requis'),
-            id_compte: type != 'Credit' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            au_compte: type == 'Transfer' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            id_categorie: type != 'Transfer' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
-            id_evenement: type == 'Credit' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            from_account: type != 'Credit' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            to_account: type == 'Transfer' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            category: type != 'Transfer' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
+            event: type == 'Credit' && yup.string().notOneOf(['0'], 'Ce champ est requis'),
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/finance/transactions`, { values, type, eglise }).then(data => {
+            values['church'] = eglise
+            values['type'] = type
+            axios.post(`/finance/transactions`, values ).then(data => {
                 toast.success('Success')
                 formik.resetForm()
                 handleModal()
@@ -64,10 +65,10 @@ export default function Ajouter({ type, eglise, categorie, handleModal, modal, t
     })
 
     //Filters categories according to transaction type: Credit, Debit
-    let filteredCategorie = categorie.filter(cate => cate.type == type)
+    let filteredCategorie = categorie.filter(cate => cate.category_type == type)
 
     //filters comptes to remove the sending compte from the list of receiving compte in transfert
-    const receivingCompte = toutComptes.filter(c => c.id_compte != formik.values.id_compte)
+    const receivingCompte = toutComptes.filter(c => c.id != formik.values.id)
 
 
 
@@ -81,17 +82,17 @@ export default function Ajouter({ type, eglise, categorie, handleModal, modal, t
 
                     {type != 'Transfer' &&
                         <div className="form-group row mb-3">
-                            <label htmlFor="id_categorie" className="fw-bold col-sm-3 col-form-label">
+                            <label htmlFor="category" className="fw-bold col-sm-3 col-form-label">
                                 Categorie
                             </label>
                             <div className="col-sm-9">
-                                <select className='form-control form-select' name="id_categorie" id="id_categorie" placeholder='Type' {...formik.getFieldProps('id_categorie')}>
+                                <select className='form-control form-select' name="category" id="category" placeholder='Categorie' {...formik.getFieldProps('category')}>
                                     <option value={0} disabled>Categorie {type == 'Credit' ? 'Collecte' : 'Depense'} </option>
                                     {filteredCategorie.map((cate) =>
-                                        <option key={cate.id_categorie} value={cate.id_categorie}>{cate.lib_categorie}</option>
+                                        <option key={cate.id} value={cate.id}>{cate.category_name}</option>
                                     )}
                                 </select>
-                                {formik.touched.id_categorie && formik.errors.id_categorie ? (<small className='text-danger'>{formik.errors.id_categorie}</small>) : null}
+                                {formik.touched.category && formik.errors.category ? (<small className='text-danger'>{formik.errors.category}</small>) : null}
                             </div>
                         </div>
                     }
@@ -99,61 +100,61 @@ export default function Ajouter({ type, eglise, categorie, handleModal, modal, t
                     {
                         type == 'Credit' &&
                         <div className="form-group row mb-3">
-                            <label htmlFor="id_evenement" className="fw-bold col-sm-3 col-form-label">
+                            <label htmlFor="event" className="fw-bold col-sm-3 col-form-label">
                                 Evenement
                             </label>
                             <div className='col-sm-9' sm={10}>
-                                <select name='id_evenement' className="form-control form-select mb-1"  {...formik.getFieldProps('id_evenement')}>
+                                <select name='event' className="form-control form-select mb-1"  {...formik.getFieldProps('event')}>
                                     <option value={0} disabled>Evenement </option>
                                     {props.evenements.map((ev) =>
-                                        <option key={ev.id_evenement} value={ev.id_evenement}>{ev.evenement}</option>
+                                        <option key={ev.id} value={ev.id}>{ev.event}</option>
                                     )}
                                 </select>
-                                {formik.touched.id_evenement && formik.errors.id_evenement ? (<small className='text-danger'>{formik.errors.id_evenement}</small>) : null}
+                                {formik.touched.event && formik.errors.event ? (<small className='text-danger'>{formik.errors.event}</small>) : null}
                             </div>
                         </div>
                     }
 
                     {type != 'Credit' &&
                         <div className="form-group row mb-2">
-                            <label htmlFor="id_compte" className="fw-semibold col-sm-3 col-form-label">
+                            <label htmlFor="from_account" className="fw-semibold col-sm-3 col-form-label">
                                 Compte
                             </label>
                             <div className="col-sm-9">
-                                <select name='id_compte' className="form-control form-select mb-1"  {...formik.getFieldProps('id_compte')}>
+                                <select name='from_account' className="form-control form-select mb-1"  {...formik.getFieldProps('from_account')}>
                                     <option value={0} disabled>Du Compte </option>
                                     {comptes.map((com) =>
-                                        <option key={com.id_compte} value={com.id_compte}>{com.lib_compte}</option>
+                                        <option key={com.id} value={com.id}>{com.account_name}</option>
                                     )}
                                 </select>
-                                {formik.touched.id_compte && formik.errors.id_compte ? (<small className='text-danger'>{formik.errors.id_compte}</small>) : null}
+                                {formik.touched.account_name && formik.errors.account_name ? (<small className='text-danger'>{formik.errors.account_name}</small>) : null}
                             </div>
                         </div>}
 
                     {type == 'Transfer' &&
                         <div className="form-group row mb-2">
-                            <label htmlFor="au_compte" className="fw-semibold col-sm-3 col-form-label">
+                            <label htmlFor="to_account" className="fw-semibold col-sm-3 col-form-label">
                                 Compte
                             </label>
                             <div className='col-sm-9'>
-                                <select name='au_compte' className="form-control form-select mb-1"  {...formik.getFieldProps('au_compte')}>
+                                <select name='to_account' className="form-control form-select mb-1"  {...formik.getFieldProps('to_account')}>
                                     <option value={0} disabled>Au Compte </option>
                                     {receivingCompte.map((com) =>
-                                        <option key={com.id_compte} value={com.id_compte}>{com.lib_compte}</option>
+                                        <option key={com.id} value={com.id}>{com.account_name}</option>
                                     )}
                                 </select>
-                                {formik.touched.au_compte && formik.errors.au_compte ? (<small className='text-danger'>{formik.errors.au_compte}</small>) : null}
+                                {formik.touched.to_account && formik.errors.to_account ? (<small className='text-danger'>{formik.errors.to_account}</small>) : null}
                             </div>
                         </div>
                     }
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="montant" className="fw-semibold col-sm-3 col-form-label">
+                        <label htmlFor="amount" className="fw-semibold col-sm-3 col-form-label">
                             Montant
                         </label>
                         <div className='col-sm-9'>
-                            <input type="number" className='form-control' name="montant" id="montant" {...formik.getFieldProps('montant')} />
-                            {formik.touched.montant && formik.errors.montant ? (<small className='text-danger'>{formik.errors.montant}</small>) : null}
+                            <input type="number" className='form-control' name="amount" id="amount" {...formik.getFieldProps('amount')} />
+                            {formik.touched.amount && formik.errors.amount ? (<small className='text-danger'>{formik.errors.amount}</small>) : null}
                         </div>
                     </div>
 
@@ -195,13 +196,13 @@ export function Info({ transaction, handleModal, fetch, modal }) {
 
     const initialValues = {
         description: transaction.description,
-        montant: transaction.montant,
-        notes: ''
+        amount: transaction.amount,
+        comment: ''
     }
     const validationSchema = yup.object({
         description: yup.string().notRequired(),
-        montant: yup.number().min(1, 'Ce champ est requis'),
-        notes: yup.string().required('Ce champ est requis')
+        amount: yup.number().min(1, 'Ce champ est requis'),
+        comment: yup.string().required('Ce champ est requis')
     })
 
 
@@ -222,8 +223,8 @@ export function Info({ transaction, handleModal, fetch, modal }) {
         }
     }
 
-    const ApprovedOrRejected = (statut) => {
-        if (statut == 'Rejected') {
+    const ApprovedOrRejected = (status) => {
+        if (status == 'Rejected') {
             return <>Rejecté par{' '}
                 <span color='danger' className='fw-bold text-danger'>
                     <FontAwesomeIcon icon={faClose} />
@@ -256,11 +257,11 @@ export function Info({ transaction, handleModal, fetch, modal }) {
     const ShowValidationButtons = ({ trans, children }) => {
         //checks if the transaction is still pending and the admin not the owner
         //of the transaction
-        if (trans.statut == 'Pending' && trans.id_membre != admin.id) {
+        if (trans.status == 'Pending' && trans.added_by != admin.id) {
 
             //checks if the account of the transaction is the church of the
             //admin or if the admin is a superadmin
-            if (transaction.compte.id_eglise == admin.id_eglise) {
+            if (transaction.church?.id == admin.church_id) {
                 return children
             }
             if (permissions.superAdmin) {
@@ -272,7 +273,7 @@ export function Info({ transaction, handleModal, fetch, modal }) {
     const ShowEditDeleteButtons = ({ trans, children }) => {
         //checks if the transaction is still pending and the admin is the owner
         //of the transaction
-        if (trans.statut == 'Pending' && trans.id_membre == admin.id) {
+        if (trans.status == 'Pending' && trans.added_by == admin.id) {
             return children
         }
     }
@@ -282,7 +283,7 @@ export function Info({ transaction, handleModal, fetch, modal }) {
         const query = new URLSearchParams({ notes: values.notes }).toString()
         let a = action === 'v' ? 'confirmer' : 'rejecter'
         try {
-            const { data } = await axios.put(`/finance/transactions/${transaction.id_transaction}/${a}?${query}`)
+            const { data } = await axios.put(`/finance/transactions/${transaction.id}/${a}?${query}`)
             handleModal(null)
             fetch()
             toast.success('Success')
@@ -319,8 +320,8 @@ export function Info({ transaction, handleModal, fetch, modal }) {
 
     return (
         <Modal show={modal === 'trans'} onHide={() => { setAction(null); handleModal() }} centered>
-            <Modal.Header>
-                <Modal.Title className='fs-5'>{title(action)} Transaction #{transaction.id_transaction}</Modal.Title>
+            <Modal.Header closeButton>
+                <Modal.Title className='fs-5'>{title(action)} Transaction #{transaction.id}</Modal.Title>
             </Modal.Header>
 
             <Modal.Body>
@@ -328,30 +329,30 @@ export function Info({ transaction, handleModal, fetch, modal }) {
                     <li className='list-group-item'>
                         Type
                         <span className='float-end fw-semibold'>
-                            {type(transaction.type)}
+                            {type(transaction.transaction_type)}
                         </span>
                     </li>
                     <li className='list-group-item'>
                         Montant
                         <span className='float-end fw-semibold'>
-                            {formatAmount(transaction.montant)}
+                            {formatAmount(transaction.amount)}
                         </span>
                     </li>
                     <li className='list-group-item'>
                         Enreg. par :
                         <span className='float-end fw-semibold'>
-                            {transaction.membre?.nom} {transaction.membre?.prenom}
+                            {transaction.added_by_name}
                         </span>
                     </li>
                     <li className='list-group-item'>
-                        {ApprovedOrRejected(transaction.statut)}
+                        {ApprovedOrRejected(transaction.status)}
                         <span className='float-end fw-semibold'>
-                            {transaction.membre_approuve?.nom} {transaction.membre_approuve?.prenom}
+                            {transaction.approved_by_name}
                         </span>
                     </li>
                     <li className='list-group-item'>
                         Date
-                        <span className='float-end'>{timeDate(transaction.createdAt)}</span>
+                        <span className='float-end'>{timeDate(transaction.created_at)}</span>
                     </li>
                 </ul>
 
@@ -363,9 +364,9 @@ export function Info({ transaction, handleModal, fetch, modal }) {
                     >
                         <Form className='mt-3' >
                             <hr />
-                            <FormInputWithLabel name={"montant"} title={"Montant"} placeholder={"Montant"} />
+                            <FormInputWithLabel name={"amount"} title={"Montant"} placeholder={"Montant"} />
                             <FormInputWithLabel name={"description"} title={"Descsription"} placeholder={"Description"} />
-                            <FormInputWithLabel name={"notes"} title={"Observation"} placeholder={"Observation"} />
+                            <FormInputWithLabel name={"comment"} title={"Observation"} placeholder={"Observation"} />
                             <Modal.Footer>
                                 {!loading &&
                                     <button className="btn btn-danger btn-outline-danger" onClick={() => setAction(null)}>
@@ -379,12 +380,12 @@ export function Info({ transaction, handleModal, fetch, modal }) {
 
                 {action === 's' &&
                     <Formik
-                        initialValues={{ notes: '' }}
-                        validationSchema={yup.object({ notes: yup.string().required('Ce champ est requis') })}
+                        initialValues={{ comment: '' }}
+                        validationSchema={yup.object({ comment: yup.string().required('Ce champ est requis') })}
                         onSubmit={modifyOrDeleteTransaction}
                     >
                         <Form className='mt-3' >
-                            <FormInputWithLabel name={"notes"} title={"Observation"} placeholder={"Observation"} />
+                            <FormInputWithLabel name={"comment"} title={"Observation"} placeholder={"Observation"} />
                             <Modal.Footer>
                                 {!loading &&
                                     <button className="btn btn-danger btn-outline-danger" onClick={() => setAction(null)}>
@@ -399,12 +400,12 @@ export function Info({ transaction, handleModal, fetch, modal }) {
 
                 {(action === 'r' || action === 'v') ?
                     <Formik
-                        initialValues={{ notes: '' }}
-                        validationSchema={yup.object({ notes: yup.string().required('Ce champ est requis') })}
+                        initialValues={{ comment: '' }}
+                        validationSchema={yup.object({ comment: yup.string().required('Ce champ est requis') })}
                         onSubmit={validateOrRejectTransaction}
                     >
                         <Form className='mt-3' >
-                            <FormInputWithLabel name={"notes"} title={"Observation"} placeholder={"Observation"} />
+                            <FormInputWithLabel name={"comment"} title={"Observation"} placeholder={"Observation"} />
 
                             <Modal.Footer>
                                 {!loading &&
@@ -423,7 +424,7 @@ export function Info({ transaction, handleModal, fetch, modal }) {
             </Modal.Body>
 
 
-            {!transaction.id_parent && !action &&
+            {!transaction.parent && !action &&
                 <Modal.Footer>
                     <ShowEditDeleteButtons trans={transaction}>
                         <button className='btn btn-outline-dark rounded float-end mt-2'

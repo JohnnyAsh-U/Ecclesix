@@ -94,9 +94,9 @@ function Index() {
 
     const options = listeCategories.map(c => {
         if (c.category_type == 'Credit') {
-            return { id_categorie: c.id, lib_categorie: `(Collecte) ${c.category_name}` }
+            return { id: c.id, category_name: `(Collecte) ${c.category_name}` }
         } else {
-            return { id_categorie: c.id, lib_categorie: `(Depense) ${c.category_name}` }
+            return { id: c.id, category_name: `(Depense) ${c.category_name}` }
         }
     })
 
@@ -177,7 +177,7 @@ function Index() {
                                             <option value={'tout_dons'}>Toutes Les Collectes</option>
                                             <option value={'tout_depenses'}>Touts Les Depenses</option>
                                             <option value={'tout_transferts'}>Touts Les Transferts</option>
-                                            {options.map(cate => <option key={cate.id_categorie} value={cate.id_categorie}>{cate.lib_categorie}</option>)}
+                                            {options.map(cate => <option key={cate.id} value={cate.id}>{cate.category_name}</option>)}
                                         </FormSelect>
                                     </div>
 
@@ -218,7 +218,7 @@ function Index() {
 
                     </div>
 
-                    {/* <Ajouter
+                    <Ajouter
                         handleModal={handleModal}
                         modal={modal}
                         type={type}
@@ -238,7 +238,7 @@ function Index() {
                         modal={modal}
                         transaction={selectTransaction}
                         fetch={fetchEgliseCompte}
-                    /> */}
+                    />
                 </div>
             }
 

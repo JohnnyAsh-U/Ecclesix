@@ -57,14 +57,14 @@ function LogTable({ filters }) {
                         </thead>
                         <tbody>
                             {logs && logs.map(d =>
-                                <tr align='middle' key={d.id_log}>
+                                <tr align='middle' key={d.id}>
                                     <td className='text-center' >{Statut[d.action]}</td>
                                     <td >#{d.transaction_no}</td>
                                     <td >
-                                        {new Date(d.createdAt).toLocaleString('fr')}
+                                        {new Date(d.created_at).toLocaleString('fr')}
                                     </td>
                                     <td className='text-wrap'>
-                                        {d.membre?.nom} {d.membre?.prenom}
+                                        {d.admin}
                                     </td>
                                     <td className='small'>{stateObject(d.previous_state)}</td>
                                     <td className='small'>{stateObject(d.new_state)}</td>

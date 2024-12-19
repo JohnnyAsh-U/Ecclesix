@@ -46,7 +46,7 @@ class Account(models.Model):
     )
     balance = EncryptedField(max_length=200)
     is_main = models.BooleanField(default=False)
-    church = models.ForeignKey(Church, on_delete=models.CASCADE)
+    church = models.ForeignKey(Church, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -183,7 +183,7 @@ class Transaction(models.Model):
         ]
 
     def __str__(self):
-        f"{self.description}"
+        return f"{self.description}"
 
 
 class Monthly_Balance(models.Model):
@@ -216,8 +216,8 @@ class Transaction_Log(models.Model):
         max_length=50,
     )
     transaction_no = models.IntegerField("Transaction No")
-    previous_state = models.JSONField()
-    new_state = models.JSONField()
+    previous_state = models.JSONField(null= True, blank=True)
+    new_state = models.JSONField(null= True, blank=True)
     comment = models.CharField("Notes", max_length=255)
     admin = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

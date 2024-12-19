@@ -13,7 +13,7 @@ import LogTable from './log_table'
 
 function FinanceLog() {
     const { data, error, loading, reload } = useFetch('/finance/transactions-logs/filters', 'get')
-    const { firstDate: firstDate, alladmins: admins } = data || {}
+    const { first_date: firstDate, alladmins: admins } = data || {}
 
     let filter = {
         action: 'tout',
@@ -86,7 +86,7 @@ function FinanceLog() {
                                         <FormSelect name='admin' value={filters.admin} onChange={({ target }) => setFilters({ ...filters, [target.name]: target.value })}>
                                             <option value={'tout'}>Tout</option>
                                             {admins.map(a =>
-                                                <option key={a.id} value={a.id}>{a.prenom} {a.nom}</option>
+                                                <option key={a.id} value={a.id}>{a.name}</option>
                                             )}
                                         </FormSelect>
                                     </div>

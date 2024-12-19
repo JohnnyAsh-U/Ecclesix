@@ -14,7 +14,7 @@ function TransactionTable({ filters, id_eglise, modal, setModal, setSelectTransa
         id_eglise
     }).toString()
     const { data, reload, error, loading } = useFetch(`/finance/transactions?${query}`, 'get')
-    const { res, accountCols } = data || {}
+    const { res, accounts: accountCols } = data || {}
     let result = []
     if (res) {
         result = [...res].reverse()
@@ -35,31 +35,31 @@ function TransactionTable({ filters, id_eglise, modal, setModal, setSelectTransa
 
     const transactionCategorieDetails = (val) => {
 
-        if (val.type == 'Transfer') {
+        if (val.transaction_type == 'Transfer') {
 
-            let sendingAccount = val.compte
-            let receivingAccount = val.compte_c
+            let sendingAccount = val.from_account_name
+            let receivingAccount = val.to_account_name
 
             return <span >
-                {sendingAccount?.lib_compte} {' '}
+                {sendingAccount} {' '}
                 <FontAwesomeIcon icon={faArrowRight} /> {' '}
-                {receivingAccount?.lib_compte}
+                {receivingAccount}
             </span>
-        } else if (val.type == 'Credit' || val.type == 'Debit') {
-            if (val.type == 'Credit' && val.id_parent) {
+        } else if (val.transaction_type == 'Credit' || val.transaction_type == 'Debit') {
+            if (val.transaction_type == 'Credit' && val.parent_id) {
 
-                let sendingAccount = val.compte
-                let receivingAccount = val.compte_c
+                let sendingAccount = val.from_account_name
+                let receivingAccount = val.to_account_name
 
                 return <span >
-                    #{val.id_parent}  {Type[val.type]} ({val.categorie?.lib_categorie})
+                    #{val.parent_id}  {Type[val.transaction_type]} ({val.category_name})
                     <br />
-                    {sendingAccount?.lib_compte} {' '}
+                    {sendingAccount} {' '}
                     <FontAwesomeIcon icon={faArrowRight} /> {' '}
-                    {receivingAccount?.lib_compte}
+                    {receivingAccount}
                 </span>
             } else {
-                return `${Type[val.type]} (${val.categorie?.lib_categorie})`
+                return `${Type[val.transaction_type]} (${val.category_name})`
             }
         }
     }
@@ -89,26 +89,26 @@ function TransactionTable({ filters, id_eglise, modal, setModal, setSelectTransa
                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Description</th>
                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Montant</th>
                                 {accountCols && accountCols.map(acc =>
-                                    <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id_compte} scope='col'>{acc.lib_compte}</th>)}
+                                    <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id} scope='col'>{acc.name}</th>)}
                             </tr>
                         </thead>
                         <tbody>
                             {result && result.map(d =>
-                                <tr className={`table-${Statut[d.statut]}`} key={d.id_transaction} style={{ cursor: 'pointer' }} onClick={() => { setSelectTransaction(d); setModal('trans') }}>
-                                    <td>#{d.id_transaction}</td>
-                                    <td>{d.type == 'Don' ? dateDisplay(d.evenement?.date_evenement) : dateDisplay(d.createdAt)} <br />
-                                        {d.evenement && <span>({d.evenement?.type_evenement?.lib_type_evenement})</span>}
+                                <tr className={`table-${Statut[d.status]}`} key={d.id} style={{ cursor: 'pointer' }} onClick={() => { setSelectTransaction(d); setModal('trans') }}>
+                                    <td>#{d.id}</td>
+                                    <td>{d.type == 'Don' ? dateDisplay(d.evenement?.date_evenement) : dateDisplay(d.created_at)} <br />
+                                       {d.event_type_name && <span>({d.event_type_name })</span>}
                                     </td>
                                     <td>
                                         {transactionCategorieDetails(d)}
                                     </td>
                                     <td className=' text-wrap'>{d.description}</td>
-                                    <td>{formatAmount(d.montant)}</td>
+                                    <td>{formatAmount(d.amount)}</td>
                                     {d.accounts.map((a, index) =>
                                         <td key={index}>
-                                            {a.montant > 0 && <span className='text-success fw-bold'>{formatAmount(a.montant)}</span>}
-                                            {a.montant < 0 && <span className='text-danger '>{formatAmount(a.montant)}</span>}
-                                            {a.montant == 0 && <span>{formatAmount(a.montant)}</span>}
+                                            {a.balance > 0 && <span className='text-success fw-bold'>{formatAmount(a.balance)}</span>}
+                                            {a.balance < 0 && <span className='text-danger '>{formatAmount(a.balance)}</span>}
+                                            {a.balance == 0 && <span>{formatAmount(a.balance)}</span>}
                                         </td>
                                     )}
                                 </tr>
