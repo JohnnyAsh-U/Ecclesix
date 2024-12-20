@@ -29,7 +29,7 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
     }).toString()
     const { data, reload, error, loading } = useFetch(`/finance/budgets?${query}`, 'get')
 
-    const { budgets } = data || {}
+    const budgets = data || {}
 
 
     const fetchBudgetDetails = async (id) => {
@@ -55,13 +55,19 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
     //Checks if the budget end date is past, before returning
     // add expenses icons
     const BudgetDateCheck = ({ item, children }) => {
-        if (new Date(item.date_de_fin).setHours(23, 59) < new Date()) {
+        if (new Date(item.end_date).setHours(23, 59) < new Date()) {
             return null;
         }
-        if (parseFloat(item.montant) <= parseFloat(item.montant_actuel)) {
+        if (parseFloat(item.allocated_amount) <= parseFloat(item.actual_amount)) {
             return null;
         }
         return children
+    }
+
+    const Statut = {
+        Pending: "warning",
+        Validated: "",
+        Rejected: "danger"
     }
 
 
@@ -72,13 +78,13 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
 
     const submit = async (values) => {
         try {
-            if (values.montant) {
-                values.action = "montant"
-                const { data } = await axios.put(`/finance/budgets/${viewDetail}`, { values }, { withCredentials: true })
+            if (values.amount) {
+                values.action = "amount"
+                const { data } = await axios.patch(`/finance/budgets/${viewDetail}`, values)
             }
             if (values.date) {
                 values.action = "date"
-                const { data } = await axios.put(`/finance/budgets/${viewDetail}`, { values }, { withCredentials: true })
+                const { data } = await axios.patch(`/finance/budgets/${viewDetail}`,  values)
             }
             setAction(null)
             setViewDetail(null)
@@ -103,11 +109,11 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
     return (
         <> {loading && <LoadingData />}
             {!loading && budgets?.map(item =>
-                <div className="col-md-12 col-xl-12 " key={item.id_budget}>
+                <div className="col-md-12 col-xl-12 " key={item.id}>
                     <div className="card app-design">
                         <div className="card-body">
                             <ContentPermsWrapper requiredPerms={['ajouter_transaction']}>
-                                {(permissions.superAdmin || id_eglise == admin.id_eglise) &&
+                                {(permissions.superAdmin || id_eglise == admin.church_id) &&
                                     <BudgetDateCheck item={item}>
                                         <button className="btn btn-outline-primary f-right"
                                             onClick={() => { setBudget(item); setModal('depense') }}
@@ -117,10 +123,10 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                     </BudgetDateCheck>}
                             </ContentPermsWrapper>
 
-                            <h5 className="f-w-400 custom">{item.lib_budget}
-                                {item.montant_actuel == 0 &&
+                            <h5 className="f-w-400 custom">{item.budget_name}
+                                {item.actual_amount == 0 &&
                                     <ContentPermsWrapper requiredPerms={['ajouter_budget']}>
-                                        {(permissions.superAdmin || id_eglise == admin.id_eglise) &&
+                                        {(permissions.superAdmin || id_eglise == admin.church_id) &&
                                             <span className="align-items-center ms-2 hidden" role="group">
                                                 <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
                                                     <button className='btn btn-default btn-sm btn-outline-default p-1 mx-2' onClick={() => { setBudget(item); setModal('modifier') }}>
@@ -134,11 +140,11 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                     </ContentPermsWrapper>
                                 }
                             </h5>
-                            <h6 className="f-w-400 text-muted mt-1">{item.compte?.lib_compte}</h6>
-                            <p className="text-muted"> {formatDate(item.date_de_debut)} - {formatDate(item.date_de_fin)}</p>
+                            <h6 className="f-w-400 text-muted mt-1">{item.account_name}</h6>
+                            <p className="text-muted"> {formatDate(item.start_date)} - {formatDate(item.end_date)}</p>
                             <p className="text-c-blue">
-                                Montant Budget : {formatAmount(item.montant)} ({item.compte?.lib_compte})<br />
-                                Montant Actuel : {formatAmount(item.montant_actuel)}<br />
+                                Montant Budget : {formatAmount(item.allocated_amount)} ({item.account_name})<br />
+                                Montant Actuel : {formatAmount(item.actual_amount)}<br />
                             </p>
                             <div className='d-flex justify-content-between'>
                                 <div className="progress-box w-75">
@@ -149,12 +155,12 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                     </div>
                                 </div>
                                 <button className='btn btn-outline-primary'
-                                    onClick={() => fetchBudgetDetails(item.id_budget)}>
-                                    {viewDetail === item.id_budget ? <FontAwesomeIcon icon={faCaretUp} /> : "Plus..."}</button>
+                                    onClick={() => fetchBudgetDetails(item.id)}>
+                                    {viewDetail === item.id ? <FontAwesomeIcon icon={faCaretUp} /> : "Plus..."}</button>
                             </div>
 
 
-                            {viewDetail === item.id_budget &&
+                            {viewDetail === item.id &&
                                 <>
                                     <hr />
                                     {budgetLoading &&
@@ -182,18 +188,18 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                                         </thead>
                                                         <tbody>
                                                             {!loading && budgetDetail.map((b) =>
-                                                                <tr v-for="item in tableItems" className='custom' key={b.id_transaction}>
+                                                                <tr v-for="item in tableItems" className={`custom table-${Statut[b.status]}`} key={b.id}>
 
                                                                     <td className="ms-1 small">
-                                                                        {b.id_transaction}
+                                                                        {b.id}
                                                                     </td>
 
                                                                     <td className="ms-1 small">
-                                                                        {new Date(b.createdAt).toLocaleString('fr')}
+                                                                        {new Date(b.created_at).toLocaleString('fr')}
                                                                     </td>
 
                                                                     <td className="ms-1 small">
-                                                                        {b.categorie?.lib_categorie}
+                                                                        {b.category_name}
                                                                     </td>
 
                                                                     <td className='small'>
@@ -201,11 +207,11 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                                                     </td>
 
                                                                     <td className='small'>
-                                                                        {formatAmount(b.montant)}
+                                                                        {formatAmount(b.amount)}
                                                                     </td>
 
                                                                     <td className='small'>
-                                                                        {b.membre.prenom} {b.membre.nom}
+                                                                        {b.added_by_name}
                                                                     </td>
                                                                 </tr>
                                                             )}
@@ -231,7 +237,7 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                                                             {new Date(details[ob].new).toLocaleDateString('fr')}
                                                                         </span>
                                                                     }
-                                                                    {details[ob].extension === 'montant' &&
+                                                                    {details[ob].extension === 'amount' &&
                                                                         <span>
                                                                             {details[ob].old.toLocaleString('fr')}
                                                                             <FontAwesomeIcon icon={faArrowRight} className='mx-1' />
@@ -244,11 +250,11 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                                         )}
                                                         {action &&
                                                             <Formik
-                                                                initialValues={{ montant: '', date: '' }}
+                                                                initialValues={{ amount: '', date: '' }}
                                                                 validationSchema={
                                                                     yup.object({
-                                                                        montant: action === 'ajouter' && yup.number().min(1, 'Invalid').required('Ce champ est requis'),
-                                                                        date: action === 'prolonger' && yup.date().min(new Date(item.date_de_fin), 'Invalid').required('Ce champ est requis')
+                                                                        amount: action === 'ajouter' && yup.number().min(1, 'Invalid').required('Ce champ est requis'),
+                                                                        date: action === 'prolonger' && yup.date().min(new Date(item.end_date), 'Invalid').required('Ce champ est requis')
                                                                     })
                                                                 }
                                                                 onSubmit={submit}
@@ -257,7 +263,7 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
                                                                 <Form>
                                                                     <div className='d-flex flex-column mt-3'>
                                                                         {action === 'ajouter' &&
-                                                                            <FormInputWithLabel title={"Montant"} name={"montant"} placeholder="Montant" />
+                                                                            <FormInputWithLabel title={"Montant"} name={"amount"} placeholder="Montant" />
                                                                         }
 
                                                                         {action === 'prolonger' &&
@@ -280,7 +286,7 @@ function Main({ id_eglise, filters, modal, setBudget, setModal }) {
 
                                                         {!action &&
                                                             <ContentPermsWrapper requiredPerms={['ajouter_budget']}>
-                                                                {(permissions.superAdmin || id_eglise == admin.id_eglise) &&
+                                                                {(permissions.superAdmin || id_eglise == admin.church_id) &&
                                                                     <div className='btn-group btn-group-sm mt-2 float-end'>
                                                                         <button className="btn btn-outline-primary" onClick={() => setAction('prolonger')}>
                                                                             <FontAwesomeIcon icon={faCalendar} />

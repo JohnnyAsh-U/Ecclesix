@@ -16,24 +16,24 @@ export function Ajouter({ handleModal, modal, comptes, categorie, eglise }) {
 
     const formik = useFormik({
         initialValues: {
-            lib_budget: '',
-            id_compte: '0',
-            id_categorie: '0',
-            montant: '',
-            date_de_debut: date_aujourdhui(new Date()),
-            date_de_fin: '',
+            budget_name: '',
+            account: '0',
+            category: '0',
+            allocated_amount: '',
+            start_date: date_aujourdhui(new Date()),
+            end_date: '',
         },
         validationSchema: yup.object({
-            lib_budget: yup.string().required('Ce champ est requis'),
-            id_compte: yup.number().notOneOf([0], 'Ce champ est requis'),
-            id_categorie: yup.number().notOneOf([0], 'Ce champ est requis'),
-            montant: yup.number().required('Ce champ est requis').min(1, 'Ce champ est requis'),
-            date_de_debut: yup.string().required('Ce champ est requis'),
-            date_de_fin: yup.date().required('Ce champ est requis').min(new Date(), 'Pas Valide')
+            budget_name: yup.string().required('Ce champ est requis'),
+            account: yup.number().notOneOf([0], 'Ce champ est requis'),
+            category: yup.number().notOneOf([0], 'Ce champ est requis'),
+            allocated_amount: yup.number().required('Ce champ est requis').min(1, 'Ce champ est requis'),
+            start_date: yup.string().required('Ce champ est requis'),
+            end_date: yup.date().required('Ce champ est requis').min(new Date(), 'Pas Valide')
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/finance/budgets`, { values }).then(data => {
+            axios.post(`/finance/budgets`,  values).then(data => {
                 formik.resetForm()
                 handleModal()
                 toast.success("Success")
@@ -54,72 +54,72 @@ export function Ajouter({ handleModal, modal, comptes, categorie, eglise }) {
                 </Modal.Header>
                 <Modal.Body>
                     <div className="form-group row mb-2">
-                        <label htmlFor="lib_budget" className="col-sm-3 col-form-label fw-bold">
+                        <label htmlFor="budget_name" className="col-sm-3 col-form-label fw-bold">
                             Budget
                         </label>
                         <div className='col-sm-9'>
-                            <input className='form-control' id="lib_budget" name='lib_budget' {...formik.getFieldProps('lib_budget')} placeholder='Budget' />
-                            {formik.touched.lib_budget && formik.errors.lib_budget ? (<small className='text-danger'>{formik.errors.lib_budget}</small>) : null}
+                            <input className='form-control' id="budget_name" name='budget_name' {...formik.getFieldProps('budget_name')} placeholder='Budget' />
+                            {formik.touched.budget_name && formik.errors.budget_name ? (<small className='text-danger'>{formik.errors.budget_name}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="id_compte" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="account" className="fw-bold col-sm-3 col-form-label">
                             Compte
                         </label>
                         <div className='col-sm-9'>
-                            <select name='id_compte' className="form-select form-control mb-1"  {...formik.getFieldProps('id_compte')}>
+                            <select name='account' className="form-select form-control mb-1"  {...formik.getFieldProps('account')}>
                                 <option value={0}>Choississez le compte </option>
                                 {comptes.map((compte) =>
-                                    <option key={compte.id_compte} value={compte.id_compte}>{compte.lib_compte}</option>
+                                    <option key={compte.id} value={compte.id}>{compte.account_name}</option>
                                 )}
                             </select>
-                            {formik.touched.id_compte && formik.errors.id_compte ? (<small className='text-danger'>{formik.errors.id_compte}</small>) : null}
+                            {formik.touched.account && formik.errors.account ? (<small className='text-danger'>{formik.errors.account}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="id_categorie" className="fw-bold col-sm-3 col-form-label">
+                        <label htmlFor="category" className="fw-bold col-sm-3 col-form-label">
                             Type
                         </label>
                         <div className='col-sm-9'>
-                            <select size="md" name='id_categorie' className="form-select form-control mb-1"  {...formik.getFieldProps('id_categorie')}>
+                            <select size="md" name='category' className="form-select form-control mb-1"  {...formik.getFieldProps('category')}>
                                 <option value={0}>Choississez type Budget </option>
                                 {categorie.map((c) =>
-                                    <option key={c.id_categorie} value={c.id_categorie}>{c.lib_categorie}</option>
+                                    <option key={c.id} value={c.id}>{c.category_name}</option>
                                 )}
                             </select>
-                            {formik.touched.id_categorie && formik.errors.id_categorie ? (<small className='text-danger'>{formik.errors.id_categorie}</small>) : null}
+                            {formik.touched.category && formik.errors.category ? (<small className='text-danger'>{formik.errors.category}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="montant" className="col-sm-3 col-form-label fw-bold">
+                        <label htmlFor="allocated_amount" className="col-sm-3 col-form-label fw-bold">
                             Montant
                         </label>
                         <div className='col-sm-9'>
-                            <input className='form-control' id="montant" type='number' name='montant' {...formik.getFieldProps('montant')} placeholder='Montant' />
-                            {formik.touched.montant && formik.errors.montant ? (<small className='text-danger'>{formik.errors.montant}</small>) : null}
+                            <input className='form-control' id="allocated_amount" type='number' name='allocated_amount' {...formik.getFieldProps('allocated_amount')} placeholder='Montant' />
+                            {formik.touched.allocated_amount && formik.errors.allocated_amount ? (<small className='text-danger'>{formik.errors.allocated_amount}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="date_de_debut" className="col-sm-3 col-form-label fw-bold">
+                        <label htmlFor="start_date" className="col-sm-3 col-form-label fw-bold">
                             Debut
                         </label>
                         <div className='col-sm-9'>
-                            <input className='form-control' id="date_de_debut" type='date' name='date_de_debut' {...formik.getFieldProps('date_de_debut')} placeholder='Debut' />
-                            {formik.touched.date_de_debut && formik.errors.date_de_debut ? (<small className='text-danger'>{formik.errors.date_de_debut}</small>) : null}
+                            <input className='form-control' id="start_date" type='date' name='start_date' {...formik.getFieldProps('start_date')} placeholder='Debut' />
+                            {formik.touched.start_date && formik.errors.start_date ? (<small className='text-danger'>{formik.errors.start_date}</small>) : null}
                         </div>
                     </div>
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="date_de_fin" className="col-sm-3 col-form-label fw-bold">
+                        <label htmlFor="end_date" className="col-sm-3 col-form-label fw-bold">
                             Fin
                         </label>
                         <div className='col-sm-9'>
-                            <input className='form-control' id="date_de_fin" type='date' name='date_de_fin' {...formik.getFieldProps('date_de_fin')} placeholder='Fin' />
-                            {formik.touched.date_de_fin && formik.errors.date_de_fin ? (<small className='text-danger'>{formik.errors.date_de_fin}</small>) : null}
+                            <input className='form-control' id="end_date" type='date' name='end_date' {...formik.getFieldProps('end_date')} placeholder='Fin' />
+                            {formik.touched.end_date && formik.errors.end_date ? (<small className='text-danger'>{formik.errors.end_date}</small>) : null}
                         </div>
                     </div>
                 </Modal.Body>
@@ -143,24 +143,24 @@ export const Modifier = ({ budget, handleModal, modal }) => {
     const [loading, setLoading] = useState(false)
 
     const initialValues = {
-        lib_budget: budget.lib_budget,
-        montant: budget.montant,
-        date_de_debut: budget.date_de_debut,
-        date_de_fin: budget.date_de_fin,
+        budget_name: budget.budget_name,
+        allocated_amount: budget.allocated_amount,
+        start_date: budget.start_date,
+        end_date: budget.end_date,
     }
 
     const validationSchema = yup.object({
-        lib_budget: yup.string().required('Ce champ est requis'),
-        montant: yup.number().required('Ce champ est requis').min(1, 'Ce champ est requis'),
-        date_de_debut: yup.string().required('Ce champ est requis'),
-        date_de_fin: yup.date().required('Ce champ est requis').min(new Date(), 'Pas Valide')
+        budget_name: yup.string().required('Ce champ est requis'),
+        allocated_amount: yup.number().required('Ce champ est requis').min(1, 'Ce champ est requis'),
+        start_date: yup.string().required('Ce champ est requis'),
+        end_date: yup.date().required('Ce champ est requis').min(new Date(), 'Pas Valide')
     })
 
 
     const submit = (values) => {
         setLoading(true)
         values.action = "all"
-        axios.put(`/finance/budgets/${budget.id_budget}`, { values }).then(data => {
+        axios.patch(`/finance/budgets/${budget.id}`, values ).then(data => {
             handleModal()
             if (data) toast.success("Success")
         })
@@ -183,10 +183,10 @@ export const Modifier = ({ budget, handleModal, modal }) => {
                     validationSchema={validationSchema}
                     onSubmit={submit} >
                     <Form>
-                        <FormInputWithLabel name={"lib_budget"} title={"Budget"} placeholder="Budget" />
-                        <FormInputWithLabel name={"montant"} title={"Montant"} placeholder="Montant" />
-                        <FormInputWithLabel name={"date_de_debut"} title={"Debut"} placeholder="Debut" type="date" />
-                        <FormInputWithLabel name={"date_de_fin"} title={"Fin"} placeholder="Fin" type="date" />
+                        <FormInputWithLabel name={"budget_name"} title={"Budget"} placeholder="Budget" />
+                        <FormInputWithLabel name={"allocated_amount"} title={"Montant"} placeholder="Montant" />
+                        <FormInputWithLabel name={"start_date"} title={"Debut"} placeholder="Debut" type="date" />
+                        <FormInputWithLabel name={"end_date"} title={"Fin"} placeholder="Fin" type="date" />
                         <Modal.Footer>
                             {!loading &&
                                 <button className='btn btn-outline-danger' type='button' onClick={() => handleModal()}>
@@ -211,7 +211,7 @@ export function Supprimer({ budget, modal, handleModal }) {
     const suppression = async (e) => {
         setLoading(true)
         e.preventDefault()
-        axios.delete(`/finance/budgets/${budget.id_budget}`, { withCredentials: true })
+        axios.delete(`/finance/budgets/${budget.id}`)
             .then((data) => {
                 handleModal()
                 toast.success("Success")
@@ -228,7 +228,7 @@ export function Supprimer({ budget, modal, handleModal }) {
                     <Modal.Title className='fs-5'>Supprimer Ce Budget</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <h6>Supprimer ce budget: <span className='text-danger'>{budget.lib_budget}</span> </h6>
+                    <h6>Supprimer ce budget: <span className='text-danger'>{budget.budget_name}</span> </h6>
                 </Modal.Body>
                 <Modal.Footer>
                     {!loading &&

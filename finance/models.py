@@ -13,9 +13,11 @@ class EncryptedField(models.CharField):
         value = super().get_db_prep_value(value, connection, prepared)
         if value is not None:
             return encrypt_amount(value)
+            # return value
 
     def from_db_value(self, value, expression, connection):
         return decrypt_amount(value)
+        # return value
 
 
 class Category(models.Model):
@@ -95,12 +97,12 @@ class Transaction_Rule(models.Model):
 class Budget(models.Model):
     budget_name = models.CharField("Budget Name", max_length=50)
     allocated_amount = EncryptedField(max_length=100)
-    total_amount = EncryptedField(max_length=100)
+    actual_amount = EncryptedField(max_length=100, default=0) 
     start_date = models.DateField()
     end_date = models.DateField()
     category = models.ForeignKey(Category, verbose_name="Budget Category",on_delete=models.CASCADE)
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
-    details = models.JSONField(null=True, blank=True)
+    details = models.JSONField(null=True, blank=True, default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -164,7 +166,7 @@ class Transaction(models.Model):
         Member, on_delete=models.SET_NULL, null=True, blank=True
     )
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, null=True, blank=True)
-    parent = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     budget = models.ForeignKey(Budget, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -184,6 +186,9 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.description}"
+    
+    def get_church(self):
+        return str(getattr(self.from_account, "church", None))
 
 
 class Monthly_Balance(models.Model):
@@ -216,9 +221,9 @@ class Transaction_Log(models.Model):
         max_length=50,
     )
     transaction_no = models.IntegerField("Transaction No")
-    previous_state = models.JSONField(null= True, blank=True)
-    new_state = models.JSONField(null= True, blank=True)
-    comment = models.CharField("Notes", max_length=255)
+    detail = models.JSONField(null= True, blank=True)
+    # new_state = models.JSONField(null= True, blank=True)
+    comment = models.CharField("Notes", max_length=255, blank= True, null=True)
     admin = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

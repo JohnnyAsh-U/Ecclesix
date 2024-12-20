@@ -52,7 +52,7 @@ export default function Ajouter({ type, eglise, categorie, handleModal, modal, t
             setLoading(true)
             values['church'] = eglise
             values['type'] = type
-            axios.post(`/finance/transactions`, values ).then(data => {
+            axios.post(`/finance/transactions`, values).then(data => {
                 toast.success('Success')
                 formik.resetForm()
                 handleModal()
@@ -194,18 +194,6 @@ export function Info({ transaction, handleModal, fetch, modal }) {
     const [loading, setLoading] = useState(false)
 
 
-    const initialValues = {
-        description: transaction.description,
-        amount: transaction.amount,
-        comment: ''
-    }
-    const validationSchema = yup.object({
-        description: yup.string().notRequired(),
-        amount: yup.number().min(1, 'Ce champ est requis'),
-        comment: yup.string().required('Ce champ est requis')
-    })
-
-
     const type = (val) => {
         if (val == 'Credit') {
             return "Collecte"
@@ -258,7 +246,6 @@ export function Info({ transaction, handleModal, fetch, modal }) {
         //checks if the transaction is still pending and the admin not the owner
         //of the transaction
         if (trans.status == 'Pending' && trans.added_by != admin.id) {
-
             //checks if the account of the transaction is the church of the
             //admin or if the admin is a superadmin
             if (transaction.church?.id == admin.church_id) {
@@ -280,10 +267,9 @@ export function Info({ transaction, handleModal, fetch, modal }) {
 
     const validateOrRejectTransaction = async (values) => {
         setLoading(true)
-        const query = new URLSearchParams({ notes: values.notes }).toString()
-        let a = action === 'v' ? 'confirmer' : 'rejecter'
+        let a = action === 'v' ? 'Validate' : 'Reject'
         try {
-            const { data } = await axios.put(`/finance/transactions/${transaction.id}/${a}?${query}`)
+            const { data } = await axios.put(`/finance/transactions/${transaction.id}`, { notes: values.comment, action: a })
             handleModal(null)
             fetch()
             toast.success('Success')
@@ -296,16 +282,13 @@ export function Info({ transaction, handleModal, fetch, modal }) {
     }
 
 
-    const modifyOrDeleteTransaction = async (values) => {
+    const DeleteTransaction = async (values) => {
         setLoading(true)
-        const query = new URLSearchParams({ notes: values.notes }).toString()
+        const query = new URLSearchParams({ notes: values.comment }).toString()
         let data
         try {
-            if (action == 'm') {
-                data = await axios.put(`/finance/transactions/${transaction.id_transaction}/modifier?${query}`, { values })
-            }
             if (action == 's') {
-                data = await axios.delete(`/finance/transactions/${transaction.id_transaction}/supprimer?${query}`)
+                data = await axios.delete(`/finance/transactions/${transaction.id}?${query}`)
             }
             handleModal()
             if (data) toast.success('Success');
@@ -356,33 +339,11 @@ export function Info({ transaction, handleModal, fetch, modal }) {
                     </li>
                 </ul>
 
-                {action === 'm' &&
-                    <Formik
-                        initialValues={initialValues}
-                        validationSchema={validationSchema}
-                        onSubmit={modifyOrDeleteTransaction}
-                    >
-                        <Form className='mt-3' >
-                            <hr />
-                            <FormInputWithLabel name={"amount"} title={"Montant"} placeholder={"Montant"} />
-                            <FormInputWithLabel name={"description"} title={"Descsription"} placeholder={"Description"} />
-                            <FormInputWithLabel name={"comment"} title={"Observation"} placeholder={"Observation"} />
-                            <Modal.Footer>
-                                {!loading &&
-                                    <button className="btn btn-danger btn-outline-danger" onClick={() => setAction(null)}>
-                                        Fermer
-                                    </button>}
-                                <LoadingButton2 color={"primary"} loading={loading} name={"Modifier"} type={"submit"} />
-                            </Modal.Footer>
-                        </Form>
-                    </Formik>
-                }
-
                 {action === 's' &&
                     <Formik
                         initialValues={{ comment: '' }}
                         validationSchema={yup.object({ comment: yup.string().required('Ce champ est requis') })}
-                        onSubmit={modifyOrDeleteTransaction}
+                        onSubmit={DeleteTransaction}
                     >
                         <Form className='mt-3' >
                             <FormInputWithLabel name={"comment"} title={"Observation"} placeholder={"Observation"} />
@@ -427,12 +388,6 @@ export function Info({ transaction, handleModal, fetch, modal }) {
             {!transaction.parent && !action &&
                 <Modal.Footer>
                     <ShowEditDeleteButtons trans={transaction}>
-                        <button className='btn btn-outline-dark rounded float-end mt-2'
-                            type='submit'
-                            onClick={() => setAction('m')}
-                        > <FontAwesomeIcon icon={faEdit} /> Modifier
-                        </button>
-
                         <button className='btn btn-outline-danger rounded float-end mt-2'
                             type='submit'
                             onClick={() => setAction("s")}

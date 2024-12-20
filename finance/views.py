@@ -3,15 +3,17 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     UpdateAPIView,
     ListAPIView,
+    CreateAPIView
 )
 from .serializers import (
     CategorySerializer,
     RuleSerializer,
     AccountSerializer,
     TransactionSerializer,
-    TransactionLogSerializer
+    TransactionLogSerializer,
+    BudgetSerializer,
 )
-from rest_framework.exceptions import ParseError, NotFound
+from rest_framework.exceptions import ParseError
 from .models import (
     Category,
     Transaction_Rule,
@@ -19,6 +21,7 @@ from .models import (
     Transaction,
     Monthly_Balance,
     Transaction_Log,
+    Budget,
 )
 from event.models import Event
 from rest_framework.views import APIView
@@ -31,12 +34,13 @@ from django.db.models import Sum
 from church.models import Church
 from church.serializers import SimpleChurchSerializer
 from decimal import Decimal
-from datetime import date
+from datetime import date, datetime
 from dateutil.relativedelta import *
 from members.models import Member
 from django.db import transaction
 from django.db.models import Q
 from .services import transaction_table
+from .utils import encrypt_amount
 
 
 class CategoryListCreateView(ListCreateAPIView):
@@ -562,7 +566,7 @@ class TransactionListCreateView(ListCreateAPIView):
             action="Created",
             transaction_no=instance["id"],
             admin=request.user,
-            new_state={
+            detail={
                 "categorie": category,
                 "montant": instance["amount"],
                 "transaction": transactionType[instance["transaction_type"]],
@@ -601,10 +605,11 @@ class TransactionListCreateView(ListCreateAPIView):
                 return cat
 
 
-class TransactionValidateOrReject(UpdateAPIView):
+class TransactionValidateRejectDelete(UpdateAPIView):
     perms = {
         "OPTIONS": ["superadmin"],
         "PUT": ["confirmer_transaction"],
+        "DELETE": ["ajouter_transaction"],
     }
     serializer_class = TransactionSerializer
     queryset = Transaction.objects.all()
@@ -615,29 +620,147 @@ class TransactionValidateOrReject(UpdateAPIView):
             with transaction.atomic():
                 action = data["action"]
                 if action == "Validate":
-                    self.validate(request, data)
+                    self.validate(request)
                 elif action == "Reject":
-                    self.reject(request, data)
+                    self.reject(request)
                 else:
                     raise ParseError("Not Valid")
             return Response(status=status.HTTP_201_CREATED)
         except BaseException as m:
+            print(m)
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        try:
-            pass
-        except:
-            pass
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
 
     def validate(self, request):
-        instance = self.get_object()
+        instance: Transaction = self.get_object()
+        data = request.data
+        comment = data.get("notes", None)
+        if instance.transaction_type == "Credit":
+            acc = instance.from_account
+            acc.balance = Decimal(acc.balance) + Decimal(instance.amount)
+            acc.save()
+            # get the children tranfer transaction
+            children_trans = instance.transaction_set.all()
+
+            if children_trans:
+                for t in children_trans:
+                    parent_acc_balance = instance.from_account.balance
+                    child_acc_balance = t.to_account.balance
+
+                    # deduct the child transaction amount from the parent acc
+                    if Decimal(parent_acc_balance) < Decimal(t.amount):
+                        raise ValueError("Not Valid")
+                    instance.from_account.balance = Decimal(
+                        parent_acc_balance
+                    ) - Decimal(t.amount)
+                    # add the child transaction amount to the (to_account) acc
+                    t.to_account.balance = Decimal(child_acc_balance) + Decimal(
+                        t.amount
+                    )
+
+                    # save the account balance
+                    t.to_account.save()
+                    instance.from_account.save()
+
+                    # confirm the child transaction
+                    t.status = "Validated"
+                    t.approved_by = request.user
+                    t.save()
+
+            serializer = self.get_serializer(
+                instance,
+                data={
+                    "status": "Validated",
+                    "approved_by": request.user.id,
+                },
+                partial=True,
+                context={"comment": comment, "request": request},
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        elif instance.transaction_type == "Debit":
+            acc = instance.from_account
+            if Decimal(acc.balance) < Decimal(instance.amount):
+                raise ValueError("Solde Insuffisant")
+
+            # Deduct the money to the account
+            acc.balance = Decimal(acc.balance) - Decimal(instance.amount)
+
+            # update the actual amount on the budget
+            if instance.budget:
+                budget = instance.budget
+                budget.actual_amount = Decimal(budget.actual_amount) + Decimal(
+                    instance.amount
+                )
+                instance.budget.save()
+
+            acc.save()
+
+            serializer = self.get_serializer(
+                instance,
+                data={
+                    "status": "Validated",
+                    "approved_by": request.user.id,
+                },
+                partial=True,
+                context={"comment": comment, "request": request},
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        elif instance.transaction_type == "Transfer":
+            debit_acc = instance.from_account
+            credit_acc = instance.to_account
+            if Decimal(debit_acc.balance) < Decimal(credit_acc.balance):
+                raise ValueError("Solde Insuffisant")
+
+            # Deduct the money to the account
+            debit_acc.balance = Decimal(debit_acc.balance) - Decimal(instance.amount)
+
+            # credit the money to the account
+            credit_acc.balance = Decimal(credit_acc.balance) + Decimal(instance.amount)
+
+            debit_acc.save()
+            credit_acc.save()
+
+            serializer = self.get_serializer(
+                instance,
+                data={
+                    "status": "Validated",
+                    "approved_by": request.user.id,
+                },
+                partial=True,
+                context={"comment": comment, "request": request},
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        else:
+            raise Exception()
 
     def reject(self, request):
         instance = self.get_object()
+        data = request.data
+        comment = data.get("notes", None)
+
+        if instance.transaction_type == "Credit":
+            # get the children tranfer transaction
+            children_trans = instance.transaction_set.all()
+            if children_trans:
+                for t in children_trans:
+                    # reject the child transaction
+                    t.status = "Rejected"
+                    t.approved_by = request.user
+                    t.save()
+
+        serializer = self.get_serializer(
+            instance,
+            data={
+                "status": "Rejected",
+                "approved_by": request.user.id,
+            },
+            partial=True,
+            context={"comment": comment, "request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
 
     def check_object_permissions(self, request, obj):
         """
@@ -647,18 +770,18 @@ class TransactionValidateOrReject(UpdateAPIView):
         # checks if the transaction has been confirmed or rejected
         # if so return a bad request
         if obj.status == "Validated" or obj.status == "Rejected":
-            self.permission_denied(request, message="400", code="400")
+            self.permission_denied(request, message="Not Pending", code="400")
 
         # checks if the admin that created the transaction is not
         # same admin that confirms it
-        if obj.added_by == request.user.id:
-            self.permission_denied(request, message="400", code="400")
+        if obj.added_by_id == request.user.id:
+            self.permission_denied(request, message="Own Transaction", code="400")
 
         # checks if its a credit transaction and if the has a parent id
         # meaning rule based transaction cannot be validated as standalone
         # but only with their parent transaction
         if obj.transaction_type == "Credit" and obj.parent:
-            self.permission_denied(request, message="400", code="400")
+            self.permission_denied(request, message="Rule Transaction", code="400")
 
         # //checks if the admin isnt a superadmin, and so the church of the admin
         # //must match the church of the account that made the transaction
@@ -666,8 +789,200 @@ class TransactionValidateOrReject(UpdateAPIView):
             not request.user.is_superuser
             and obj.from_account.church_id != request.user.church_id
         ):
-            self.permission_denied(request, message="400", code="400")
+            self.permission_denied(request, message="No Perm", code="400")
 
+    def delete(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                id = kwargs[self.lookup_field]
+                transaction_french = {
+                    "Debit": "Depense",
+                    "Credit": "Collecte",
+                    "Transfer": "Transfert",
+                }
+                instance = Transaction.objects.get(id=id)
+                self.check_delete_permissions(request, instance)
+                notes = request.query_params.get("notes", None)
+                print(notes)
+                Transaction_Log.objects.create(
+                    action="Deleted",
+                    transaction_no=instance.pk,
+                    admin_id=request.user.id,
+                    detail={
+                        "categorie": str(instance.category),
+                        "montant": instance.amount,
+                        "transaction": transaction_french[instance.transaction_type],
+                        "compte": str(instance.from_account),
+                        "au_compte": str(instance.to_account),
+                    },
+                    comment=notes,
+                )
+                detail = {
+                    "resource": "Transaction",
+                    "id": instance.pk,
+                    "lib": f"#{instance.id} {transaction_french[instance.transaction_type]} ({instance.get_church()})",
+                }
+                Log.objects.create(
+                    admin_id=request.user.id, log_type="DELETE", detail=detail
+                )
+                instance.delete()
+            return Response(status=status.HTTP_201_CREATED)
+        except BaseException as m:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    def check_delete_permissions(self, request, obj):
+        if obj.status != "Pending" or obj.approved_by_id or obj.parent_id:
+            self.permission_denied(request, message="Not Pending", code="400")
+
+        if obj.added_by_id != request.user.id:
+            self.permission_denied(request, message="Not admin transaction", code="400")
+
+
+class BudgetListCreateView(ListCreateAPIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["voir_finance", "voir_toutes_finances"],
+        "POST": ["ajouter_budget"],
+    }
+    serializer_class = BudgetSerializer
+    queryset = Budget.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        query = self.request.query_params
+        church = query.get("id_eglise", None)
+        category = query.get("id_categorie", None)
+        month = int(query.get("mois", date.today().month - 1))
+        year = int(query.get("annee", date.today().year))
+
+        if not user.is_superuser and not user.has_perm_custom("voir_toutes_finances"):
+            church = user.church_id
+
+        queryset = self.get_queryset()
+
+        if month != "tout":
+            queryset = queryset.filter(
+                start_date__lte=date(year, month + 1, 1) + relativedelta(day=31),
+            ).filter(end_date__gte=date(year, month + 1, 1))
+
+        if category and category != "tout":
+            queryset = queryset.filter(category_id=category)
+
+        queryset = queryset.filter(account__church__id=church).filter(
+            account__account_type="Caisse"
+        )
+        serializer = self.get_serializer(queryset, many=True)
+
+        ViewLogger(user.id, {"resource": "Finance - Budgets"})
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        detail = {
+            "resource": "Budget",
+            "id": serializer.data["id"],
+            "lib": f"{serializer.data['budget_name']} ({serializer.data['church_name']})",
+        }
+        Log.objects.create(admin_id=request.user.id, log_type="INSERT", detail=detail)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+
+class BudgetRUDView(RetrieveUpdateDestroyAPIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["voir_finance", "voir_toutes_finances"],
+        "PATCH": ["ajouter_budget"],
+        "DELETE": ["superAdmin"],
+    }
+    serializer_class = BudgetSerializer
+    queryset = Budget.objects.all()
+    
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        trans = TransactionSerializer(instance.transaction_set.all(), many=True)
+        print(trans)
+        details = {}
+        budget_details = instance.details
+        for b in budget_details:
+            admin = Member.objects.filter(id=budget_details[b]['admin']).first()
+            details[b] = {
+                **budget_details[b],
+                "admin": admin.get_full_name()
+            }
+        return Response({"data": trans.data, "details": details})
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        data = request.data
+        action = data.pop("action", None)
+        if action == "all":
+            serializer = self.get_serializer(
+                instance, data=request.data, partial=partial
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+        elif action == "amount":
+            amount = data.get("amount", None)
+            extension_no = len(instance.details)
+            instance.details = {
+                **instance.details,
+                f"{extension_no+1}": {
+                    "admin": request.user.id,
+                    "extension": "amount",
+                    "old": instance.allocated_amount,
+                    "new": str(Decimal(instance.allocated_amount) + Decimal(amount)),
+                    "date": str(datetime.now()),
+                },
+            }
+            instance.allocated_amount = Decimal(instance.allocated_amount) + Decimal(
+                amount
+            )
+            instance.save()
+        elif action == "date":
+            new_date = data.get("date", None)
+            print(new_date)
+            extension_no = len(instance.details)
+            instance.details = {
+                **instance.details,
+                f"{extension_no+1}": {
+                    "admin": request.user.id,
+                    "extension": "date",
+                    "old": str(instance.end_date),
+                    "new": new_date,
+                    "date": str(datetime.now()),
+                },
+            }
+            instance.end_date = new_date
+            instance.save()
+        else:
+            raise ParseError()
+        return Response(status=status.HTTP_201_CREATED)
+    
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        church = str(getattr(instance.account, "church", None))
+        detail = {
+            "resource": "Budget",
+            "id": instance.id,
+            "lib": f"{instance.budget_name} ({church})",
+        }
+        Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class BudgetAddExpenses(CreateAPIView):
+    perms = {
+        "POST" : ['ajouter_transaction']
+    }
 
 class TransactionLogTableData(APIView):
     perms = {
@@ -687,9 +1002,13 @@ class TransactionLogTableData(APIView):
         firstDate = Transaction_Log.objects.order_by("created_at").first()
 
         return Response(
-            data={"alladmins": all_admins_list, "first_date": getattr(firstDate, "created_at", "01-01-2024")}
+            data={
+                "alladmins": all_admins_list,
+                "first_date": getattr(firstDate, "created_at", "01-01-2024"),
+            }
         )
-        
+
+
 class TransactionLogTable(ListAPIView):
     perms = {
         "OPTIONS": ["superadmin"],
@@ -697,35 +1016,32 @@ class TransactionLogTable(ListAPIView):
     }
     queryset = Transaction_Log.objects.all()
     serializer_class = TransactionLogSerializer
-    
-    
+
     def list(self, request, *args, **kwargs):
         query = request.query_params
-        action = query.get('action', None)
-        admin = query.get('admin', None)
-        search = query.get('search', None)
-        month = int(query.get('mois', date.today().month-1))
-        year = int(query.get('annee', date.today().year))
-        
+        action = query.get("action", None)
+        admin = query.get("admin", None)
+        search = query.get("search", None)
+        month = int(query.get("mois", date.today().month - 1))
+        year = int(query.get("annee", date.today().year))
+
         queryset = self.filter_queryset(self.get_queryset())
-        
-        
+
         if search:
-            queryset = queryset.filter(transaction_no = int(search))
-           
-        if action and action != 'tout':
-            queryset = queryset.filter(action = action)
-           
-            
-        if admin and admin !='tout':
-            queryset = queryset.filter(admin_id = admin)
-            
+            queryset = queryset.filter(transaction_no=int(search))
+
+        if action and action != "tout":
+            queryset = queryset.filter(action=action)
+
+        if admin and admin != "tout":
+            queryset = queryset.filter(admin_id=admin)
+
         queryset = queryset.filter(
-            created_at__date__range = (
+            created_at__date__range=(
                 date(year, month + 1, 1),
                 date(year, month + 1, 1) + relativedelta(day=31),
             )
-        ).order_by('-id')
+        ).order_by("-id")
 
         serializer = self.get_serializer(queryset, many=True)
         return Response({"logs": serializer.data})

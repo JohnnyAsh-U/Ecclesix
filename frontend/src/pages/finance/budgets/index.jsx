@@ -49,19 +49,17 @@ function Budgets() {
     const fetchEgliseCompte = async () => {
         if (!eglises.length) setLoading(true);
         try {
-            const { data } = await axios.get(`/finance/eglises`,
-                { withCredentials: true }
-            );
+            const { data } = await axios.get(`/finance`);
             setFirstDate(data.date)
-            setListeCategories(data.categorie)
-            setToutComptes(data.toutComptes)
-            setEglises(data.res); //when the church is empty the comp doesn't load
+            setListeCategories(data.category)
+            setToutComptes(data.account)
+            setEglises(data.church_account); //when the church is empty the comp doesn't load
 
-            if (data.res.length > 0) {
+            if (data.church_account.length > 0) {
                 //if admin church doesn't have an account we set it to the first church and first account
-                let adminEglise = data.res.find(eg => eg.id_eglise == admin.id_eglise) || data.res[0]
-                setCurrentEglise(adminEglise?.id_eglise)
-                setComptes(adminEglise?.comptes)
+                let adminEglise = data.church_account.find(eg => eg.id == admin.church_id) || data.church_account[0]
+                setCurrentEglise(adminEglise?.id)
+                setComptes(adminEglise?.accounts)
             }
 
         } catch (err) {
@@ -77,13 +75,13 @@ function Budgets() {
 
     useEffect(() => {
         if (currentEglise) {
-            let adminEglise = eglises.find(eg => eg.id_eglise == currentEglise)
-            setComptes(adminEglise?.comptes)
+            let adminEglise = eglises.find(eg => eg.id == currentEglise)
+            setComptes(adminEglise?.accounts)
         }
     }, [currentEglise])
 
 
-    const categorieBudget = listeCategories.filter(c => c.type === 'Budget')
+    const categorieBudget = listeCategories.filter(c => c.category_type === 'Budget')
 
     return (
         <>  {loading && <LoadingPage />}
@@ -91,7 +89,7 @@ function Budgets() {
                 <div>
                     <BreadCrumb title={"Finance - Budgets"} icon={<FontAwesomeIcon icon={faMoneyCheck} />}>
                         <ContentPermsWrapper requiredPerms={['ajouter_budget']}>
-                            {(permissions.superAdmin || currentEglise == admin.id_eglise) &&
+                            {(permissions.superAdmin || currentEglise == admin.church_id) &&
                                 <button
                                     className='btn btn-round btn-primary btn-sm hor-grd btn-grd-primary float-end'
                                     onClick={() => { setModal('ajouter') }}>
@@ -118,7 +116,7 @@ function Budgets() {
                                             </label>
                                             <FormSelect id='eglise' name='eglise' onChange={(e) => setCurrentEglise(e.target.value)} value={currentEglise}>
                                                 {eglises.map(eglise =>
-                                                    <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                                    <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                                 )}
                                             </FormSelect>
                                         </div>
@@ -132,7 +130,7 @@ function Budgets() {
                                             onChange={({ target }) => setFilters({ ...filters, [target.name]: target.value })}>
                                             <option value={'tout'}>Touts</option>
                                             {categorieBudget.map((budget, id) =>
-                                                <option key={budget.id_categorie} value={budget.id_categorie}>{budget.lib_categorie}</option>
+                                                <option key={budget.id} value={budget.id}>{budget.category_name}</option>
                                             )}
                                         </FormSelect>
                                     </div>
@@ -198,7 +196,7 @@ function Budgets() {
                             handleModal={handleModal}
                             modal={modal}
                             budget={budget}
-                            categorie={listeCategories.filter(c => c.type === 'Debit')}
+                            categorie={listeCategories.filter(c => c.category_type === 'Debit')}
                         />
                     </div>
 

@@ -50,8 +50,8 @@ function LogTable({ filters }) {
                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>ID</th>
                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Date</th>
                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Admin</th>
-                                <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Etat Precedent</th>
-                                <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Nouvel Etat</th>
+                                <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Detail</th>
+                                {/* <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Nouvel Etat</th> */}
                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Observations</th>
                             </tr>
                         </thead>
@@ -66,9 +66,9 @@ function LogTable({ filters }) {
                                     <td className='text-wrap'>
                                         {d.admin}
                                     </td>
-                                    <td className='small'>{stateObject(d.previous_state)}</td>
-                                    <td className='small'>{stateObject(d.new_state)}</td>
-                                    <td >{d.remark}</td>
+                                    <td className='small'>{stateObject(d.detail)}</td>
+                                    {/* <td className='small'>{stateObject(d.new_state)}</td> */}
+                                    <td >{d.comment}</td>
                                 </tr>
                             )}
                             {/* {result && result.map(d =>
