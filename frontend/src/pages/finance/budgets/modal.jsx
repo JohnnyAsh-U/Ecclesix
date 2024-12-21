@@ -246,20 +246,21 @@ export function Supprimer({ budget, modal, handleModal }) {
 export function DepenseBudget({ budget, modal, categorie, handleModal }) {
     const [loading, setLoading] = useState(false)
 
+
     const formik = useFormik({
         initialValues: {
-            id_categorie: '',
+            category: '',
             description: '',
-            montant: '',
+            amount: '',
         },
         validationSchema: yup.object({
-            id_categorie: yup.number().notOneOf(['0'], 'Ce champ est requis'),
-            montant: yup.number().required('Ce champ est requis').min(1, 'Ce champ est requis'),
+            category: yup.number().notOneOf(['0'], 'Ce champ est requis'),
+            amount: yup.number().required('Ce champ est requis').min(1, 'Ce champ est requis'),
             description: yup.string().required('Ce champ est requis'),
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/finance/budgets/${budget.id_budget}/depense`, { values }).then(data => {
+            axios.post(`/finance/budgets/${budget.id}/add-expense`, values).then(data => {
                 formik.resetForm()
                 toast.success("Success")
                 handleModal(null)
@@ -275,22 +276,22 @@ export function DepenseBudget({ budget, modal, categorie, handleModal }) {
         <Modal show={modal === 'depense'} onHide={() => handleModal()} centered>
             <form onSubmit={formik.handleSubmit}>
                 <Modal.Header>
-                    <Modal.Title className='fs-5'>Ajouter Une Depense ({budget.lib_budget})</Modal.Title>
+                    <Modal.Title className='fs-5'>Ajouter Une Depense ({budget.budget_name})</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="id_categorie" className="col-sm-3 col-form-label fw-bold">
+                        <label htmlFor="category" className="col-sm-3 col-form-label fw-bold">
                             Depense
                         </label>
                         <div className='col-sm-9'>
-                            <select name='id_categorie' className="form-select form-control mb-1"  {...formik.getFieldProps('id_categorie')}>
+                            <select name='category' className="form-select form-control mb-1"  {...formik.getFieldProps('category')}>
                                 <option value={0}>Choississez Depense</option>
                                 {categorie.map((c) =>
-                                    <option key={c.id_categorie} value={c.id_categorie}>{c.lib_categorie}</option>
+                                    <option key={c.id} value={c.id}>{c.category_name}</option>
                                 )}
                             </select>
-                            {formik.touched.id_categorie && formik.errors.id_categorie ? (<small className='text-danger'>{formik.errors.id_categorie}</small>) : null}
+                            {formik.touched.category && formik.errors.category ? (<small className='text-danger'>{formik.errors.category}</small>) : null}
                         </div>
                     </div>
 
@@ -306,12 +307,12 @@ export function DepenseBudget({ budget, modal, categorie, handleModal }) {
                     </div>
 
                     <div className="form-group row mb-2">
-                        <label htmlFor="montant" className="col-sm-3 col-form-label fw-bold">
+                        <label htmlFor="amount" className="col-sm-3 col-form-label fw-bold">
                             Montant
                         </label>
                         <div className='col-sm-9'>
-                            <input className='form-control' id="montant" type='number' name='montant' {...formik.getFieldProps('montant')} placeholder='Montant' />
-                            {formik.touched.montant && formik.errors.montant ? (<small className='text-danger'>{formik.errors.montant}</small>) : null}
+                            <input className='form-control' id="amount" type='number' name='amount' {...formik.getFieldProps('amount')} placeholder='Montant' />
+                            {formik.touched.amount && formik.errors.amount ? (<small className='text-danger'>{formik.errors.amount}</small>) : null}
                         </div>
                     </div>
 

@@ -15,6 +15,7 @@ urlpatterns = [
     path('/budgets', views.BudgetListCreateView.as_view(), name="budget-list-create"),
     path('/budgets/<int:pk>', views.BudgetRUDView.as_view(), name="budget-rud"),
     path('/budgets/<int:pk>/add-expense', views.BudgetAddExpenses.as_view(), name="budget-add-expense"),
+    path('/rapports', views.Report.as_view(), name="report"),
     path('/transactions-logs/filters', views.TransactionLogTableData.as_view(), name="transaction-log-data"),
     path('/transactions-logs', views.TransactionLogTable.as_view(), name="transaction-log"),
 ]

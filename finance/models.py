@@ -16,7 +16,7 @@ class EncryptedField(models.CharField):
             # return value
 
     def from_db_value(self, value, expression, connection):
-        return decrypt_amount(value)
+        return Decimal(decrypt_amount(value))
         # return value
 
 
@@ -205,7 +205,7 @@ class Monthly_Balance(models.Model):
         default_permissions = ()
 
     def __str__(self):
-        f"{self.account.account_name}"
+        return f"{self.account.account_name}"
 
 
 class Transaction_Log(models.Model):

@@ -373,7 +373,6 @@ class VerifyOTP(APIView):
             return response
 
         except Exception as m:
-            print(m)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 

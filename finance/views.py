@@ -3,7 +3,7 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     UpdateAPIView,
     ListAPIView,
-    CreateAPIView
+    CreateAPIView,
 )
 from .serializers import (
     CategorySerializer,
@@ -39,8 +39,9 @@ from dateutil.relativedelta import *
 from members.models import Member
 from django.db import transaction
 from django.db.models import Q
-from .services import transaction_table
+from .services import transaction_table, report_table
 from .utils import encrypt_amount
+import copy
 
 
 class CategoryListCreateView(ListCreateAPIView):
@@ -235,7 +236,6 @@ class AccountCreateListView(ListCreateAPIView):
                 )
 
         except BaseException as m:
-            print(m)
             return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
     def list(self, request, *args, **kwargs):
@@ -465,7 +465,6 @@ class TransactionListCreateView(ListCreateAPIView):
                     raise ParseError("Not Valid")
             return Response(status=status.HTTP_201_CREATED)
         except BaseException as m:
-            print(m)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def credit_transaction(self, request, data):
@@ -497,7 +496,6 @@ class TransactionListCreateView(ListCreateAPIView):
                 calculated_amount = (Decimal(rule.percentage) / 100) * Decimal(
                     data["amount"]
                 )
-                print(calculated_amount)
                 rule_transaction = self.get_serializer(
                     data={
                         "description": data["description"],
@@ -515,7 +513,7 @@ class TransactionListCreateView(ListCreateAPIView):
 
     def debit_transaction(self, request, data):
         from_account = Account.objects.get(id=data["from_account"])
-        if Decimal(from_account.balance) < Decimal(str(data["amount"])):
+        if from_account.balance < Decimal(str(data["amount"])):
             raise ValidationError("Solde Insuffisant")
 
         serializer = self.get_serializer(
@@ -535,7 +533,7 @@ class TransactionListCreateView(ListCreateAPIView):
     def transfer_transaction(self, request, data):
         from_account = Account.objects.get(id=data["from_account"])
         to_account = Account.objects.get(id=data["to_account"])
-        if Decimal(from_account.balance) < Decimal(str(data["amount"])):
+        if from_account.balance < Decimal(str(data["amount"])):
             raise ValidationError("Solde Insuffisant")
 
         serializer = self.get_serializer(
@@ -627,7 +625,6 @@ class TransactionValidateRejectDelete(UpdateAPIView):
                     raise ParseError("Not Valid")
             return Response(status=status.HTTP_201_CREATED)
         except BaseException as m:
-            print(m)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def validate(self, request):
@@ -636,7 +633,7 @@ class TransactionValidateRejectDelete(UpdateAPIView):
         comment = data.get("notes", None)
         if instance.transaction_type == "Credit":
             acc = instance.from_account
-            acc.balance = Decimal(acc.balance) + Decimal(instance.amount)
+            acc.balance = acc.balance + instance.amount
             acc.save()
             # get the children tranfer transaction
             children_trans = instance.transaction_set.all()
@@ -647,15 +644,11 @@ class TransactionValidateRejectDelete(UpdateAPIView):
                     child_acc_balance = t.to_account.balance
 
                     # deduct the child transaction amount from the parent acc
-                    if Decimal(parent_acc_balance) < Decimal(t.amount):
+                    if parent_acc_balance < t.amount:
                         raise ValueError("Not Valid")
-                    instance.from_account.balance = Decimal(
-                        parent_acc_balance
-                    ) - Decimal(t.amount)
+                    instance.from_account.balance = parent_acc_balance - t.amount
                     # add the child transaction amount to the (to_account) acc
-                    t.to_account.balance = Decimal(child_acc_balance) + Decimal(
-                        t.amount
-                    )
+                    t.to_account.balance = child_acc_balance + t.amount
 
                     # save the account balance
                     t.to_account.save()
@@ -679,18 +672,16 @@ class TransactionValidateRejectDelete(UpdateAPIView):
             self.perform_update(serializer)
         elif instance.transaction_type == "Debit":
             acc = instance.from_account
-            if Decimal(acc.balance) < Decimal(instance.amount):
+            if acc.balance < instance.amount:
                 raise ValueError("Solde Insuffisant")
 
             # Deduct the money to the account
-            acc.balance = Decimal(acc.balance) - Decimal(instance.amount)
+            acc.balance = acc.balance - instance.amount
 
             # update the actual amount on the budget
             if instance.budget:
                 budget = instance.budget
-                budget.actual_amount = Decimal(budget.actual_amount) + Decimal(
-                    instance.amount
-                )
+                budget.actual_amount = budget.actual_amount + instance.amount
                 instance.budget.save()
 
             acc.save()
@@ -709,14 +700,14 @@ class TransactionValidateRejectDelete(UpdateAPIView):
         elif instance.transaction_type == "Transfer":
             debit_acc = instance.from_account
             credit_acc = instance.to_account
-            if Decimal(debit_acc.balance) < Decimal(credit_acc.balance):
+            if debit_acc.balance < credit_acc.balance:
                 raise ValueError("Solde Insuffisant")
 
             # Deduct the money to the account
-            debit_acc.balance = Decimal(debit_acc.balance) - Decimal(instance.amount)
+            debit_acc.balance = debit_acc.balance - instance.amount
 
             # credit the money to the account
-            credit_acc.balance = Decimal(credit_acc.balance) + Decimal(instance.amount)
+            credit_acc.balance = credit_acc.balance + instance.amount
 
             debit_acc.save()
             credit_acc.save()
@@ -803,7 +794,6 @@ class TransactionValidateRejectDelete(UpdateAPIView):
                 instance = Transaction.objects.get(id=id)
                 self.check_delete_permissions(request, instance)
                 notes = request.query_params.get("notes", None)
-                print(notes)
                 Transaction_Log.objects.create(
                     action="Deleted",
                     transaction_no=instance.pk,
@@ -901,21 +891,16 @@ class BudgetRUDView(RetrieveUpdateDestroyAPIView):
     }
     serializer_class = BudgetSerializer
     queryset = Budget.objects.all()
-    
-    
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        
+
         trans = TransactionSerializer(instance.transaction_set.all(), many=True)
-        print(trans)
         details = {}
         budget_details = instance.details
         for b in budget_details:
-            admin = Member.objects.filter(id=budget_details[b]['admin']).first()
-            details[b] = {
-                **budget_details[b],
-                "admin": admin.get_full_name()
-            }
+            admin = Member.objects.filter(id=budget_details[b]["admin"]).first()
+            details[b] = {**budget_details[b], "admin": admin.get_full_name()}
         return Response({"data": trans.data, "details": details})
 
     def update(self, request, *args, **kwargs):
@@ -938,17 +923,14 @@ class BudgetRUDView(RetrieveUpdateDestroyAPIView):
                     "admin": request.user.id,
                     "extension": "amount",
                     "old": instance.allocated_amount,
-                    "new": str(Decimal(instance.allocated_amount) + Decimal(amount)),
+                    "new": str(instance.allocated_amount + Decimal(amount)),
                     "date": str(datetime.now()),
                 },
             }
-            instance.allocated_amount = Decimal(instance.allocated_amount) + Decimal(
-                amount
-            )
+            instance.allocated_amount = instance.allocated_amount + Decimal(amount)
             instance.save()
         elif action == "date":
             new_date = data.get("date", None)
-            print(new_date)
             extension_no = len(instance.details)
             instance.details = {
                 **instance.details,
@@ -965,7 +947,7 @@ class BudgetRUDView(RetrieveUpdateDestroyAPIView):
         else:
             raise ParseError()
         return Response(status=status.HTTP_201_CREATED)
-    
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         church = str(getattr(instance.account, "church", None))
@@ -977,12 +959,182 @@ class BudgetRUDView(RetrieveUpdateDestroyAPIView):
         Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 class BudgetAddExpenses(CreateAPIView):
-    perms = {
-        "POST" : ['ajouter_transaction']
-    }
+    perms = {"POST": ["ajouter_transaction"]}
+    serializer_class = TransactionSerializer
+
+    def create(self, request, *args, **kwargs):
+        pk = kwargs["pk"]
+        validated_data = self.validate(request, pk, request.data)
+        serializer = self.get_serializer(data=validated_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        self.logger(request, serializer.data)
+        return Response(status=status.HTTP_201_CREATED)
+
+    def validate(self, request, pk, data):
+        amount = Decimal(data.get("amount", 0))
+        if not amount:
+            raise ValidationError("Amount Not Valid")
+        budget = Budget.objects.get(id=pk)
+        if date.today() > budget.end_date:
+            raise ValidationError("Budget Closed")
+        if amount > (budget.allocated_amount - budget.actual_amount):
+            raise ValidationError("Solde Insuffisant")
+        acc = budget.account
+        if acc.balance < amount:
+            raise ValidationError("Solde Insuffisant")
+
+        return {
+            **data,
+            "transaction_type": "Debit",
+            "status": "Pending",
+            "from_account": acc.pk,
+            "added_by": request.user.id,
+            "budget": pk,
+        }
+
+    def logger(self, request, instance):
+        category = instance["category_name"]
+        from_account = instance["from_account_name"]
+        church = instance["church"]["name"]
+        transactionType = {
+            "Debit": "Depense",
+            "Credit": "Collecte",
+            "Transfer": "Transfert",
+        }
+        Transaction_Log.objects.create(
+            action="Created",
+            transaction_no=instance["id"],
+            admin=request.user,
+            detail={
+                "categorie": category,
+                "montant": instance["amount"],
+                "transaction": transactionType[instance["transaction_type"]],
+                "compte": from_account,
+                "budget": instance["budget_name"],
+            },
+        )
+        detail = {
+            "resource": "Transaction",
+            "id": instance["id"],
+            "lib": f"#{instance['id']} {transactionType[instance["transaction_type"]]} ({church})",
+        }
+        Log.objects.create(admin_id=request.user.id, log_type="INSERT", detail=detail)
+
+
+class Report(APIView):
+    perms = {"GET": ["voir_finance", "voir_toutes_finances"]}
+
+    def get(self, request, *args, **kwargs):
+        user: Member = request.user
+        query = self.request.query_params
+        acc_type = query.get("type", None)
+        church = query.get("id_eglise", request.user.church_id)
+        month = int(query.get("mois", date.today().month - 1))
+        year = int(query.get("annee", date.today().year))
+
+        if not acc_type or not church:
+            raise ParseError("Not valid")
+
+        # just to make sure user can only see their church report except
+        # if it's  superuser or user with see all report perm
+        if not user.is_superuser and not user.has_perm_custom("voir_toutes_finances"):
+            church = user.church_id
+
+        # get the church accounts using the church and type params
+        # for querying the transactions
+        accounts = self.church_accounts(church, acc_type)
+
+        # filter using the church accounts and from month start to end
+        queryset = (
+            Transaction.objects.filter(
+                Q(from_account_id__in=[acc["id"] for acc in accounts])
+                | Q(to_account_id__in=[acc["id"] for acc in accounts])
+            )
+            .filter(
+                updated_at__date__range=(
+                    date(year, month + 1, 1),
+                    date(year, month + 1, 1) + relativedelta(day=31),
+                )
+            )
+            .filter(status="Validated")
+        )
+
+        all_categories = Category.objects.all()
+        categories_report = []
+
+        # append the accounts to each category
+        for cat in all_categories:
+            categories_report.append(
+                {
+                    "id": cat.id,
+                    "category": cat.category_name,
+                    "type": cat.category_type,
+                    "accounts": copy.deepcopy(accounts),
+                }
+            )
+
+        # make a deep copy of the array
+        InitialBalance = copy.deepcopy(accounts)
+        FinalBalance = copy.deepcopy(accounts)
+
+        OpeningBalance = Monthly_Balance.objects.filter(
+            month=month + 1, year=year, account__id__in=[acc["id"] for acc in accounts]
+        )
+
+        # update the final account variable and initial account variable with the opening account balance
+        for obj in OpeningBalance:
+            account_initial = next(
+                (i for i in InitialBalance if i["id"] == obj.pk), None
+            )
+            account_final = next((f for f in FinalBalance if f["id"] == obj.pk), None)
+
+            if account_initial:
+                account_initial["balance"] += obj.balance
+
+            if account_final:
+                account_final["balance"] += obj.balance
+
+        data = report_table(
+            accounts,
+            InitialBalance,
+            # TotalExpenses,
+            # TotalTransferIn,
+            # TotalTransferOut,
+            # TotalIncome,
+            FinalBalance,
+            categories_report,
+            queryset,
+        )
+
+        ViewLogger(request.user.id, {"resource": "Finance - Rapports"})
+        # data = {
+        #     "accountsName": FinalBalance,
+        #     "accountCols": accounts,
+        #     "InitialBalance" : InitialBalance,
+        #     "TotalExpenses": TotalExpenses,
+        #     "TotalTransferIn": TotalTransferIn,
+        #     "TotalTransferOut": TotalTransferOut,
+        #     "TotalIncome": TotalIncome,
+        #     "rapportCategories": categories_report
+        # }
+        return Response(data)
+
+    def church_accounts(self, church_id, acc_type):
+        accs = Account.objects.filter(church_id=church_id, account_type=acc_type)
+        return [
+            {
+                "id": acc.id,
+                "name": acc.account_name,
+                "is_main": acc.is_main,
+                "balance": Decimal(0.00),
+            }
+            for acc in accs
+        ]
+
 
 class TransactionLogTableData(APIView):
     perms = {

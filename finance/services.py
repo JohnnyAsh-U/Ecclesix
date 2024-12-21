@@ -1,4 +1,6 @@
 from decimal import Decimal
+import copy
+from .models import Transaction
 
 
 def transaction_table(data):
@@ -108,3 +110,208 @@ def transaction_table(data):
             result.append(trans)
 
     return result
+
+
+def report_table(
+    accounts: list[dict],
+    InitialBalance: list[dict],
+    FinalBalance: list[dict],
+    categories_report: list[dict],
+    queryset: list[Transaction],
+) -> dict:
+    TotalExpenses = copy.deepcopy(accounts)
+    TotalIncome = copy.deepcopy(accounts)
+    TotalTransferIn = copy.deepcopy(accounts)
+    TotalTransferOut = copy.deepcopy(accounts)
+
+    for trans in queryset:
+        if trans.transaction_type == "Credit":
+            # checks if the transaction is not a rule based income
+            if not trans.parent:
+                # Total Balance
+                # give the main account the amount to gradually reduce it as the rules apply
+                next((a for a in FinalBalance if a["is_main"] == True))[
+                    "balance"
+                ] += trans.amount
+
+                # Total Income
+                next((a for a in TotalIncome if a["is_main"] == True))[
+                    "balance"
+                ] += trans.amount
+
+                # Total Category
+                cate = next(
+                    (a for a in categories_report if a["id"] == trans.category_id), None
+                )
+
+                if cate:
+                    mainAcc = next(
+                        (a for a in cate["accounts"] if a["is_main"] == True)
+                    )
+                    mainAcc["balance"] += trans.amount
+            else:
+                # total balance
+                debitAccount = next(
+                    (a for a in FinalBalance if a["id"] == trans.from_account_id), None
+                )
+                creditAccount = next(
+                    (a for a in FinalBalance if a["id"] == trans.to_account_id), None
+                )
+
+                # we check if the debited and credited account belongs to the church
+                # if so we debit and credit accounts
+                if debitAccount and creditAccount:
+                    # subtract the amount transferred to other accounts and add to the credited account
+                    creditAccount["balance"] += trans.amount
+                    debitAccount["balance"] -= trans.amount
+
+                    # Total Income
+                    d_acc = next(
+                        (a for a in TotalIncome if a["id"] == trans.from_account_id)
+                    )
+                    c_acc = next(
+                        (a for a in TotalIncome if a["id"] == trans.to_account_id)
+                    )
+
+                    # subtract the amount transferred to other accounts and add to the credited account
+                    c_acc["balance"] += trans.amount
+                    d_acc["balance"] -= trans.amount
+
+                    #   //Total Categories
+                    cate = next(
+                        (a for a in categories_report if a["id"] == trans.category_id),
+                        None,
+                    )
+                    if cate:
+                        debitAcc = next(
+                            (
+                                a
+                                for a in cate["accounts"]
+                                if a["id"] == trans.from_account_id
+                            )
+                        )
+                        creditAcc = next(
+                            (
+                                a
+                                for a in cate["accounts"]
+                                if a["id"] == trans.to_account_id
+                            )
+                        )
+                        creditAcc["balance"] += trans.amount
+                        debitAcc["balance"] -= trans.amount
+
+                elif debitAccount:
+                    # but if the credited account isn't among church account, we just consider it as
+                    # outgoing transfer from the account, so we only debit account
+                    debitAccount["balance"] -= trans.amount
+                    d_acc = next(
+                        (
+                            a
+                            for a in TotalTransferOut
+                            if a["id"] == trans.from_account_id
+                        )
+                    )
+                    d_acc["balance"] -= trans.amount
+                elif creditAccount:
+                    # but if the debited account isnt among chuch accounts, we just consider it as
+                    # incoming transfer from foreign account, so we only credit account
+                    creditAccount["balance"] += trans.amount
+                    c_acc = next(
+                        (a for a in TotalTransferIn if a["id"] == trans.to_account_id)
+                    )
+                    c_acc["balance"] += trans.amount
+        elif trans.transaction_type == "Debit":
+            #  //Total Balance
+            debitAccount = next(
+                (a for a in FinalBalance if a["id"] == trans.from_account_id)
+            )
+            debitAccount["balance"] -= trans.amount
+
+            # //Total Expenses
+            acc = next((a for a in TotalExpenses if a["id"] == trans.from_account_id))
+            acc["balance"] -= trans.amount
+
+            # //Total Categorie
+            cate = next((a for a in categories_report if a["id"] == trans.category_id))
+            if cate:
+                account = next(
+                    (a for a in cate["accounts"] if a["id"] == trans.from_account_id)
+                )
+                account["balance"] -= trans.amount
+
+        elif trans.transaction_type == "Transfer":
+            #  //Total Balance
+            debitAccount = next(
+                (a for a in FinalBalance if a["id"] == trans.from_account_id)
+            )
+            creditAccount = next(
+                (a for a in FinalBalance if a["id"] == trans.to_account_id)
+            )
+
+            if debitAccount:
+                debitAccount["balance"] -= trans.amount
+
+            if creditAccount:
+                creditAccount["balance"] += trans.amount
+
+            # Total Transfers
+            d_acc = next(
+                (a for a in TotalTransferOut if a["id"] == trans.from_account_id)
+            )
+            c_acc = next((a for a in TotalTransferIn if a["id"] == trans.to_account_id))
+            if d_acc:
+                d_acc["balance"] -= trans.amount
+
+            if c_acc:
+                c_acc["balance"] += trans.amount
+
+    # add the total(final) column to the accounts
+    accounts.append({"id": 0, "name": "Total", "is_main": False})
+
+    # total expenses
+    total = sum(tx["balance"] for tx in TotalExpenses if tx["name"] != "Total")
+    TotalExpenses.append({"id": 0, "name": "Total", "is_main": False, "balance": total})
+
+    # total income
+    total = sum(tx["balance"] for tx in TotalIncome if tx["name"] != "Total")
+    TotalIncome.append({"id": 0, "name": "Total", "is_main": False, "balance": total})
+
+    # total transferIn
+    total = sum(tx["balance"] for tx in TotalTransferIn if tx["name"] != "Total")
+    TotalTransferIn.append(
+        {"id": 0, "name": "Total", "is_main": False, "balance": total}
+    )
+
+    # total transfer out
+    total = sum(tx["balance"] for tx in TotalTransferOut if tx["name"] != "Total")
+    TotalTransferOut.append(
+        {"id": 0, "name": "Total", "is_main": False, "balance": total}
+    )
+
+    # total initial balance
+    total = sum(tx["balance"] for tx in InitialBalance if tx["name"] != "Total")
+    InitialBalance.append(
+        {"id": 0, "name": "Total", "is_main": False, "balance": total}
+    )
+
+    # total final balance
+    total = sum(tx["balance"] for tx in FinalBalance if tx["name"] != "Total")
+    FinalBalance.append({"id": 0, "name": "Total", "is_main": False, "balance": total})
+
+    # Sum of all the categories
+    for cat in categories_report:
+        total = sum(tx["balance"] for tx in cat["accounts"] if tx["name"] != "Total")
+        cat["accounts"].append(
+            {"id": 0, "name": "Total", "is_main": False, "balance": total}
+        )
+
+    return {
+        "accountsName": FinalBalance,
+        "accountCols": accounts,
+        "InitialBalance": InitialBalance,
+        "TotalExpenses": TotalExpenses,
+        "TotalTransferIn": TotalTransferIn,
+        "TotalTransferOut": TotalTransferOut,
+        "TotalIncome": TotalIncome,
+        "rapportCategories": categories_report,
+    }

@@ -58,8 +58,8 @@ function RapportTable({ filters, id_eglise, eglise }) {
         return
     }
 
-    const listeDons = !loading && categories.filter(a => a.type === 'Credit' && a.comptes?.find(b => b.lib_compte == 'Total')?.montant !== 0)
-    const listeDepense = !loading && categories.filter(a => a.type === 'Debit' && a.comptes?.find(b => b.lib_compte == 'Total')?.montant !== 0)
+    const listeDons = !loading && categories.filter(a => a.type === 'Credit' && a.accounts?.find(b => b.name == 'Total')?.amount !== 0)
+    const listeDepense = !loading && categories.filter(a => a.type === 'Debit' && a.accounts?.find(b => b.name == 'Total')?.amount !== 0)
 
 
     return (
@@ -92,45 +92,45 @@ function RapportTable({ filters, id_eglise, eglise }) {
                                         <tr className='bg-inverse thead-default'>
                                             <th colSpan={4} style={{ backgroundColor: '#f3f4f7' }}>Resumé</th>
                                             {accountCols.map(acc =>
-                                                <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id_compte} scope='col'>{acc.lib_compte}</th>)}
-                                            <th style={{ backgroundColor: '#f3f4f7' }}>Total</th>
+                                                <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id} scope='col'>{acc.name}</th>)}
+                                            {/* <th style={{ backgroundColor: '#f3f4f7' }}>Total</th> */}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
                                             <th colSpan={4}>Solde Initial</th>
-                                            {initialBalance.map(acc => <td className='text-wrap text-success fw-bold' key={acc.id_compte} scope='col'>
-                                                {formatAmount(acc.montant)}
+                                            {initialBalance.map(acc => <td className='text-wrap text-success fw-bold' key={acc.id} scope='col'>
+                                                {formatAmount(acc.balance)}
                                             </td>)}
                                         </tr>
                                         <tr>
                                             <th colSpan={4}>Collectes Totales</th>
-                                            {totalIncome.map(acc => <td className='text-wrap text-success fw-bold' key={acc.id_compte} scope='col'>
-                                                {formatAmount(acc.montant)}
+                                            {totalIncome.map(acc => <td className='text-wrap text-success fw-bold' key={acc.id} scope='col'>
+                                                {formatAmount(acc.balance)}
                                             </td>)}
                                         </tr>
                                         <tr>
                                             <th colSpan={4}>Depenses Totales</th>
-                                            {totalExpenses.map(acc => <td className='text-wrap text-danger fw-bold' key={acc.id_compte} scope='col'>
-                                                {formatAmount(acc.montant)}
+                                            {totalExpenses.map(acc => <td className='text-wrap text-danger fw-bold' key={acc.id} scope='col'>
+                                                {formatAmount(acc.balance)}
                                             </td>)}
                                         </tr>
                                         <tr>
                                             <th colSpan={4}>Transferts Totaux Entrants</th>
-                                            {totalTransferIn.map(acc => <th className='text-wrap text-success ' key={acc.id_compte} scope='col'>
-                                                {formatAmount(acc.montant)}
+                                            {totalTransferIn.map(acc => <th className='text-wrap text-success ' key={acc.id} scope='col'>
+                                                {formatAmount(acc.balance)}
                                             </th>)}
                                         </tr>
                                         <tr>
                                             <th colSpan={4}>Transferts Totaux Sortants</th>
-                                            {totalTransferOut.map(acc => <td className='text-wrap text-danger fw-bold' key={acc.id_compte} scope='col'>
-                                                {formatAmount(acc.montant)}
+                                            {totalTransferOut.map(acc => <td className='text-wrap text-danger fw-bold' key={acc.id} scope='col'>
+                                                {formatAmount(acc.balance)}
                                             </td>)}
                                         </tr>
                                         <tr>
                                             <th colSpan={4}>Solde Final</th>
-                                            {finalBalance.map(acc => <th className='text-wrap' key={acc.id_compte} scope='col'>
-                                                {parseFloat(acc.montant) >= 0 && <span className='text-success'>{formatAmount(acc.montant)}</span>}
+                                            {finalBalance.map(acc => <th className='text-wrap' key={acc.id} scope='col'>
+                                                {parseFloat(acc.balance) >= 0 && <span className='text-success'>{formatAmount(acc.balance)}</span>}
                                             </th>)}
                                         </tr>
                                     </tbody>
@@ -155,16 +155,16 @@ function RapportTable({ filters, id_eglise, eglise }) {
                                             <tr className='bg-inverse'>
                                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Categorie</th>
                                                 {accountCols.map(acc =>
-                                                    <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id_compte} scope='col'>{acc.lib_compte}</th>)}
-                                                <th style={{ backgroundColor: '#f3f4f7' }}>Total</th>
+                                                    <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id} scope='col'>{acc.name}</th>)}
+                                                {/* <th style={{ backgroundColor: '#f3f4f7' }}>Total</th> */}
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {listeDons.map((a, index) =>
                                                 <tr key={index}>
-                                                    <td>{a.categorie}</td>
-                                                    {a.comptes?.map(e =>
-                                                        <td key={e.id_compte}>{formatAmount(e.montant)}</td>
+                                                    <td>{a.category}</td>
+                                                    {a.accounts?.map(e =>
+                                                        <td key={e.id}>{formatAmount(e.balance)}</td>
                                                     )}
                                                 </tr>
                                             )}
@@ -183,16 +183,16 @@ function RapportTable({ filters, id_eglise, eglise }) {
                                             <tr className='bg-inverse'>
                                                 <th scope="col" style={{ backgroundColor: '#f3f4f7' }}>Categorie</th>
                                                 {accountCols.map(acc =>
-                                                    <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id_compte} scope='col'>{acc.lib_compte}</th>)}
-                                                <th style={{ backgroundColor: '#f3f4f7' }}>Total</th>
+                                                    <th className='text-wrap' style={{ backgroundColor: '#f3f4f7' }} key={acc.id} scope='col'>{acc.name}</th>)}
+                                                {/* <th style={{ backgroundColor: '#f3f4f7' }}>Total</th> */}
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {listeDepense.map((a, index) =>
                                                 <tr key={index}>
-                                                    <td>{a.categorie}</td>
-                                                    {a.comptes?.map(e =>
-                                                        <td key={e.id_compte} className='text-danger fw-bold'>{formatAmount(e.montant)}</td>
+                                                    <td>{a.category}</td>
+                                                    {a.accounts?.map(e =>
+                                                        <td key={e.id_compte} className='text-danger fw-bold'>{formatAmount(e.balance)}</td>
                                                     )}
                                                 </tr>
                                             )}

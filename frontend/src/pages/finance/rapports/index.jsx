@@ -42,16 +42,16 @@ function Rapports() {
     const fetchEgliseCompte = async () => {
         if (!eglises.length) setLoading(true);
         try {
-            const { data } = await axios.get(`/finance/eglises`);
+            const { data } = await axios.get(`/finance`);
             setFirstDate(data.date)
-            setEvenements(data.evenements)
-            setEglises(data.res); //when the church is empty the comp doesn't load
+            setEvenements(data.events)
+            setEglises(data.church_account); //when the church is empty the comp doesn't load
 
-            if (data.res.length > 0) {
+            if (data.church_account.length > 0) {
                 //if admin church doesn't have an account we set it to the first church and first account
-                let adminEglise = data.res.find(eg => eg.id_eglise == admin.id_eglise) || data.res[0]
-                setCurrentEglise(adminEglise?.id_eglise)
-                setComptes(adminEglise?.comptes)
+                let adminEglise = data.church_account.find(eg => eg.id == admin.church_id) || data.church_account[0]
+                setCurrentEglise(adminEglise?.id)
+                setComptes(adminEglise?.accounts)
             }
         } catch (err) {
             toast.error("Impossible de charger les donnees")
@@ -66,8 +66,8 @@ function Rapports() {
 
     useEffect(() => {
         if (currentEglise) {
-            let adminEglise = eglises.find(eg => eg.id_eglise == currentEglise)
-            setComptes(adminEglise?.comptes)
+            let adminEglise = eglises.find(eg => eg.id == currentEglise)
+            setComptes(adminEglise?.accounts)
         }
     }, [currentEglise])
 
@@ -95,7 +95,7 @@ function Rapports() {
                                             </label>
                                             <FormSelect id='eglise' name='eglise' onChange={(e) => setCurrentEglise(e.target.value)} value={currentEglise}>
                                                 {eglises.map(eglise =>
-                                                    <option key={eglise.id_eglise} value={eglise.id_eglise}>{eglise.lib_eglise}</option>
+                                                    <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
                                                 )}
                                             </FormSelect>
                                         </div>
@@ -140,7 +140,7 @@ function Rapports() {
                         <div className='col-sm-12'>
                             {currentEglise && <RapportTable
                                 id_eglise={currentEglise}
-                                eglise={eglises.find(e => e.id_eglise == currentEglise).lib_eglise}
+                                eglise={eglises.find(e => e.id_eglise == currentEglise)?.church_name}
                                 filters={filters}
                             />}
                         </div>
