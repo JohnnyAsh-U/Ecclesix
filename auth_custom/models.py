@@ -32,7 +32,7 @@ class User(AbstractBaseUser):
     device_id = models.CharField(max_length=100, null=True)
     otp_key = models.CharField(max_length=50, null=True, blank=True, default=None)
     verified = models.BooleanField(default=False)
-    verification_code = models.CharField(max_length=100, null=True)
+    verification_code = models.CharField(max_length=100, null=True, blank=True)
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"
