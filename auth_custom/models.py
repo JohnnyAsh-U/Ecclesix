@@ -63,8 +63,12 @@ class User(AbstractBaseUser):
         send_mail(subject, message, from_email, [self.email], **kwargs)
         
     def get_all_permissions(self):
-        permissions = self.role.permission.all()
-        return permissions
+        if hasattr(self.role, "permission"):
+            permissions = self.role.permission.all()
+            return permissions
+        return None
+            
+       
     
     def has_perm_custom(self, perm):
         if not self.role: return False

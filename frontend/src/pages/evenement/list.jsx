@@ -113,7 +113,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                                         {diffInDaysFromNow(evenement.event_date) <= 7 &&
                                             <ContentPermsWrapper requiredPerms={['modifier_evenement', 'supprimer_evenement']}>
                                                 {/* Checks if the admin is superadin or the event belong to the admin church events  */}
-                                                {(permissions.superAdmin || evenement.id == admin.church_id)
+                                                {(permissions.superAdmin || evenement.church == admin.church_id)
                                                     &&
                                                     <Dropdown direction="dropend" className="m-0">
                                                         <Dropdown.Toggle variant='link' className='btn  btn-outline-default py-0 rounded' as={"button"}>

@@ -46,7 +46,7 @@ const Filter = ({ handleChange, firstDate, listetype, filters, filterDefault }) 
                             </FormSelect>
                         </div>
                     </div>
-                    <ContentPermsWrapper requiredPerms={['superAdmin', 'voir_touts_membres']}>
+                    <ContentPermsWrapper requiredPerms={['superAdmin', 'voir_touts_evenements']}>
                         <div className="form-group row mb-1">
                             <div className='col-sm-4'>
                                 <label className='col-form-label'>

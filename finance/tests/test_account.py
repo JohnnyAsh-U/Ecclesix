@@ -65,7 +65,7 @@ class TestAccounts(APITestCase):
         self.assertEqual(res.status_code, 201)
         acc = Account.objects.get(id=res.data["id"])
         self.assertEqual(acc.is_main, False)
-        self.assertEqual(acc.balance, data["balance"])
+        self.assertEqual(str(acc.balance), data["balance"])
 
     def test_account_input2(self):
         url = reverse("account-create-list")
@@ -89,8 +89,8 @@ class TestAccounts(APITestCase):
 
         acc = Account.objects.get(id=res.data["id"])
         acc2 = Account.objects.get(id=res2.data["id"])
-        self.assertEqual(acc.balance, data["balance"])
-        self.assertEqual(acc2.balance, data2["balance"])
+        self.assertEqual(str(acc.balance), data["balance"])
+        self.assertEqual(str(acc2.balance), data2["balance"])
         self.assertEqual(acc.is_main, True)
         self.assertEqual(acc2.is_main, False)
 
@@ -106,7 +106,7 @@ class TestAccounts(APITestCase):
         res = self.client.post(url, data=data, format="json")
         self.assertEqual(res.status_code, 201)
         acc = Account.objects.get(id=res.data["id"])
-        self.assertEqual(acc.balance, data["balance"])
+        self.assertEqual(str(acc.balance), data["balance"])
         self.assertEqual(acc.is_main, False)
 
         data = {
@@ -118,7 +118,7 @@ class TestAccounts(APITestCase):
         res = self.client.post(url, data=data, format="json")
         self.assertEqual(res.status_code, 201)
         acc = Account.objects.get(id=res.data["id"])
-        self.assertEqual(acc.balance, data["balance"])
+        self.assertEqual(str(acc.balance), data["balance"])
         self.assertEqual(acc.is_main, True)
 
         data = {
@@ -130,7 +130,7 @@ class TestAccounts(APITestCase):
         res = self.client.post(url, data=data, format="json")
         self.assertEqual(res.status_code, 201)
         acc = Account.objects.get(id=res.data["id"])
-        self.assertEqual(acc.balance, data["balance"])
+        self.assertEqual(str(acc.balance), data["balance"])
         self.assertEqual(acc.is_main, True)
 
         data = {
@@ -143,7 +143,7 @@ class TestAccounts(APITestCase):
         res = self.client.post(url, data=data, format="json")
         self.assertEqual(res.status_code, 201)
         acc = Account.objects.get(id=res.data["id"])
-        self.assertEqual(acc.balance, data["balance"])
+        self.assertEqual(str(acc.balance), data["balance"])
         self.assertEqual(acc.is_main, False)
 
         data = {
@@ -155,5 +155,5 @@ class TestAccounts(APITestCase):
         res = self.client.post(url, data=data, format="json")
         self.assertEqual(res.status_code, 201)
         acc = Account.objects.get(id=res.data["id"])
-        self.assertEqual(acc.balance, data["balance"])
+        self.assertEqual(str(acc.balance), data["balance"])
         self.assertEqual(acc.is_main, False)

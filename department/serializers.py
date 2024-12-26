@@ -54,10 +54,23 @@ class ChurchDepartmentSerializer(ModelSerializer):
         fields = ["id", "church_name", "departments_list"]
 
     def get_departments_list(self, obj):
-        list_deps = obj.departments.all()
-        if list_deps:
+        user  = self.context['request'].user
+        deps = obj.departments.all()
+        
+        # checks if he's only a departmental head, if so we return his only departments
+        filter_permission2 = bool(
+            not user.has_perm_custom("voir_touts_departements")
+            and not user.has_perm_custom("voir_departement")
+            and not user.is_superuser
+            and user.has_perm_custom("chef_departement")
+        )
+        
+        if filter_permission2:
+            deps = deps.filter(department_head = user)
+            
+        if deps:
             res = []
-            for dep in list_deps:
+            for dep in deps:
                 res.append(
                     {
                         "id": dep.id,

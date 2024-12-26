@@ -19,7 +19,7 @@ const Evenements = () => {
 
     let filter = {
         type_evenement: 'tout',
-        eglise: permissions.superAdmin ? 'tout' : admin.id_eglise,
+        eglise: permissions.superAdmin ? 'tout' : admin.church_id,
         mois: new Date().getMonth(),
         annee: new Date().getFullYear(),
     }

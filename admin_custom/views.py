@@ -149,8 +149,9 @@ class AdminPermissions(APIView):
         user: Member = request.user
         perms = []
         user_perms = user.get_all_permissions()
-        for perm in user_perms:
-            perms.append(model_to_dict(perm)["codename"])
+        if user_perms:
+            for perm in user_perms:
+                perms.append(model_to_dict(perm)["codename"])
         permissions = {"superAdmin": user.is_superuser, "perms": perms}
         return Response(
             {"permissions": permissions, "churches": serialized_church.data}

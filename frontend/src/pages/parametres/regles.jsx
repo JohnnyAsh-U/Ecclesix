@@ -53,12 +53,13 @@ const Regles = () => {
                 {loading && <LoadingData />}
 
                 <div className="table-responsive mb-3">
-                    <table className="table table-hover table-striped table-bordered ">
+                    <table className="table table-hover table-striped table-bordered small">
                         <thead className='bg-inverse'>
                             <tr className='bg-inverse'>
                                 <th><FontAwesomeIcon icon={faChurch} /> Eglise</th>
-                                <th >Regle</th>
                                 <th >Categorie</th>
+
+                                <th >Regle</th>
                                 <th >Pourcentage</th>
                                 <th >Au Compte</th>
                                 <th>Date Modification</th>
@@ -69,8 +70,9 @@ const Regles = () => {
                             {!loading && listeRegles.map((reg, id) =>
                                 <tr key={id} className='custom'>
                                     <td> {reg.church_name}</td>
-                                    <td> {reg.rule_name}</td>
                                     <td>  {reg.category_name}</td>
+
+                                    <td> {reg.rule_name}</td>
                                     <td> {reg.percentage} % </td>
                                     <td> {reg.account_name}</td>
                                     <td>{dateFormat(reg.updated_at)}</td>

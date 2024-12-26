@@ -3,6 +3,7 @@ from rest_framework import serializers
 from admin_custom.models import Log
 from rest_framework.exceptions import ValidationError
 from django.db.models import Sum
+from decimal import Decimal
 import copy
 
 transaction_french = {"Debit": "Depense", "Credit": "Collecte", "Transfer": "Transfert"}
@@ -171,7 +172,7 @@ class BudgetSerializer(serializers.ModelSerializer):
         read_only_fields = ['actual_amount']
         
     def get_percent(self, obj):
-        return (obj.actual_amount / obj.allocated_amount)*100
+        return (Decimal(obj.actual_amount) / Decimal(obj.allocated_amount))*100
     
     def get_church_name(self, obj):
         return str(getattr(obj.account, "church", None))

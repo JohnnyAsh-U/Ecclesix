@@ -278,6 +278,7 @@ export function Info({ transaction, handleModal, fetch, modal }) {
             handleModal(null);
         } finally {
             setLoading(false)
+            setAction(null)
         }
     }
 
@@ -297,6 +298,7 @@ export function Info({ transaction, handleModal, fetch, modal }) {
             toast.error('Echec')
         } finally {
             setLoading(false)
+            setAction(null)
         }
     }
 

@@ -39,11 +39,12 @@ const NommerAdmin = ({ membre }) => {
                 </ContentPermsWrapper>
             }
 
-            <button type="button"
-                className="btn btn-primary p-2 rounded"><i
-                    className="icofont icofont-ui-messaging"></i>
-                Message
-            </button>
+            {parseInt(membre.id) !== parseInt(admin.id) &&
+                <button type="button"
+                    className="btn btn-primary p-2 rounded"><i
+                        className="icofont icofont-ui-messaging"></i>
+                    Message
+                </button>}
             <Modal show={adminModal} onHide={() => setAdminModal(false)} centered>
                 <form onSubmit={(e) => handleAdmin(e)}>
                     <Modal.Header closeButton>

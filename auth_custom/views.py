@@ -47,7 +47,7 @@ class Register(APIView):
         ).first()
 
         # to make sure the user is not already registered as an admin
-        if not new_user or new_user.password != "None":
+        if not new_user or new_user.password != "":
             return Response(
                 {"status": False, "err": "Erreur ! Impossible de s'inscrire"},
                 status.HTTP_400_BAD_REQUEST,

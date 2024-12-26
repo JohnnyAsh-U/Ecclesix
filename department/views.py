@@ -35,17 +35,6 @@ class DepartmentCreateListView(ListCreateAPIView):
         if filter_permission:
             queryset = queryset.filter(id=user.church_id)
 
-        # checks if he's only a departmental head, if so we return his only departments
-        filter_permission2 = bool(
-            not user.has_perm_custom("voir_touts_departements")
-            and not user.has_perm_custom("voir_departement")
-            and not user.is_superuser
-            and user.has_perm_custom("chef_departement")
-        )
-
-        if filter_permission2:
-            queryset = queryset.filter(departement_head=user)
-
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 

@@ -7,7 +7,7 @@ from members.models import Member
 class Department(models.Model):
 
     department_name = models.CharField(max_length=50)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     church = models.ForeignKey(
         Church,
         related_name="departments",

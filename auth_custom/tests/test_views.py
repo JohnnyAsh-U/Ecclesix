@@ -20,18 +20,16 @@ class AuthTest(APITestCase):
         )
         
         #member that was just made an admin
-        cls.admin = Member.objects.create_user(
+        cls.admin = Member.objects.create(
             email="admin@chms.com",
-            password="None",
             is_admin = True,
             first_name="Test",
             last_name="User",
         )
          
         #normal user(member)
-        cls.user = Member.objects.create_user(
+        cls.user = Member.objects.create(
             email="testuser@chms.com",
-            password="None",
             first_name="Test",
             last_name="User",
         )

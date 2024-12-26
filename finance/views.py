@@ -800,7 +800,7 @@ class TransactionValidateRejectDelete(UpdateAPIView):
                     admin_id=request.user.id,
                     detail={
                         "categorie": str(instance.category),
-                        "montant": instance.amount,
+                        "montant": str(instance.amount),
                         "transaction": transaction_french[instance.transaction_type],
                         "compte": str(instance.from_account),
                         "au_compte": str(instance.to_account),

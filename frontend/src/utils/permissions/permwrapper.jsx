@@ -67,16 +67,10 @@ export const AdminEtSuperAdmin = ({ membre, children }) => {
         }
 
     } else {
-        //if the admin is not a superadmin, checks if the member account is a superadmin
-        if (membre.is_superuser) {
-            //return null if its a superadmin member
-            return null
-        } else if (membre.is_admin) {
-            return null;
-        } else {
-            //return children for any other accounts
+        //return children if ordinary members is a member of admin church
+        if (!membre.is_superuser && !membre.is_admin && membre.church == admin.church_id) {
             return children
-        };
+        }
     }
 }
 

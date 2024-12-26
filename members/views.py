@@ -170,6 +170,7 @@ class MemberListCreateView(ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         data = request.data
         data["birthdate"] = None if not data["birthdate"] else data["birthdate"]
+        data["email"] = None if not data["email"] else data["email"]
         data["baptism_date"] = (
             None if not data["baptism_date"] else data["baptism_date"]
         )

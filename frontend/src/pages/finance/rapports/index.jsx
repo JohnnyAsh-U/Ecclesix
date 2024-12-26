@@ -140,7 +140,7 @@ function Rapports() {
                         <div className='col-sm-12'>
                             {currentEglise && <RapportTable
                                 id_eglise={currentEglise}
-                                eglise={eglises.find(e => e.id_eglise == currentEglise)?.church_name}
+                                eglise={eglises.find(e => e.id == currentEglise)?.church_name}
                                 filters={filters}
                             />}
                         </div>

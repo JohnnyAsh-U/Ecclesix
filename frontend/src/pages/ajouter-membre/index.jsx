@@ -21,6 +21,7 @@ const AjouterMembre = () => {
   const [listeville, setListeVille] = useState([]);
   const [suiveurs, setSuiveurs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [bapt, setBapt] = useState(0)
   const timerRef = useRef(null)
 
 
@@ -66,7 +67,7 @@ const AjouterMembre = () => {
   const submit = async (values) => {
     setLoading(true)
     try {
-      const { data } = await axios.post('/membre', values );
+      const { data } = await axios.post('/membre', values);
       if (data) {
         toast.success('Success')
         timerRef.current = setTimeout(() => {
@@ -253,7 +254,7 @@ const AjouterMembre = () => {
                         addon={<FontAwesomeIcon icon={faChurch} />}
                         name={"church"}
                         placeholder="Eglise"
-                        disabled = {!permissions.superAdmin}
+                        disabled={!permissions.superAdmin}
                       >
                         <option value="" disabled>Choississez l'eglise</option>
                         {eglises.map((eglise) =>
@@ -278,7 +279,7 @@ const AjouterMembre = () => {
                     <div className="col-sm-4 m-b-5">
                       <FormSelectAddOn
                         color={"primary"}
-                        addon={"S"}
+                        addon={"Statut"}
                         name={"status"}
                       >
                         <option value='' disabled>Statut</option>
@@ -291,15 +292,29 @@ const AjouterMembre = () => {
                   </div>
 
                   <div className="form-group row">
+
                     <div className="col-sm-4 m-b-5">
+                      <div className="input-group mb-0">
+                        <span className={`input-group-text bg-primary`}
+                          id="basic-addon1">
+                          Etes-Vous Baptisé
+                        </span>
+                        <select value={bapt} name={"bapt"} className="form-control form-select" onChange={(e) => setBapt(e.target.value)}>
+                          <option value={1}>Oui</option>
+                          <option value={0}>Non</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {bapt == 1 && <div className="col-sm-4 m-b-5">
                       <FormInputAddOn
                         color={"primary"}
-                        addon={"Bapteme"}
+                        addon={"Date De Bapteme"}
                         name={"baptism_date"}
                         type={"date"}
                         placeholder={"Date De Bapteme"}
                       />
-                    </div>
+                    </div>}
 
                     <div className="col-sm-4 m-b-5">
                       <FormSelectAddOn
@@ -314,10 +329,10 @@ const AjouterMembre = () => {
                       </FormSelectAddOn>
                     </div>
 
-                    <div className="col-sm-4 m-b-5">
+                    <div className={`col-sm-4 m-b-5 ${bapt==1 && "offset-sm-8 mt-3"}`}>
                       <FormInputAddOn
                         color={"primary"}
-                        addon={"Date"}
+                        addon={"Enreg. Le"}
                         name={"date_joined"}
                         type={"date"}
                         placeholder={"Date"}
@@ -337,6 +352,8 @@ const AjouterMembre = () => {
                 </div>
               </div>
             </Form>
+
+
           </Formik>
         </div>
       </div>

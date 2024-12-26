@@ -82,7 +82,7 @@ const AjouterMembre = ({ departement, activeEglise, fetch }) => {
 
 
     return (
-        <AddRemoveMembersWrapper id_chef={departement.departement_head} eglise={departement.church}>
+        <AddRemoveMembersWrapper id_chef={departement.department_head} eglise={departement.church}>
             <form onSubmit={(e) => ajouterMembreAuGroupe(e)} className='d-flex flex-row align-items-start justify-content-center'>
                 <AsyncSelect styles={{ control: (provided) => ({ ...provided, minWidth: 200, height: 40 }) }}
                     cacheOptions

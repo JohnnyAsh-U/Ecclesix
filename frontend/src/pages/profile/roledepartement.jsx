@@ -13,7 +13,7 @@ const RoleDepartement = ({ membre, roles, ...props }) => {
     const [modifierRole, setModifierRole] = useState(false)
     const [membreRole, setMembreRole] = useState(membre.role?.id_role || '0')
 
-
+    console.log(roles)
 
     const handleRole = async (e) => {
         if (membreRole === '0') return
@@ -90,7 +90,7 @@ const RoleDepartement = ({ membre, roles, ...props }) => {
                                 <p className='d-flex mt-3'>
                                     <FormSelect type='text' value={membreRole} onChange={(val) => setMembreRole(val.target.value)}>
                                         <option value={0} disabled>Role...</option>
-                                        {roles.map(role =>
+                                        {roles && roles.roles?.map(role =>
                                             <option key={role.id} value={role.id}>{role.role_name}</option>)}
                                     </FormSelect>
                                     <button className='btn btn-primary btn-sm rounded ms-1' onClick={() => { setModifierRole(false); handleRole() }}>Ok</button>

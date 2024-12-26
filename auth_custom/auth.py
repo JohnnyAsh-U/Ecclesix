@@ -159,7 +159,7 @@ class JWTAuthentication(BaseAuthentication):
     www_authenticate_realm = "401"
 
     def authenticate(self, request):
-        return (Member.objects.get(id=1), None)
+        # return (Member.objects.get(id=5008), None)
         try:
             header_token = str(request.META.get("HTTP_AUTHORIZATION", b""))
             access_token = header_token.split()[1]
