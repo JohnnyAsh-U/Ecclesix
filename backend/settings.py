@@ -106,9 +106,7 @@ CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS").split(",")
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS").split(",")
-SESSION_COOKIE_SAMESITE = None
-CSRF_COOKIE_SAMESITE = None
-CORS_ALLOW_ALL_ORIGINS = True
+
 
 ROOT_URLCONF = "backend.urls"
 
@@ -136,11 +134,10 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {"default": {}}
 
-if True:
+if os.getenv("DJANGO_ENV") == "production":
     DATABASES["default"] = dj_database_url.config(
         default=os.getenv("DATABASE_URL"), conn_max_age=600
     )
-    print("here")
 else:
     DATABASES["default"] = {
         "ENGINE": os.getenv("ENGINE"),
@@ -153,7 +150,6 @@ else:
         # "NAME": BASE_DIR / "db.sqlite3",
     }
     
-print(DATABASES["default"])
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
@@ -206,19 +202,10 @@ AUTH_USER_MODEL = "members.Member"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-# if not DEBUG:
-#     # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
-#     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-#     # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
-#     # and renames the files with unique names for each version to support long-term caching
-#     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-
 STATIC_URL = '/static/'
 
 # This production code might break development mode, so we check whether we're in DEBUG mode
-if True:
+if not DEBUG:
     # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
