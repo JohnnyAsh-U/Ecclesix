@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
 import dj_database_url
 import os
 from pathlib import Path
@@ -31,9 +32,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = True if os.getenv("DJANGO_ENV") == "development" else False
 
 
-
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -52,10 +50,10 @@ INSTALLED_APPS = [
     "admin_custom",
     "church",
     "event",
-    'dashboard',
+    "dashboard",
     "department",
-    'finance',
-    'seeders',
+    "finance",
+    "seeders",
 ]
 
 
@@ -93,9 +91,9 @@ SPECTACULAR_SETTINGS = {
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -104,12 +102,10 @@ MIDDLEWARE = [
 ]
 
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS').split(',')
-ALLOWED_HOSTS = ['*']
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
 CORS_ALLOW_CREDENTIALS = True
-# CSRF_COOKIE_SECURE = True
-# SESSION_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS").split(",")
 
 
 ROOT_URLCONF = "backend.urls"
@@ -136,22 +132,26 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    # "default": dj_database_url.config(
-    #     default= os.getenv('DATABASE_URL'),
-    #     # conn_max_age=600
-    # )
-    "default": {
-        'ENGINE' : os.getenv('ENGINE'),
-        'NAME' :os.getenv('NAME'),
-        'USER' : os.getenv('USER'),
-        'PASSWORD': os.getenv('PASSWORD'),
-        'HOST' : os.getenv('HOST'),
-        'PORT' : os.getenv('PORT')
+DATABASES = {"default": {}}
+
+if os.getenv("DJANGO_ENV") == "production":
+    DATABASES["default"] = dj_database_url.config(
+        default=os.getenv("DATABASE_URL"), conn_max_age=600
+    )
+    print("here")
+else:
+    DATABASES["default"] = {
+        "ENGINE": os.getenv("ENGINE"),
+        "NAME": os.getenv("NAME"),
+        "USER": os.getenv("USER"),
+        "PASSWORD": os.getenv("PASSWORD"),
+        "HOST": os.getenv("HOST"),
+        "PORT": os.getenv("PORT"),
         # "ENGINE": "django.db.backends.sqlite3",
         # "NAME": BASE_DIR / "db.sqlite3",
     }
-}
+    
+print(DATABASES["default"])
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
@@ -203,7 +203,6 @@ AUTH_USER_MODEL = "members.Member"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 
 
 # if not DEBUG:
