@@ -575,7 +575,7 @@ class TransactionListCreateView(ListCreateAPIView):
         detail = {
             "resource": "Transaction",
             "id": instance["id"],
-            "lib": f"#{instance['id']} {transactionType[instance["transaction_type"]]} ({church})",
+            "lib": f"#{instance['id']} {transactionType[instance['transaction_type']]} ({church})",
         }
         Log.objects.create(admin_id=request.user.id, log_type="INSERT", detail=detail)
 
