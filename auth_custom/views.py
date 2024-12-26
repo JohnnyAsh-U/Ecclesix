@@ -85,7 +85,7 @@ class Login(APIView):
         ).first()
 
         # to make sure if the password is default none then the user has to first register
-        if not admin or admin.password == "None":
+        if not admin or admin.password == "":
             return Response(
                 {"status": False, "err": "Ce compte n'existe pas"},
                 status.HTTP_400_BAD_REQUEST,
@@ -198,7 +198,7 @@ class Reinitialization(APIView):
         ).first()
 
         # to make sure if the password is not default
-        if not admin or admin.password == "None":
+        if not admin or admin.password == "":
             return Response(
                 {"status": False, "err": "Ce compte n'existe pas"},
                 status.HTTP_400_BAD_REQUEST,
