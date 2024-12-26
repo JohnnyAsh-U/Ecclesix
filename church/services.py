@@ -165,6 +165,7 @@ def AttendanceYearGraph(id):
     result = {}
 
     totalEvent = Event_stats.objects.filter(church_id=id)
+    print(totalEvent[0].__dict__)
         
     if totalEvent.count() == 0:
         return {}
@@ -172,26 +173,26 @@ def AttendanceYearGraph(id):
     oldest_event_stat =reduce(lambda x,y: min(x,y), [ev.year for ev in totalEvent])
 
     for ev in totalEvent:
-        event_by_year = result.get(ev.year, None)
+        event_by_year = result.get(str(ev.year), None)
         if not event_by_year:
-            result[ev.year] = []
+            result[str(ev.year)] = []
 
         found_event = next(
-            (event for event in result[ev.year] if event['id'] == ev.pk),
+            (event for event in result[str(ev.year)] if event['id'] == ev.pk),
             None,
         )
 
         if not found_event:
-            result[ev.year].append(
+            result[str(ev.year)].append(
                 {"id": ev.pk, "event": ev.event_type_name, "data": [*month_data]}
             )
             
             found_event = next(
-                (event for event in result[ev.year] if event['id'] == ev.pk),
+                (event for event in result[str(ev.year)] if event['id'] == ev.pk),
                 None,
             )
         
-        found_event["data"][int(ev.month)-1] = int(ev.average)
+        found_event["data"][int(ev.month)-1] = ev.average
 
     return {"year": oldest_event_stat, **result}
 

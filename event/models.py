@@ -61,7 +61,7 @@ class Event_stats(models.Model):
         
 
 
-# This is the sql for the event_stat view for sqlite3
+# This is the sql for the event_stat view for mysql
 
 # CREATE VIEW events_stats AS
 # SELECT event_event_type.id, event_event_type.event_type_name, month(event_event.event_date) AS month, year(event_event.event_date) AS year, event_event.church_id, SUM(event_event.total) AS totals, ROUND(AVG(event_event.total), 0) AS average
@@ -69,5 +69,15 @@ class Event_stats(models.Model):
 # JOIN event_event ON event_event_type.id = event_event.event_type_id
 # WHERE event_event_type.weekly_event = True
 # GROUP BY month(event_event.event_date), year( event_event.event_date), event_event_type.id,
+# event_event.church_id
+# ORDER BY event_event_type.id, event_event.church_id, MONTH, YEAR
+
+#for postgres
+
+# CREATE VIEW events_stats AS
+# SELECT event_event_type.id, event_event_type.event_type_name, extract(month from event_event.event_date) AS month, extract(year from event_event.event_date) AS year, event_event.church_id, SUM(event_event.total) AS totals, ROUND(AVG(event_event.total), 0) AS average
+# FROM event_event_type
+# JOIN event_event ON event_event_type.id = event_event.event_type_id WHERE event_event_type.weekly_event = True
+# GROUP BY extract(month from event_event.event_date), extract(year from event_event.event_date), event_event_type.id,
 # event_event.church_id
 # ORDER BY event_event_type.id, event_event.church_id, MONTH, YEAR

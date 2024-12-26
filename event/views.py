@@ -149,7 +149,7 @@ class EventTypeListCreateView(ListCreateAPIView):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(
-            data={"list": serializer.data, "first_event_date": oldest_event.event_date}
+            data={"list": serializer.data, "first_event_date": getattr(oldest_event, "event_date", date.today())}
         )
 
     def create(self, request, *args, **kwargs):
