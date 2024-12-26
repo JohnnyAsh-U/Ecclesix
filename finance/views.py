@@ -344,7 +344,7 @@ class ChurchAndAccounts(APIView):
         event_list = [
             {
                 "id": ev.id,
-                "event": f"{ev.church} - {ev.event_type} ({ev.event_date.strftime("%d-%m-%Y")})",
+                "event": f"{ev.church} - {ev.event_type} ({str(ev.event_date)})",
             }
             for ev in event_queryset
         ]
