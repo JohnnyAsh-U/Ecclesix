@@ -165,7 +165,6 @@ def AttendanceYearGraph(id):
     result = {}
 
     totalEvent = Event_stats.objects.filter(church_id=id)
-    print(totalEvent[0].__dict__)
         
     if totalEvent.count() == 0:
         return {}
