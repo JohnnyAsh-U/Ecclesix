@@ -47,7 +47,7 @@ function SecondChart({ chartData }) {
       data.push({ category: m })
     })
 
-    chartData.forEach((ev) => {
+    chartData?.forEach((ev) => {
       let n = ev.event
       ev.data.forEach((d, index) => {
         data[index][ev.event] = d
@@ -81,7 +81,7 @@ function SecondChart({ chartData }) {
     let color = ['rgba(70,128,255,1)','#FC6180', '#FFB64D']
 
 
-    chartData.forEach((e, index) => {
+    chartData?.forEach((e, index) => {
       let series2 = chart.series.push(
         am5xy.SmoothedXLineSeries.new(root, {
           name: e.event,
