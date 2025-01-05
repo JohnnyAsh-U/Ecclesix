@@ -128,7 +128,7 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
 
                 </Modal.Body>
                 <Modal.Footer>
-                    <button type="button" className={`btn btn-danger btn-outline-danger`} onClick={() => handleClose()}>
+                    <button type="button" className={`btn btn-danger btn-outline-danger`} onClick={() => handleModal()}>
                         Fermer
                     </button>
                     <LoadingButton2 loading={loading} color={"primary"} name={"Ajouter"} />

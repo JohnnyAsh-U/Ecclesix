@@ -6,20 +6,18 @@ import { AgeCategory } from '../../utils/datetime/agecategory'
 import { useNavigate } from 'react-router-dom'
 import { ActifStatut, StatutBadge } from '../../utils/membre/statut'
 import { toast } from 'react-toastify'
-import useFetch from '../../hooks/fetchHook'
+import axios from 'axios'
+import useDebounce from './debounce'
 
 const List = ({ filters, search }) => {
     const [page, setPage] = useState(1)
-
-    const query = new URLSearchParams({
-        ...filters,
-        search,
-        page,
-        limit: 200,
-    }).toString()
-    const { loading, data, error } = useFetch(`/membre?${query}`, 'get')
-    const { list: liste, total_pages: totalPages, total_members: total } = data || {}
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState(null)
+    const [liste, setListe] = useState([])
+    const [totalPages, setTotalPages] = useState(null)
+    const [total, setTotal] = useState(null)
     const navigate = useNavigate()
+    const debouncedSearch = useDebounce(search, 1000)
 
     const handlePageChange = async (num) => {
         setPage(num)
@@ -37,8 +35,33 @@ const List = ({ filters, search }) => {
         return day + ' ' + mois[month] + ' ' + year
     }
 
- 
-    
+
+    useEffect(() => {
+        const query = new URLSearchParams({
+            ...filters,
+            search: debouncedSearch,
+            page,
+            limit: 200,
+        }).toString()
+        const fetchData = async () => {
+            setLoading(true)
+            try {
+                const { data } = await axios.get(`/membre?${query}`)
+                // setData(data)
+                setListe(data.list)
+                setTotalPages(data.total_pages)
+                setTotal(data.total_members)
+            } catch (err) {
+                setError(err)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchData()
+    }, [filters, page, debouncedSearch])
+
+
+
     useEffect(() => {
         setPage(1)
     }, [filters, search])
@@ -88,8 +111,8 @@ const List = ({ filters, search }) => {
                                         {membre.marital_status === 'M' && 'Marie'}
                                         {membre.marital_status === 'C' && 'Celibataire'}
                                     </td>
-                                    <td>{membre.city_name }</td>
-                                    <td>{membre.church_name }</td>
+                                    <td>{membre.city_name}</td>
+                                    <td>{membre.church_name}</td>
                                     <td>{AgeCategory(membre.birthdate)}</td>
                                     <td>{membre.profession_type}</td>
                                     <td>{ActifStatut(membre)}</td>

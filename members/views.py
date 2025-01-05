@@ -36,7 +36,7 @@ class MinisterWorkerMembers(ListAPIView):
         church = params.get("eglise", None)
         result = Member.objects
 
-        if church:
+        if church and church != "null":
             result = result.filter(church_id=church)
         if Ministre and not Ouvrier:
             result = result.filter(status="Ministre")
@@ -91,7 +91,7 @@ class MemberListCreateView(ListCreateAPIView):
             names = search.split()
             query = Q()
             for name in names:
-                query &= Q(first_name__icontains=name) | Q(last_name__icontains=name)
+                query &= Q(first_name__istartswith=name) | Q(last_name__istartswith=name)
             queryset = queryset.filter(query)
 
         if gender and gender != "tout":

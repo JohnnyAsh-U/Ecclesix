@@ -3,6 +3,7 @@ import useDeviceSize from "./screenWidth";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import Loading from "../components/Loading/loading";
 
 const Context = createContext()
 
@@ -12,6 +13,7 @@ const AppContext = ({ children }) => {
     const [permissions, setPermissions] = useState([])
     const [membrePage, setMembrePage] = useState(1)
     const [loading, setLoading] = useState(false)
+    const [reloading, setReloading] = useState(true)
     const [eglises, setEglises] = useState([])
     const navigate = useNavigate()
     const {
@@ -60,11 +62,13 @@ const AppContext = ({ children }) => {
 
 
     useEffect(() => {
+        setReloading(true)
         let token = localStorage.getItem('chms')
         if (token) {
             AdminPermissions()
             setAdmin(jwtDecode(token))
         }
+        setReloading(false)
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
 
@@ -85,6 +89,10 @@ const AppContext = ({ children }) => {
         setLoading,
         connexion,
         deconnexion
+    }
+
+    if (reloading){
+        return <Loading />
     }
 
     return (
