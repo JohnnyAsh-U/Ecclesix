@@ -109,7 +109,7 @@ class AuthBackend:
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,
-                "Church Management System <noreply@example.com>",
+                "Church Management System <info@chms.site>",
                 [self.user.email],
             )
             msg.content_subtype = "html"
@@ -137,10 +137,11 @@ class AuthBackend:
             content = render_to_string(
                 "reset_password.html", context={"token_link": verification_link}
             )
+          
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,
-                "Church Management System <noreply@example.com>",
+                "Church Management System <info@chms.site>",
                 [self.user.email],
             )
             msg.content_subtype = "html"
