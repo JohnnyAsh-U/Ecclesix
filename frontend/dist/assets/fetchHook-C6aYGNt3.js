@@ -1,1 +1,0 @@
-import{r as t,a as i}from"./index-X7PpWUj8.js";const x=(e,o,c={})=>{const[n,s]=t.useState(!0),[u,l]=t.useState(null),[d,f]=t.useState(null),r=async()=>{s(!0);try{const{data:a}=await i[o](e,c);l(a)}catch(a){f(a)}finally{s(!1)}};return t.useEffect(()=>{r()},[e]),{loading:n,reload:()=>r(),data:u,error:d}};export{x as u};
