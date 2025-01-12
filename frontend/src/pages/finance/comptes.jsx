@@ -17,7 +17,7 @@ const Comptes = ({ eglise, type, modal }) => {
         <> {loading && <LoadingData />}
             <div className="row justify-content-center">
                 {data && data.map((compte, index) =>
-                    <div className="col-sm-4 col-lg-6 col-xs-12 col-xl-3 col-md-6"  key={compte.id}>
+                    <div className="col-sm-6 col-lg-6 col-xs-12 col-xl-2 col-md-6 mx-1"  key={compte.id}>
                         <WidgetB
                             icon={compte.account_type == 'Caisse' ? faMoneyBill : faBank}
                             label={compte.account_name}

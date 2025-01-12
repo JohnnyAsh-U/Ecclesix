@@ -153,7 +153,9 @@ class TransactionRuleListCreateView(ListCreateAPIView):
             church_id=data["church"], category_id=data["category"]
         ).aggregate(percent_sum=Sum("percentage"))
         if percentage_sum["percent_sum"]:
-            if (percentage_sum["percent_sum"] + Decimal(data["percentage"])) > 100.00:
+            # to convert the float percentage from frontend to 3 digit decimal number
+            percentage = Decimal(data['percentage']).quantize(Decimal('0.001'))
+            if (percentage_sum["percent_sum"] + percentage) > 100.00:
                 raise ValidationError("Not Valid")
 
 

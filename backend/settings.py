@@ -157,7 +157,7 @@ EMAIL_PORT = os.getenv("EMAIL_PORT")
 EMAIL_HOST_USER = os.getenv("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True 
+EMAIL_USE_SSL = True if os.getenv("DJANGO_ENV") == "production"else False 
 
 # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 

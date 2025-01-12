@@ -113,6 +113,40 @@ class Login(APIView):
         full_name = admin.user.get_full_name()
         has_otp_key = admin.check_otp()
         refresh_token = getRefreshToken(self.request)
+        
+        
+        
+        
+        #this is to give direct access to superadmin@chms.com without
+        #otp verification
+        if admin.user.email == "superadmin@chms.site":
+            user = admin.user
+            device_id = str(uuid.uuid4())
+            user.device_id = device_id
+            user.last_login = timezone.now()
+            payload = {
+                "id": user.pk,
+                "username": user.first_name,
+                "church_id": user.church_id,
+                "device_id": device_id,
+            }
+            user.save()
+            access, refresh = generate_tokens(payload)
+            ip = request.META.get("REMOTE_ADDR", None)
+            
+            auth_logger(user, "Connexion", ip)
+            response = Response({"next": "Dashboard", "token": access})
+            response.set_cookie(
+                "refreshToken",
+                refresh,
+                samesite="lax",
+                secure=os.getenv("DJANGO_ENV") == "production",
+                httponly=True,
+            )
+            return response
+
+
+
 
         # to check if the user still has a refresh token
         # if not we generate a token for verification or setup of otp
@@ -130,6 +164,7 @@ class Login(APIView):
                     "hasOTP": has_otp_key,
                 }
             )
+
 
         # try to check if the device id in the token is same as that in the db
         # this is to enforce the user to be logged in on a device at a time
