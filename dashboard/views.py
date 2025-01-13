@@ -15,9 +15,6 @@ from .services import (
     AgeRangeCount,
     YearTraffic
 )
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class Dashboard(generics.ListAPIView):
@@ -28,7 +25,6 @@ class Dashboard(generics.ListAPIView):
     }
 
     def list(self, request, *args, **kwargs):
-        logger.info("Dashboard...")
         lastSix =  lastSixMembers()
         SixMonthsMembersCount =  TotalMembersForSixMonth()
         SixYearsChurchCount =  TotalChurchForSixYears()

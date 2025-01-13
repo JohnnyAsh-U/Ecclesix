@@ -25,8 +25,9 @@ class Command(BaseCommand):
                 )
 
                 if present_account_balance.exists():
-                    present_account_balance.first().balance = acc.balance
-                    present_account_balance.first().save()
+                    month_account_balance = present_account_balance.first()
+                    month_account_balance.balance = acc.balance
+                    month_account_balance.save()
                     logger.info(f"Updating {present_account_balance.first()}")
                 else:
                     Monthly_Balance.objects.create(
