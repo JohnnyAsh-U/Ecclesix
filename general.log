@@ -3,3 +3,4 @@
 [2025-01-13 13:20:30,916] INFO finance.cron cron Mise a jour du Solde Du Mois de Janvier le 2025-01-13 13:20:30.916696+00:00
 [2025-01-13 13:20:43,188] INFO finance.cron cron Mise a jour du Solde Du Mois de Janvier le 2025-01-13 13:20:43.188584+00:00
 [2025-01-13 13:21:21,214] INFO finance.cron cron Mise a jour du Solde Du Mois de Janvier
+[2025-01-13 13:56:00,878] INFO seeders.management.commands.monthly_balance_job monthly_balance_job Mise a jour du Solde Du Mois de Janvier
