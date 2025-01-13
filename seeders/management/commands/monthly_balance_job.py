@@ -23,13 +23,8 @@ class Command(BaseCommand):
                 present_account_balance = Monthly_Balance.objects.filter(
                     month=month, year=year, account=acc
                 )
-
-                if present_account_balance.exists():
-                    month_account_balance = present_account_balance.first()
-                    month_account_balance.balance = acc.balance
-                    month_account_balance.save()
-                    logger.info(f"Updating {present_account_balance.first()}")
-                else:
+                
+                if not present_account_balance.exists():
                     Monthly_Balance.objects.create(
                         month=month, year=year, account=acc, balance=acc.balance
                     )
@@ -37,7 +32,7 @@ class Command(BaseCommand):
                         f"Inserting New Record for {present_account_balance.first()}"
                     )
 
-            logger.info(f"Monthly Balance Job done")
+            logger.info(f"Mise a jour du Solde Du Mois Terminé")
             self.stdout.write(self.style.SUCCESS("Job completed"))
         except Exception as m:
             logger.exception(m)

@@ -1090,9 +1090,9 @@ class Report(APIView):
         # update the final account variable and initial account variable with the opening account balance
         for obj in OpeningBalance:
             account_initial = next(
-                (i for i in InitialBalance if i["id"] == obj.pk), None
+                (i for i in InitialBalance if i["id"] == obj.account_id), None
             )
-            account_final = next((f for f in FinalBalance if f["id"] == obj.pk), None)
+            account_final = next((f for f in FinalBalance if f["id"] == obj.account_id), None)
 
             if account_initial:
                 account_initial["balance"] += obj.balance
