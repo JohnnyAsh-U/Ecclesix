@@ -2,9 +2,14 @@ from models import Account, Monthly_Balance
 from django.utils import timezone
 from backend.utils import time_date
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def monthly_balance_update():
     today = timezone.now()
-    print(f"Mise a jour du Solde Du Mois de {time_date.list_month[today.month-1]} le {today}")
+    logger.info(f"Mise a jour du Solde Du Mois de {time_date.list_month[today.month-1]} le {today}")
 
 
 

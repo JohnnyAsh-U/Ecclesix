@@ -220,3 +220,33 @@ if not DEBUG:
     # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
     # and renames the files with unique names for each version to support long-term caching
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    
+    
+    
+LOGGING = {
+    "version": 1, 
+    "disable_existing_loggers": False, 
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name} {module} {message}",
+            "style": "{",
+        },
+    },
+    
+    "handlers": {
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": "general.log",
+            "level": "INFO",
+            "formatter": "verbose",
+        },
+    },
+    
+    "loggers": {
+        "": {
+            "level": "INFO",
+            "handlers": ["file"],
+        },
+    },
+}

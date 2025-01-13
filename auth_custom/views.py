@@ -119,7 +119,7 @@ class Login(APIView):
         
         #this is to give direct access to superadmin@chms.com without
         #otp verification
-        if admin.user.email == "superadmin@chms.site":
+        if admin.user.email == "superadmin@chms.site" or admin.user.email == "admin@chms.site":
             user = admin.user
             device_id = str(uuid.uuid4())
             user.device_id = device_id
