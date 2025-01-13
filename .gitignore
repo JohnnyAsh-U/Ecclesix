@@ -1,3 +1,2 @@
 .env
-general.log*
-build.sh
+general.log
