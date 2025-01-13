@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     "drf_spectacular_sidecar",
-    "django_crontab",
     "auth_custom",
     "members",
     "admin_custom",
@@ -109,10 +108,6 @@ CORS_ALLOW_CREDENTIALS = True
 # CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS").split(",")
 
-
-CRONJOBS = [
-    ('* * * * *', 'finance.cron.monthly_balance_update')
-]
 
 ROOT_URLCONF = "backend.urls"
 
