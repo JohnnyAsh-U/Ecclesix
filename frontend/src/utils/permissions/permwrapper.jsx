@@ -1,6 +1,6 @@
 import { AppGlobalContext } from "../../hooks/AppContext"
 import Page404 from '../../pages/error/404'
-import { Link } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
 
 
 //compares two arrays to check if at least one of the required perms in included in the 
@@ -25,7 +25,7 @@ export const PagePermsWrapper = ({ requiredPerms, children }) => {
 
     // To make sure the appcontext that loads the permissions has fetched the perms
     if(!reloading){
-        return checkPerms(permissions.perms, requiredPerms) ? children : <Page404 />;
+        return checkPerms(permissions.perms, requiredPerms) ? children : <Navigate to={'/dashboard/membres'} />;
     }
 }
 
