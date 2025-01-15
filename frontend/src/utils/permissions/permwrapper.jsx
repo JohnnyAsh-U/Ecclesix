@@ -24,8 +24,8 @@ export const PagePermsWrapper = ({ requiredPerms, children }) => {
     }
 
     // To make sure the appcontext that loads the permissions has fetched the perms
-    if(!reloading){
-        return checkPerms(permissions.perms, requiredPerms) ? children : <Navigate to={'/dashboard/membres'} />;
+    if(!reloading && permissions.perms){
+        return checkPerms(permissions.perms, requiredPerms) ? children : <Page404 />;
     }
 }
 
