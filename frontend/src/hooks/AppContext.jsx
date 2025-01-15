@@ -88,7 +88,8 @@ const AppContext = ({ children }) => {
         loading,
         setLoading,
         connexion,
-        deconnexion
+        deconnexion,
+        reloading
     }
 
     if (reloading){

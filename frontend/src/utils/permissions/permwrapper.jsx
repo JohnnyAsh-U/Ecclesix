@@ -11,7 +11,7 @@ function checkPerms(userPerms, requiredPerms) {
 
 //Page Permission check wrapper
 export const PagePermsWrapper = ({ requiredPerms, children }) => {
-    const { permissions } = AppGlobalContext()
+    const { permissions, reloading } = AppGlobalContext()
 
     //if superadmin 
     if (permissions.superAdmin) {
@@ -23,7 +23,10 @@ export const PagePermsWrapper = ({ requiredPerms, children }) => {
         return children
     }
 
-    return checkPerms(permissions.perms, requiredPerms) ? children : <Page404 />;
+    // To make sure the appcontext that loads the permissions has fetched the perms
+    if(!reloading){
+        return checkPerms(permissions.perms, requiredPerms) ? children : <Page404 />;
+    }
 }
 
 //Content Permission check wrapper
