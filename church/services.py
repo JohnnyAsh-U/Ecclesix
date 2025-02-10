@@ -15,7 +15,9 @@ def TotalMembersForSixMonth(id):
 
     for a in range(5, -1, -1):
         start_date = today.replace(day=1) + relativedelta(months=-a)
-        end_date = today.replace(day=31) + relativedelta(months=-a)
+        # end_date = today.replace(day=31) + relativedelta(months=-a)
+        end_date = today + relativedelta(day=31, months=-a)
+
 
         count = Member.objects.filter(
             church=id, date_joined__date__range=(start_date, end_date), is_active=True
@@ -33,7 +35,9 @@ def TotalEventsForSixMonth(id):
 
     for a in range(0, 6):
         start_date = today.replace(day=1) + relativedelta(months=-a)
-        end_date = today.replace(day=31) + relativedelta(months=-a)
+        # end_date = today.replace(day=31) + relativedelta(months=-a)
+        end_date = today + relativedelta(day=31, months=-a)
+
 
         count = Event.objects.filter(
             church=id,
@@ -52,7 +56,9 @@ def TotalAttendanceForSixMonth(id):
 
     for a in range(0, 6):
         start_date = today.replace(day=1) + relativedelta(months=-a)
-        end_date = today.replace(day=31) + relativedelta(months=-a)
+        # end_date = today.replace(day=31) + relativedelta(months=-a)
+        end_date = today + relativedelta(day=31, months=-a)
+
 
         count = Event.objects.filter(
             church=id,
