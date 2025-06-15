@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-import dj_database_url
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -92,7 +91,7 @@ SPECTACULAR_SETTINGS = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -133,24 +132,16 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {"default": {}}
-
-if os.getenv("DJANGO_ENV") == "production":
-    DATABASES["default"] = dj_database_url.config(
-        default=os.getenv("DATABASE_URL"), conn_max_age=600
-    )
-else:
-    DATABASES["default"] = {
+DATABASES = {
+    "default": {
         "ENGINE": os.getenv("ENGINE"),
         "NAME": os.getenv("NAME"),
         "USER": os.getenv("USER"),
         "PASSWORD": os.getenv("PASSWORD"),
         "HOST": os.getenv("HOST"),
         "PORT": os.getenv("PORT"),
-        # "ENGINE": "django.db.backends.sqlite3",
-        # "NAME": BASE_DIR / "db.sqlite3",
     }
-    
+}
 
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = os.getenv("EMAIL_PORT")
@@ -195,7 +186,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
 
 AUTH_USER_MODEL = "members.Member"
 
@@ -207,16 +197,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'frontend/dist/assets'),
+    os.path.join(BASE_DIR, 'frontend/dist'), 
+]
 
-# This production code might break development mode, so we check whether we're in DEBUG mode
-if not DEBUG:
-    # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
-    # and renames the files with unique names for each version to support long-term caching
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    
-    
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'frontend/dist')]
+
     
     
 LOGGING = {
