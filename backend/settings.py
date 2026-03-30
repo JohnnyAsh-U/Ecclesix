@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "django_crontab",
     "drf_spectacular",
     "drf_spectacular_sidecar",
     "auth_custom",
@@ -101,11 +103,11 @@ MIDDLEWARE = [
 ]
 
 
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS").split(",")
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if os.getenv("CORS_ALLOWED_ORIGINS") else []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else []
 CORS_ALLOW_CREDENTIALS = True
 # CORS_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
 
 
 ROOT_URLCONF = "backend.urls"
@@ -134,12 +136,12 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv("ENGINE"),
-        "NAME": os.getenv("NAME"),
-        "USER": os.getenv("USER"),
-        "PASSWORD": os.getenv("PASSWORD"),
-        "HOST": os.getenv("HOST"),
-        "PORT": os.getenv("PORT"),
+        "ENGINE": os.getenv("DB_ENGINE"),
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
     }
 }
 
@@ -204,7 +206,7 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'frontend/dist')]
+TEMPLATES[0]['DIRS'].append(os.path.join(BASE_DIR, 'frontend/dist'))
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     
@@ -234,3 +236,10 @@ LOGGING = {
         },
     },
 }
+
+# Run on the first day of every month at 00:00.
+CRONTAB_PYTHON_EXECUTABLE = sys.executable.replace(" ", r"\ ")
+CRONTAB_DJANGO_MANAGE_PATH = str(BASE_DIR / "manage.py").replace(" ", r"\ ")
+CRONJOBS = [
+    ("0 0 1 * *", "django.core.management.call_command", ["monthly_balance_job"]),
+]

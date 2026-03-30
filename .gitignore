@@ -1,2 +1,4 @@
 .env
 general.log
+venv
+.venv

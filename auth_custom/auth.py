@@ -115,7 +115,8 @@ class AuthBackend:
             msg.content_subtype = "html"
             msg.send()
             return True
-        except smtplib.SMTPException:
+        except smtplib.SMTPException as e:
+            print(e)
             return False
 
     def verify_refresh_token(self, token, secret):
