@@ -12,17 +12,42 @@ export const NavList = () => {
         {
             name: 'Dashboard',
             to: '/dashboard',
+
             icon: <i className="icofont icofont-chart-histogram"></i>,
             color: '#4680ff',
             perms: [],
             items: [
                 {
+                    name: 'Overview',
+                    to: '/dashboard/overview'
+                },
+                {
                     name: 'Membres',
                     to: '/dashboard/membres'
-                },  {
-                    name: 'Finances',
-                    to: '/dashboard/finances'
-                }
+                },
+                {
+                    name: 'Members',
+                    to: '/dashboard/members'
+                }, {
+                    name: 'Growth',
+                    to: '/dashboard/growth'
+                },
+                {
+                    name: 'Departments',
+                    to: '/dashboard/departments'
+                },
+                {
+                    name: 'Attendance',
+                    to: '/dashboard/attendance'
+                },
+                {
+                    name: 'Branches',
+                    to: '/dashboard/branches'
+                },
+                {
+                    name: 'Insights',
+                    to: '/dashboard/insights'
+                },
             ]
         },
         {
@@ -74,7 +99,7 @@ export const NavList = () => {
             icon: <i className="icofont icofont-court"></i>,
             color: '#4680ff',
             perms: [],
-            items: eglises.map(e=>({name: e.church_name, to: '/eglise/'+e.id}))
+            items: eglises.map(e => ({ name: e.church_name, to: '/eglise/' + e.id }))
         },
         {
             name: 'Finances',
