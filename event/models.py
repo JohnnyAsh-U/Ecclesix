@@ -4,6 +4,8 @@ from django.utils import timezone
 
 class Event_Type(models.Model):
     event_type_name = models.CharField("event type name", max_length=50, unique=True)
+    start_time = models.TimeField("start time", null=True, blank=True)
+    end_time = models.TimeField("end time", null=True, blank=True)
     weekly_event = models.BooleanField("weekly event", default=False)
 
     class Meta:

@@ -13,10 +13,24 @@ import { FormSelectWithLabel } from '../../components/Inputbox/form-select';
 export function AjouterType({ fetch, modal, handleModal }) {
     const [loading, setLoading] = useState(false)
 
+    const isWeeklyEvent = (value) => `${value}` === '1' || value === true || `${value}`.toLowerCase() === 'true'
+
+    const normalizePayload = (values) => {
+        const weekly = isWeeklyEvent(values.weekly_event)
+        return {
+            ...values,
+            weekly_event: weekly,
+            start_time: weekly ? (values.start_time || null) : null,
+            end_time: weekly ? (values.end_time || null) : null,
+        }
+    }
+
     const formik = useFormik({
         initialValues: {
             event_type_name: '',
-            weekly_event: 'none'
+            weekly_event: 'none',
+            start_time: '',
+            end_time: ''
         },
         validationSchema: yup.object({
             event_type_name: yup.string().required('Ce champ est requis'),
@@ -24,7 +38,7 @@ export function AjouterType({ fetch, modal, handleModal }) {
         }),
         onSubmit: values => {
             setLoading(true)
-            axios.post(`/evenement/type`, values ).then(data => {
+            axios.post(`/evenement/type`, normalizePayload(values) ).then(data => {
                 formik.resetForm()
                 handleModal()
                 toast.success("Success")
@@ -70,6 +84,28 @@ export function AjouterType({ fetch, modal, handleModal }) {
                             {formik.touched.weekly_event && formik.errors.weekly_event ? (<small className='text-danger'>{formik.errors.weekly_event}</small>) : null}
                         </div>
                     </div>
+
+                    {isWeeklyEvent(formik.values.weekly_event) && (
+                        <>
+                            <div className="form-group row mb-3">
+                                <label htmlFor="start_time" className="fw-bold col-sm-3 col-form-label">
+                                    Heure debut
+                                </label>
+                                <div className="col-sm-9">
+                                    <input type="time" className='form-control' name="start_time" id="start_time" {...formik.getFieldProps('start_time')} />
+                                </div>
+                            </div>
+
+                            <div className="form-group row mb-3">
+                                <label htmlFor="end_time" className="fw-bold col-sm-3 col-form-label">
+                                    Heure fin
+                                </label>
+                                <div className="col-sm-9">
+                                    <input type="time" className='form-control' name="end_time" id="end_time" {...formik.getFieldProps('end_time')} />
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </Modal.Body>
                 <Modal.Footer>
                     <button type="button" className={`btn btn-danger btn-outline-danger btn-sm`} onClick={() => handleModal()}>
@@ -90,9 +126,23 @@ export function AjouterType({ fetch, modal, handleModal }) {
 export const ModifierType = ({ type, modal, handleModal, fetch }) => {
     const [loading, setLoading] = useState(false)
 
+    const isWeeklyEvent = (value) => `${value}` === '1' || value === true || `${value}`.toLowerCase() === 'true'
+
+    const normalizePayload = (values) => {
+        const weekly = isWeeklyEvent(values.weekly_event)
+        return {
+            ...values,
+            weekly_event: weekly,
+            start_time: weekly ? (values.start_time || null) : null,
+            end_time: weekly ? (values.end_time || null) : null,
+        }
+    }
+
     const initialValues = {
         event_type_name: type.event_type_name,
-        weekly_event: type.weekly_event
+        weekly_event: type.weekly_event,
+        start_time: type.start_time || '',
+        end_time: type.end_time || ''
     }
 
     const validationSchema = yup.object({
@@ -102,7 +152,7 @@ export const ModifierType = ({ type, modal, handleModal, fetch }) => {
 
     const submit = (values) => {
         setLoading(true)
-        axios.put(`/evenement/type/${type.id}`, values, { withCredentials: true }).then(data => {
+        axios.put(`/evenement/type/${type.id}`, normalizePayload(values), { withCredentials: true }).then(data => {
             handleModal()
             toast.success("Success")
             fetch()
@@ -126,20 +176,45 @@ export const ModifierType = ({ type, modal, handleModal, fetch }) => {
                     initialValues={initialValues}
                     validationSchema={validationSchema}
                     onSubmit={submit} >
-                    <Form>
-                        <FormInputWithLabel name={"event_type_name"} title={"Libelle"} />
-                        <FormSelectWithLabel name={'weekly_event'} title={"Type"}>
-                            <option value={"none"} disabled>Type... </option>
-                            <option value={"true"}>Culte Ordinaire</option>
-                            <option value={"false"}>Culte/Evenement Special</option>
-                        </FormSelectWithLabel>
-                        <Modal.Footer>
-                            <button type="button" className={`btn btn-danger btn-outline-danger btn-sm`} onClick={() => handleModal()}>
-                                Fermer
-                            </button>
-                            <LoadingButton2 loading={loading} type={"submit"} color={"primary"} name={"Modifier"} size='sm' />
-                        </Modal.Footer>
-                    </Form>
+                    {(formik) => (
+                        <Form>
+                            <FormInputWithLabel name={"event_type_name"} title={"Libelle"} />
+                            <FormSelectWithLabel name={'weekly_event'} title={"Type"}>
+                                <option value={"none"} disabled>Type... </option>
+                                <option value={"1"}>Culte Ordinaire</option>
+                                <option value={"0"}>Culte/Evenement Special</option>
+                            </FormSelectWithLabel>
+
+                            {isWeeklyEvent(formik.values.weekly_event) && (
+                                <>
+                                    <div className="form-group row mb-3">
+                                        <label htmlFor="start_time" className="fw-bold col-sm-3 col-form-label">
+                                            Heure debut
+                                        </label>
+                                        <div className="col-sm-9">
+                                            <input type="time" className='form-control' name="start_time" id="start_time" {...formik.getFieldProps('start_time')} />
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group row mb-3">
+                                        <label htmlFor="end_time" className="fw-bold col-sm-3 col-form-label">
+                                            Heure fin
+                                        </label>
+                                        <div className="col-sm-9">
+                                            <input type="time" className='form-control' name="end_time" id="end_time" {...formik.getFieldProps('end_time')} />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            <Modal.Footer>
+                                <button type="button" className={`btn btn-danger btn-outline-danger btn-sm`} onClick={() => handleModal()}>
+                                    Fermer
+                                </button>
+                                <LoadingButton2 loading={loading} type={"submit"} color={"primary"} name={"Modifier"} size='sm' />
+                            </Modal.Footer>
+                        </Form>
+                    )}
                 </Formik>
             </Modal.Body>
         </Modal>

@@ -52,6 +52,8 @@ const TypeEvenement = () => {
                                 <th >ID</th>
                                 <th >Type Evenement</th>
                                 <th >Culte Ordinaire</th>
+                                <th >Heure Debut</th>
+                                <th >Heure Fin</th>
                                 <th ></th>
                             </tr>
                         </thead>
@@ -61,6 +63,8 @@ const TypeEvenement = () => {
                                     <td> {type.id}</td>
                                     <td> {type.event_type_name}</td>
                                     <td> {type.weekly_event && <FontAwesomeIcon icon={faCheck} />}</td>
+                                    <td> {type.weekly_event ? (type.start_time || '-') : '-'}</td>
+                                    <td> {type.weekly_event ? (type.end_time || '-') : '-'}</td>
                                     <td >
                                         <div className="btn-group btn-group-sm hidden" role="group" shape="rounded-pill">
                                             <button className='btn btn-default btn-sm btn-outline-default p-1 mx-2' onClick={() => { setType(type); setModal('modifier') }}>
