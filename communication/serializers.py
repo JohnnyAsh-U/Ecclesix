@@ -1,0 +1,38 @@
+from rest_framework import serializers
+from members.models import Member
+
+
+class CommunicationMiniMemberSerializer(serializers.ModelSerializer):
+    get_full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Member
+        fields = ["id", "get_full_name", "phone", "email"]
+
+    def get_get_full_name(self, obj):
+        return obj.get_full_name()
+
+
+class CommunicationSendSerializer(serializers.Serializer):
+    channel = serializers.ChoiceField(choices=["email", "sms"])
+    subject = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    message = serializers.CharField()
+    member_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        allow_empty=False,
+    )
+
+    def validate(self, attrs):
+        channel = attrs.get("channel")
+        subject = (attrs.get("subject") or "").strip()
+        message = (attrs.get("message") or "").strip()
+
+        if not message:
+            raise serializers.ValidationError({"message": "Message is required"})
+
+        if channel == "email" and not subject:
+            raise serializers.ValidationError({"subject": "Subject is required for email"})
+
+        attrs["subject"] = subject
+        attrs["message"] = message
+        return attrs

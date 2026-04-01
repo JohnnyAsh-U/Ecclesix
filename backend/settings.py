@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "dashboard",
     "department",
     "finance",
+    "communication",
     "seeders",
 ]
 
@@ -145,14 +146,17 @@ DATABASES = {
     }
 }
 
+EMAIL_BACKEND = (
+    "django.core.mail.backends.console.EmailBackend"
+    if os.getenv("DJANGO_ENV") == "development"
+    else "django.core.mail.backends.smtp.EmailBackend"
+)
 EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True if os.getenv("DJANGO_ENV") == "production"else False 
-
-# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_USE_SSL = True if os.getenv("DJANGO_ENV") == "production" else False
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

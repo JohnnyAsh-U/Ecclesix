@@ -37,6 +37,13 @@ export const NavList = () => {
             perms: ['voir_membre', 'voir_touts_membres']
         },
         {
+            name: 'Communication',
+            to: '/communication',
+            color: '#5fbeaa',
+            icon: <i className="icofont icofont-envelope-open"></i>,
+            perms: ['envoyer_communication', 'envoyer_toutes_communications']
+        },
+        {
             name: 'Departements',
             to: '/departements',
             color: '#ffb64d',

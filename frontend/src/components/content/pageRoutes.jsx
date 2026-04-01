@@ -10,6 +10,7 @@ const Evenements = React.lazy(() => import('../../pages/evenement'))
 const Logs = React.lazy(()=>import('../../pages/logs'))
 const Eglises = React.lazy(()=>import('../../pages/eglise'))
 const Parametres = React.lazy(()=>import('../../pages/parametres'))
+const Communication = React.lazy(() => import('../../pages/communication'))
 const Rapports = React.lazy(()=>import('../../pages/finance/rapports'))
 const Transactions = React.lazy(()=>import('../../pages/finance/transactions'))
 const Budgets = React.lazy(()=>import('../../pages/finance/budgets'))
@@ -20,6 +21,12 @@ export const routes = [
   // { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard/membres', name: 'Dashboard', element: Dashboard, PermissionRequises: [] },
   { path: '/membres', name: 'Membres', element: Membres, PermissionRequises: ['voir_membre', 'voir_touts_membres'] },
+  {
+    path: '/communication',
+    name: 'Communication',
+    element: Communication,
+    PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
+  },
   { path: '/membres/ajouter', name: 'Ajouter Membre', element: AjouterMembre, PermissionRequises: ['ajouter_membre'] },
   { path: '/membres/profile/:id', name: "Profile", element: Profile, PermissionRequises: [] },
   {
