@@ -10,6 +10,7 @@ import { LoadingPage } from '../../components/Loading/loading'
 import { toast } from 'react-toastify'
 import useFetch from '../../hooks/fetchHook'
 import AmesSuivis from './ames-suivis'
+import MemberAttendance from './attendance'
 
 
 
@@ -24,6 +25,7 @@ const Profile = () => {
   const { loading: rloading, data: rdata, reload: rreload, error: rerror } = useFetch(`/admin/roles`, 'get')
   const ville = vdata || []
   const roles = rdata || []
+  console.log('membre', membre)
   window.scrollTo(0, 0)
 
 
@@ -36,7 +38,8 @@ const Profile = () => {
   const tab = [
     { id: 1, label: "Information", content: <Information roles={roles} membre={membre} fetch={reload} ville={ville} /> },
     { id: 2, label: "Membres Suivis", content: <AmesSuivis roles={roles} membre={membre} /> },
-    { id: 3, label: "Admin", content: <Admin roles={roles} membre={membre} fetch={reload} /> },
+    { id: 3, label: "Presence Evenements", content: <MemberAttendance membre={membre} /> },
+    { id: 4, label: "Admin", content: <Admin roles={roles} membre={membre} fetch={reload} /> },
   ]
 
   return (
@@ -59,7 +62,10 @@ const Profile = () => {
                 if (t.id == 2 && membre.status !== 'Visiteur' && membre.status !== 'Membre') {
                   return t
                 }
-                if (t.id == 3 && membre.is_admin && permissions.superAdmin) {
+                if (t.id == 3) {
+                  return t
+                }
+                if (t.id == 4 && membre.is_admin && permissions.superAdmin) {
                   return t
                 }
                 return null

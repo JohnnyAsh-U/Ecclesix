@@ -162,6 +162,7 @@ class EventTypeListCreateView(ListCreateAPIView):
             "lib": serializer.data["event_type_name"],
             "heure_debut": serializer.data.get("start_time"),
             "heure_fin": serializer.data.get("end_time"),
+            "jour_semaine": serializer.data.get("event_day_of_week"),
         }
         Log.objects.create(admin_id=request.user.id, log_type="INSERT", detail=detail)
         headers = self.get_success_headers(serializer.data)
@@ -204,6 +205,7 @@ class EventTypeRUDView(RetrieveUpdateDestroyAPIView):
             "lib": instance.event_type_name,
             "heure_debut": str(instance.start_time) if instance.start_time else None,
             "heure_fin": str(instance.end_time) if instance.end_time else None,
+            "jour_semaine": instance.event_day_of_week,
         }
         self.perform_destroy(instance)
         Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)

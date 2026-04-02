@@ -9,6 +9,17 @@ import { toast } from 'react-toastify'
 import { AjouterType, ModifierType, SupprimerType } from './type_evenement_modal'
 
 
+const DAY_LABELS = {
+    0: 'Lundi',
+    1: 'Mardi',
+    2: 'Mercredi',
+    3: 'Jeudi',
+    4: 'Vendredi',
+    5: 'Samedi',
+    6: 'Dimanche',
+}
+
+
 
 const TypeEvenement = () => {
     const [modal, setModal] = useState(null)
@@ -52,6 +63,7 @@ const TypeEvenement = () => {
                                 <th >ID</th>
                                 <th >Type Evenement</th>
                                 <th >Culte Ordinaire</th>
+                                <th >Jour</th>
                                 <th >Heure Debut</th>
                                 <th >Heure Fin</th>
                                 <th ></th>
@@ -63,6 +75,7 @@ const TypeEvenement = () => {
                                     <td> {type.id}</td>
                                     <td> {type.event_type_name}</td>
                                     <td> {type.weekly_event && <FontAwesomeIcon icon={faCheck} />}</td>
+                                    <td> {type.event_day_of_week !== null ? (DAY_LABELS[Number(type.event_day_of_week)] || '-') : '-'}</td>
                                     <td> {type.weekly_event ? (type.start_time || '-') : '-'}</td>
                                     <td> {type.weekly_event ? (type.end_time || '-') : '-'}</td>
                                     <td >

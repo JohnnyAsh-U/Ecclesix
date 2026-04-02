@@ -69,6 +69,7 @@ class MemberSerializer(serializers.ModelSerializer):
     followed_up_by_name = serializers.SerializerMethodField()
     relations = serializers.SerializerMethodField()
     departments = serializers.SerializerMethodField()
+    qr_code = serializers.SerializerMethodField()
 
 
     class Meta:
@@ -104,6 +105,7 @@ class MemberSerializer(serializers.ModelSerializer):
             "departments",
             "get_full_name",
             "is_superuser",
+            "qr_code",
         ]
 
     def update(self, instance, validated_data):
@@ -173,3 +175,6 @@ class MemberSerializer(serializers.ModelSerializer):
                     "head": dep.department_head_id
                 })
             return res
+
+    def get_qr_code(self, obj):
+        return obj.generate_qr_payload()

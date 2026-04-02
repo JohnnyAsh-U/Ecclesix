@@ -43,3 +43,19 @@ class Log(models.Model):
 
     def __str__(self):
         return f"{self.log_type} | {self.admin.first_name}"
+
+
+class Appconfig(models.Model):
+    config_key = models.CharField(max_length=100, unique=True)
+    config_value = models.JSONField("config value", null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "app config"
+        verbose_name_plural = "app configs"
+        default_permissions = ()
+
+    def __str__(self):
+        return self.config_key

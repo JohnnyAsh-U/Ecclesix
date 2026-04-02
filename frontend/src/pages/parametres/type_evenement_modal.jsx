@@ -9,6 +9,17 @@ import { LoadingButton2 } from '../../components/buttons/loadingbuttons';
 import { FormSelectWithLabel } from '../../components/Inputbox/form-select';
 
 
+const DAYS_OF_WEEK = [
+    { value: '0', label: 'Lundi' },
+    { value: '1', label: 'Mardi' },
+    { value: '2', label: 'Mercredi' },
+    { value: '3', label: 'Jeudi' },
+    { value: '4', label: 'Vendredi' },
+    { value: '5', label: 'Samedi' },
+    { value: '6', label: 'Dimanche' },
+]
+
+
 
 export function AjouterType({ fetch, modal, handleModal }) {
     const [loading, setLoading] = useState(false)
@@ -17,11 +28,13 @@ export function AjouterType({ fetch, modal, handleModal }) {
 
     const normalizePayload = (values) => {
         const weekly = isWeeklyEvent(values.weekly_event)
+        const day = values.event_day_of_week
         return {
             ...values,
             weekly_event: weekly,
             start_time: weekly ? (values.start_time || null) : null,
             end_time: weekly ? (values.end_time || null) : null,
+            event_day_of_week: weekly && day !== 'none' && day !== '' ? Number(day) : null,
         }
     }
 
@@ -30,11 +43,17 @@ export function AjouterType({ fetch, modal, handleModal }) {
             event_type_name: '',
             weekly_event: 'none',
             start_time: '',
-            end_time: ''
+            end_time: '',
+            event_day_of_week: 'none',
         },
         validationSchema: yup.object({
             event_type_name: yup.string().required('Ce champ est requis'),
-            weekly_event: yup.string().notOneOf(['none'], 'Ce champ est requis')
+            weekly_event: yup.string().notOneOf(['none'], 'Ce champ est requis'),
+            event_day_of_week: yup.string().when('weekly_event', {
+                is: (value) => isWeeklyEvent(value),
+                then: (schema) => schema.notOneOf(['none'], 'Ce champ est requis'),
+                otherwise: (schema) => schema,
+            }),
         }),
         onSubmit: values => {
             setLoading(true)
@@ -88,6 +107,21 @@ export function AjouterType({ fetch, modal, handleModal }) {
                     {isWeeklyEvent(formik.values.weekly_event) && (
                         <>
                             <div className="form-group row mb-3">
+                                <label htmlFor="event_day_of_week" className="fw-bold col-sm-3 col-form-label">
+                                    Jour
+                                </label>
+                                <div className="col-sm-9">
+                                    <select className='form-control form-select' name="event_day_of_week" id="event_day_of_week" {...formik.getFieldProps('event_day_of_week')}>
+                                        <option value={'none'} disabled>Jour...</option>
+                                        {DAYS_OF_WEEK.map((day) => (
+                                            <option key={day.value} value={day.value}>{day.label}</option>
+                                        ))}
+                                    </select>
+                                    {formik.touched.event_day_of_week && formik.errors.event_day_of_week ? (<small className='text-danger'>{formik.errors.event_day_of_week}</small>) : null}
+                                </div>
+                            </div>
+
+                            <div className="form-group row mb-3">
                                 <label htmlFor="start_time" className="fw-bold col-sm-3 col-form-label">
                                     Heure debut
                                 </label>
@@ -130,11 +164,13 @@ export const ModifierType = ({ type, modal, handleModal, fetch }) => {
 
     const normalizePayload = (values) => {
         const weekly = isWeeklyEvent(values.weekly_event)
+        const day = values.event_day_of_week
         return {
             ...values,
             weekly_event: weekly,
             start_time: weekly ? (values.start_time || null) : null,
             end_time: weekly ? (values.end_time || null) : null,
+            event_day_of_week: weekly && day !== 'none' && day !== '' ? Number(day) : null,
         }
     }
 
@@ -142,12 +178,21 @@ export const ModifierType = ({ type, modal, handleModal, fetch }) => {
         event_type_name: type.event_type_name,
         weekly_event: type.weekly_event,
         start_time: type.start_time || '',
-        end_time: type.end_time || ''
+        end_time: type.end_time || '',
+        event_day_of_week:
+            type.event_day_of_week !== null && type.event_day_of_week !== undefined
+                ? String(type.event_day_of_week)
+                : 'none',
     }
 
     const validationSchema = yup.object({
         event_type_name: yup.string().required('Ce champ est requis'),
-        weekly_event: yup.string().notOneOf(['none'], 'Ce champ est requis')
+        weekly_event: yup.mixed().test('required-weekly', 'Ce champ est requis', (value) => value !== 'none' && value !== undefined && value !== null),
+        event_day_of_week: yup.string().when('weekly_event', {
+            is: (value) => isWeeklyEvent(value),
+            then: (schema) => schema.notOneOf(['none'], 'Ce champ est requis'),
+            otherwise: (schema) => schema,
+        }),
     })
 
     const submit = (values) => {
@@ -187,6 +232,21 @@ export const ModifierType = ({ type, modal, handleModal, fetch }) => {
 
                             {isWeeklyEvent(formik.values.weekly_event) && (
                                 <>
+                                    <div className="form-group row mb-3">
+                                        <label htmlFor="event_day_of_week" className="fw-bold col-sm-3 col-form-label">
+                                            Jour
+                                        </label>
+                                        <div className="col-sm-9">
+                                            <select className='form-control form-select' name="event_day_of_week" id="event_day_of_week" {...formik.getFieldProps('event_day_of_week')}>
+                                                <option value={'none'} disabled>Jour...</option>
+                                                {DAYS_OF_WEEK.map((day) => (
+                                                    <option key={day.value} value={day.value}>{day.label}</option>
+                                                ))}
+                                            </select>
+                                            {formik.touched.event_day_of_week && formik.errors.event_day_of_week ? (<small className='text-danger'>{formik.errors.event_day_of_week}</small>) : null}
+                                        </div>
+                                    </div>
+
                                     <div className="form-group row mb-3">
                                         <label htmlFor="start_time" className="fw-bold col-sm-3 col-form-label">
                                             Heure debut

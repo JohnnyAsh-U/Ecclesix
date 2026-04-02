@@ -1,11 +1,33 @@
 from rest_framework.generics import ListCreateAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.core.signing import Signer, BadSignature
 from .models import Attendance
 from .serializers import AttendanceSerializer
 from admin_custom.models import Log
+from members.models import Member
 from datetime import date
+import json
 import math
+
+
+signer = Signer()
+
+
+def validate_qr(signed_payload):
+    try:
+        unsigned = signer.unsign(signed_payload)
+        data = json.loads(unsigned)
+
+        member_id = data.get("id")
+        member = Member.objects.get(pk=member_id)
+
+        if member.qr_secret != data.get("sec"):
+            return None
+
+        return member
+    except (BadSignature, Member.DoesNotExist, json.JSONDecodeError, TypeError, ValueError):
+        return None
 
 
 class AttendanceListCreateView(ListCreateAPIView):
@@ -65,6 +87,25 @@ class AttendanceListCreateView(ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
+        signed_payload = data.pop("qr_code_secret", None)
+
+        if signed_payload:
+            qr_member = validate_qr(signed_payload)
+            if not qr_member:
+                return Response(
+                    {"detail": "QR code invalide ou falsifie."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            payload_member = data.get("member")
+            if payload_member and str(payload_member) != str(qr_member.pk):
+                return Response(
+                    {"detail": "Le membre du QR code ne correspond pas au membre selectionne."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data["member"] = qr_member.pk
+
         if not data.get("created_by"):
             data["created_by"] = request.user.id
         if not data.get("church"):

@@ -1,7 +1,11 @@
+import secrets
+import json
+
 from django.db import models
 from auth_custom.models import User
 from django.contrib.auth.models import UserManager
 from django.contrib.auth.hashers import make_password
+from django.core.signing import Signer
 
 
 class UserManagerCustom(UserManager):
@@ -128,6 +132,14 @@ class Member(User):
     )
 
     objects = UserManagerCustom()
+
+    def generate_qr_payload(self):
+        signer = Signer()
+        payload = {
+            "id": self.pk,
+        }
+        payload_str = json.dumps(payload)
+        return signer.sign(payload_str)
 
     class Meta:
         verbose_name = "member"

@@ -3,10 +3,26 @@ from django.utils import timezone
 
 
 class Event_Type(models.Model):
+    DAY_OF_WEEK_CHOICES = (
+        (0, "Monday"),
+        (1, "Tuesday"),
+        (2, "Wednesday"),
+        (3, "Thursday"),
+        (4, "Friday"),
+        (5, "Saturday"),
+        (6, "Sunday"),
+    )
+
     event_type_name = models.CharField("event type name", max_length=50, unique=True)
     start_time = models.TimeField("start time", null=True, blank=True)
     end_time = models.TimeField("end time", null=True, blank=True)
     weekly_event = models.BooleanField("weekly event", default=False)
+    event_day_of_week = models.PositiveSmallIntegerField(
+        "event day of week",
+        choices=DAY_OF_WEEK_CHOICES,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = "event_type"

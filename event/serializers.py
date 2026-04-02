@@ -79,6 +79,7 @@ class EventTypeSerializer(serializers.ModelSerializer):
             "event_type_name": "lib",
             "start_time": "heure_debut",
             "end_time": "heure_fin",
+            "event_day_of_week": "jour_semaine",
         }
 
         for field in validated_data:
