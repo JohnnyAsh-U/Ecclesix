@@ -5,19 +5,28 @@ import { formatDate, list_month } from '../../utils/datetime/month'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import useFetch from '../../hooks/fetchHook'
+import axios from 'axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCalendar, faEllipsisVertical, faPencil, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import Dropdown from 'react-bootstrap/Dropdown'
+import Modal from 'react-bootstrap/Modal'
 import { ContentPermsWrapper } from '../../utils/permissions/permwrapper'
 import { ModifierModal, SupprimerModal } from './modals'
 
 
 const List = ({ filters, modal, handleModal,setModal, listetype }) => {
-    const { admin, permissions, eglises } = AppGlobalContext()
+    const { admin, permissions, eglises, appConfig } = AppGlobalContext()
     const [page, setPage] = useState(1)
     const [modifierEvenement, setModifierEvenement] = useState({})
     const [supprimerEvenement, setSupprimerEvenement] = useState({})
+    const [attendanceModal, setAttendanceModal] = useState(false)
+    const [selectedEvent, setSelectedEvent] = useState(null)
+    const [attendancePage, setAttendancePage] = useState(1)
+    const [attendanceLoading, setAttendanceLoading] = useState(false)
+    const [attendanceList, setAttendanceList] = useState([])
+    const [attendanceTotalPages, setAttendanceTotalPages] = useState(1)
+    const [attendanceTotal, setAttendanceTotal] = useState(0)
 
     const query = new URLSearchParams({
         page,
@@ -31,6 +40,24 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
         setPage(num)
     }
 
+    const handleAttendancePageChange = (num) => {
+        setAttendancePage(num)
+    }
+
+    const openAttendanceModal = (evenement) => {
+        setSelectedEvent(evenement)
+        setAttendancePage(1)
+        setAttendanceModal(true)
+    }
+
+    const closeAttendanceModal = () => {
+        setAttendanceModal(false)
+        setSelectedEvent(null)
+        setAttendanceList([])
+        setAttendanceTotalPages(1)
+        setAttendanceTotal(0)
+    }
+
     const diffInDaysFromNow = (date) => {
         if (!date) return;
         let b = new Date(date)
@@ -42,6 +69,30 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
     useEffect(() => {
         setPage(1)
     }, [filters])
+
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            if (!attendanceModal || !selectedEvent?.id) {
+                return
+            }
+
+            setAttendanceLoading(true)
+            try {
+                const { data } = await axios.get(
+                    `/evenement/${selectedEvent.id}/attendance?page=${attendancePage}&limit=10`
+                )
+                setAttendanceList(data.list || [])
+                setAttendanceTotalPages(data.total_pages || 1)
+                setAttendanceTotal(data.total_attendance || 0)
+            } catch (err) {
+                toast.error('Impossible de charger la liste des presences')
+            } finally {
+                setAttendanceLoading(false)
+            }
+        }
+
+        fetchAttendance()
+    }, [attendanceModal, selectedEvent, attendancePage])
 
 
     if (error) {
@@ -80,7 +131,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                         </thead>
                         <tbody>
                             {!loading && evenements.length > 0 && evenements.map((evenement, index) => (
-                                <tr key={index}>
+                                <tr key={index} onClick={() => openAttendanceModal(evenement)} style={{ cursor: 'pointer' }}>
                                     <td>
                                         {evenement.event_type_name}
                                         {evenement.event_name && <><br /> <span className="p-1 fw-normal small">{evenement.event_name}</span></>}
@@ -109,8 +160,8 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                                         {evenement.total}
                                     </td>
 
-                                    <td>
-                                        {diffInDaysFromNow(evenement.event_date) <= 7 &&
+                                    <td onClick={(e) => e.stopPropagation()}>
+                                        {appConfig.add_events_attendance_manually && diffInDaysFromNow(evenement.event_date) <= 7 &&
                                             <ContentPermsWrapper requiredPerms={['modifier_evenement', 'supprimer_evenement']}>
                                                 {/* Checks if the admin is superadin or the event belong to the admin church events  */}
                                                 {(permissions.superAdmin || evenement.church == admin.church_id)
@@ -168,6 +219,57 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                 fetch={reload}
                 listetype={listetype}
             />
+
+            <Modal show={attendanceModal} onHide={closeAttendanceModal} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>
+                        Liste Des Presences
+                        {selectedEvent && (
+                            <div className='text-muted mt-1 fw-normal' style={{ fontSize: '12px' }}>
+                                {selectedEvent.event_type_name} - {formatDate(selectedEvent.event_date)}
+                            </div>
+                        )}
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {attendanceLoading && <LoadingData />}
+
+                    {!attendanceLoading && attendanceList.length === 0 && (
+                        <div className='text-center py-3'>Aucune presence</div>
+                    )}
+
+                    {!attendanceLoading && attendanceList.length > 0 && (
+                        <div className='table-responsive'>
+                            <table className='table table-hover table-bordered mb-0'>
+                                <thead className='bg-inverse'>
+                                    <tr>
+                                        <th>Nom Complet</th>
+                                        <th>Heure Arrivee</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {attendanceList.map((attendance) => (
+                                        <tr key={attendance.id}>
+                                            <td>{attendance.full_name}</td>
+                                            <td>{attendance.time || '-'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className='d-flex justify-content-between align-items-center'>
+                    <div className='fs-6 fw-semibold'>{attendanceTotal} Presences</div>
+                    {attendanceTotal > 0 && (
+                        <Pagination
+                            handler={handleAttendancePageChange}
+                            totalPages={attendanceTotalPages}
+                            currentPage={attendancePage}
+                        />
+                    )}
+                </Modal.Footer>
+            </Modal>
         </div>
     )
 }

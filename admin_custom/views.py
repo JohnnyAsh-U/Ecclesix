@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from .serializers import AdminMemberSerializer, SimpleChurchSerializer
 from rest_framework.mixins import UpdateModelMixin
 from django.forms.models import model_to_dict
-from .services import ViewLogger
+from .services import ViewLogger, load_app_configs_to_cache
 from rest_framework.exceptions import bad_request
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
@@ -139,6 +139,13 @@ def AddSuperAdmin(request, pk, *args, **kwargs):
         Log.objects.create(admin=admin, log_type="UPDATE", detail=detail)
         return Response(status=status.HTTP_200_OK)
     return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(["GET"])
+@permission_classes([])
+def AppConfigView(request, *args, **kwargs):
+    configs = load_app_configs_to_cache()
+    return Response(configs)
 
 
 class AdminPermissions(APIView):

@@ -113,12 +113,6 @@ class AttendanceListCreateView(ListCreateAPIView):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        detail = {
-            "resource": "Presence",
-            "id": serializer.data["id"],
-            "lib": f"{serializer.data['member_name']} - {serializer.data['event_type_name']} ({serializer.data['date']})",
-        }
-        Log.objects.create(admin_id=request.user.id, log_type="INSERT", detail=detail)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 

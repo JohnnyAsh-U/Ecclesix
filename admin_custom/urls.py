@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
    path('/logs', views.LogView.as_view(), name='logs'),
+   path('/config', views.AppConfigView, name='app-config'),
    path('/permissions', views.AdminPermissions.as_view(), name='admin-permissions'),
    path('/roles', views.RolesListCreateView.as_view(), name='role-createlist'),
    path('/roles/<int:pk>', views.RoleUpdateDestroyView.as_view(), name='role-update-delete'),

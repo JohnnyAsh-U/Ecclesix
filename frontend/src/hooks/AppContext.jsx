@@ -11,6 +11,7 @@ const AppContext = ({ children }) => {
 
     const [admin, setAdmin] = useState({})
     const [permissions, setPermissions] = useState([])
+    const [appConfig, setAppConfig] = useState({})
     const [membrePage, setMembrePage] = useState(1)
     const [loading, setLoading] = useState(false)
     const [reloading, setReloading] = useState(true)
@@ -29,6 +30,7 @@ const AppContext = ({ children }) => {
     const connexion = (token) => {
         localStorage.setItem('chms', token)
         AdminPermissions();
+        AppConfig();
         const id = jwtDecode(token)
         setAdmin(id)
     }
@@ -60,12 +62,21 @@ const AppContext = ({ children }) => {
             })
     }
 
+    const AppConfig = () => {
+        axios.get('/admin/config')
+            .then(({ data }) => {
+                setAppConfig(data)
+            })
+            .catch(() => {})
+    }
+
 
     useEffect(() => {
         setReloading(true)
         let token = localStorage.getItem('chms')
         if (token) {
             AdminPermissions()
+            AppConfig()
             setAdmin(jwtDecode(token))
         }
         setReloading(false)
@@ -82,6 +93,7 @@ const AppContext = ({ children }) => {
         userIconShow,
         admin,
         permissions,
+        appConfig,
         eglises,
         membrePage,
         setMembrePage,

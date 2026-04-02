@@ -3,12 +3,14 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     UpdateAPIView,
     DestroyAPIView,
+    ListAPIView,
 )
 from .models import Event, Event_Type
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import EventSerializer, EventTypeSerializer
 from members.models import Member
+from attendance.models import Attendance
 from datetime import date
 from admin_custom.services import ViewLogger
 from admin_custom.models import Log
@@ -123,6 +125,65 @@ class EventUpdateDestroyView(UpdateAPIView, DestroyAPIView):
         self.perform_destroy(instance)
         Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class EventAttendanceListView(ListAPIView):
+    queryset = Attendance.objects.all()
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["voir_evenement", "voir_touts_evenements"],
+    }
+
+    def list(self, request, *args, **kwargs):
+        user: Member = request.user
+        event = Event.objects.filter(pk=kwargs["pk"]).first()
+
+        if not event:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if (
+            not user.is_superuser
+            and not user.has_perm_custom("voir_touts_evenements")
+            and user.church_id != event.church_id
+        ):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        params = self.request.query_params
+        page = int(params.get("page", 1))
+        limit = int(params.get("limit", 15))
+        offset = (page - 1) * limit
+
+        queryset = (
+            self.get_queryset()
+            .select_related("member")
+            .filter(
+                event_type_id=event.event_type_id,
+                church_id=event.church_id,
+                date=event.event_date,
+            )
+            .order_by("member__first_name", "member__last_name")
+        )
+
+        total_attendance = queryset.count()
+        total_pages = math.ceil(total_attendance / limit) if total_attendance else 1
+        queryset = queryset[offset : offset + limit]
+
+        attendance_list = [
+            {
+                "id": attendance.id,
+                "full_name": attendance.member.get_full_name(),
+                "time": attendance.arrival_time,
+            }
+            for attendance in queryset
+        ]
+
+        return Response(
+            {
+                "list": attendance_list,
+                "total_pages": total_pages,
+                "total_attendance": total_attendance,
+            }
+        )
 
 
 

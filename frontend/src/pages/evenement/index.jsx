@@ -13,7 +13,7 @@ import AjouterModal from './modals'
 
 
 const Evenements = () => {
-    const { admin, permissions } = AppGlobalContext()
+    const { admin, permissions, appConfig } = AppGlobalContext()
     const { loading, data, error, reload } = useFetch(`/evenement/type`, 'get')
     const {list: listetype, first_event_date :firstDate} = data || {}
 
@@ -54,11 +54,13 @@ const Evenements = () => {
     return (
         <div>
             <BreadCrumb icon={<FontAwesomeIcon icon={faCalendarCheck} />} title={"Evenements"} >
-                <ContentPermsWrapper requiredPerms={['ajouter_evenement']}>
-                    <button onClick={() => setModal('ajouter-evenement')} className='btn btn-primary rounded hor-grd btn-grd-primary btn-sm' >
-                        <FontAwesomeIcon color='primary' icon={faCalendarPlus} size='xl' />
-                    </button>
-                </ContentPermsWrapper>
+                {appConfig.add_events_attendance_manually &&
+                    <ContentPermsWrapper requiredPerms={['ajouter_evenement']}>
+                        <button onClick={() => setModal('ajouter-evenement')} className='btn btn-primary rounded hor-grd btn-grd-primary btn-sm' >
+                            <FontAwesomeIcon color='primary' icon={faCalendarPlus} size='xl' />
+                        </button>
+                    </ContentPermsWrapper>
+                }
             </BreadCrumb>
 
             <div className="row">

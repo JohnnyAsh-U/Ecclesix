@@ -19,4 +19,7 @@ ACTIVE_TO_INACTIVE_MIN_TOTAL_EVENTS_KEY = "active_to_inactive_min_total_events"
 # Visitor/Member -> Inactive rule: evaluation period in days for attendance ratio checks.
 ACTIVE_TO_INACTIVE_PERIOD_DAYS_KEY = "active_to_inactive_period_days"
 
+# Attendance entry mode: if True, attendance is added manually; if False, it is added automatically.
+ADD_EVENTS_ATTENDANCE_MANUALLY_KEY = "add_events_attendance_manually"
+
 
