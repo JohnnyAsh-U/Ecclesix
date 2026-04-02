@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +14,7 @@ import { Bar } from 'react-chartjs-2'
 import Modal from 'react-bootstrap/Modal'
 import QRCode from 'qrcode'
 import AppLogo from '../../assets/images/logo.png'
+import useFetch from '../../hooks/fetchHook'
 
 ChartJS.register(
   CategoryScale,
@@ -25,37 +26,6 @@ ChartJS.register(
   Tooltip,
   Legend
 )
-
-const attendanceByMonth = [
-  { month: 'Nov 2025', totalEvents: 10, attendedEvents: 7 },
-  { month: 'Dec 2025', totalEvents: 9, attendedEvents: 8 },
-  { month: 'Jan 2026', totalEvents: 11, attendedEvents: 9 },
-  { month: 'Feb 2026', totalEvents: 8, attendedEvents: 6 },
-  { month: 'Mar 2026', totalEvents: 12, attendedEvents: 10 },
-  { month: 'Apr 2026', totalEvents: 10, attendedEvents: 8 },
-]
-
-const chartData = {
-  labels: attendanceByMonth.map((row) => row.month),
-  datasets: [
-    {
-      label: 'Evenements Totals',
-      data: attendanceByMonth.map((row) => row.totalEvents),
-      backgroundColor: 'rgba(70, 128, 255, 0.35)',
-      borderColor: '#4680ff',
-      borderWidth: 1,
-      borderRadius: 4,
-    },
-    {
-      label: 'Evenements Assistes',
-      data: attendanceByMonth.map((row) => row.attendedEvents),
-      backgroundColor: 'rgba(22, 196, 127, 0.35)',
-      borderColor: '#16c47f',
-      borderWidth: 1,
-      borderRadius: 4,
-    },
-  ],
-}
 
 const chartOptions = {
   responsive: true,
@@ -75,22 +45,39 @@ const chartOptions = {
   },
 }
 
-const staticMemberAttendanceQr = {
-  member_id: 'MBR-00041',
-  name: 'Membre Demo',
-  attendance_token: 'ATTENDANCE-DEMO-2026-04',
-  valid_for: 'Sunday Service',
-}
-
-const MemberAttendance = ({membre}) => {
+const MemberAttendance = ({ membre }) => {
   const [showQrModal, setShowQrModal] = useState(false)
   const [qrImageData, setQrImageData] = useState('')
   const [qrLoading, setQrLoading] = useState(false)
 
+  const { loading, data } = useFetch(`/membre/${membre.id}/events`, 'get')
+  const attendanceByMonth = data?.attendanceByMonth || []
+
+  const chartData = {
+    labels: attendanceByMonth.map((row) => row.month),
+    datasets: [
+      {
+        label: 'Evenements Totals',
+        data: attendanceByMonth.map((row) => row.totalEvents),
+        backgroundColor: 'rgba(70, 128, 255, 0.35)',
+        borderColor: '#4680ff',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+      {
+        label: 'Evenements Assistes',
+        data: attendanceByMonth.map((row) => row.attendedEvents),
+        backgroundColor: 'rgba(22, 196, 127, 0.35)',
+        borderColor: '#16c47f',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+    ],
+  }
+
   const totalEvents = attendanceByMonth.reduce((sum, row) => sum + row.totalEvents, 0)
   const totalAttended = attendanceByMonth.reduce((sum, row) => sum + row.attendedEvents, 0)
   const attendanceRate = totalEvents > 0 ? Math.round((totalAttended / totalEvents) * 100) : 0
-  const qrValue = useMemo(() => JSON.stringify(staticMemberAttendanceQr), [])
 
   const createQrImage = async () => {
     try {
@@ -169,6 +156,10 @@ const MemberAttendance = ({membre}) => {
       </div>
 
       <div className='card-body'>
+        {loading ? (
+          <div className='d-flex justify-content-center py-4'>Chargement...</div>
+        ) : (
+          <>
         <div className='row mb-3'>
           <div className='col-md-4 mb-2'>
             <div className='p-3 border rounded bg-light'>
@@ -222,6 +213,8 @@ const MemberAttendance = ({membre}) => {
             </tbody>
           </table>
         </div>
+          </>
+        )}
       </div>
 
       <Modal show={showQrModal} onHide={() => setShowQrModal(false)} centered>
@@ -269,8 +262,8 @@ const MemberAttendance = ({membre}) => {
           </div>
 
           <div className='small text-muted'>
-            <div>ID: {staticMemberAttendanceQr.member_id}</div>
-            <div>Nom: {staticMemberAttendanceQr.name}</div>
+            <div>ID: {membre.id}</div>
+            <div>Nom: {membre.get_full_name}</div>
           </div>
         </Modal.Body>
         <Modal.Footer>

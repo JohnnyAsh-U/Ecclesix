@@ -16,10 +16,30 @@ from .serializers import (
 from .models import Member
 from django.db.models import Q
 from rest_framework import status
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 from backend.utils import time_date
 from admin_custom.services import ViewLogger
 from admin_custom.models import Log
+from attendance.models import Attendance
+from event.models import Event
 import math
+
+
+FRENCH_MONTH_ABBR = [
+    "Jan",
+    "Fev",
+    "Mar",
+    "Avr",
+    "Mai",
+    "Juin",
+    "Juil",
+    "Aou",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+]
 
 
 class MinisterWorkerMembers(ListAPIView):
@@ -324,6 +344,62 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
         # Superadmin can delete other nonsuperuser profile
         if user.is_superuser and not obj.is_superuser:
             return
+        self.permission_denied(
+            request,
+            message="Denied",
+            code="401",
+        )
+
+
+class MemberLastSixMonthEventsView(GenericAPIView):
+    queryset = Member.objects.all()
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": [],
+    }
+
+    def get(self, request, *args, **kwargs):
+        member = self.get_object()
+
+        today = timezone.now().date().replace(day=1)
+        first_month = today - relativedelta(months=5)
+        attendance_by_month = []
+
+        for index in range(6):
+            month_start = first_month + relativedelta(months=index)
+            next_month = month_start + relativedelta(months=1)
+
+            total_events = Event.objects.filter(
+                church_id=member.church_id,
+                event_date__gte=month_start,
+                event_date__lt=next_month,
+            ).count()
+
+            attended_events = Attendance.objects.filter(
+                member_id=member.id,
+                date__gte=month_start,
+                date__lt=next_month,
+            ).count()
+
+            attendance_by_month.append(
+                {
+                    "month": f"{FRENCH_MONTH_ABBR[month_start.month - 1]} {month_start.year}",
+                    "totalEvents": total_events,
+                    "attendedEvents": attended_events,
+                }
+            )
+
+        return Response({"attendanceByMonth": attendance_by_month})
+
+    def check_object_permissions(self, request, obj):
+        user: Member = request.user
+        if user.is_superuser or user.has_perm_custom("voir_touts_membres"):
+            return
+        if user.has_perm_custom("voir_membre") and obj.church_id == user.church_id:
+            return
+        if user.pk == obj.pk:
+            return
+
         self.permission_denied(
             request,
             message="Denied",

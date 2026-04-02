@@ -247,4 +247,8 @@ CRONTAB_PYTHON_EXECUTABLE = sys.executable.replace(" ", r"\ ")
 CRONTAB_DJANGO_MANAGE_PATH = str(BASE_DIR / "manage.py").replace(" ", r"\ ")
 CRONJOBS = [
     ("0 0 1 * *", "django.core.management.call_command", ["monthly_balance_job"]),
+    # Run visitor to member conversion job daily at 2 AM
+    ("0 2 * * *", "django.core.management.call_command", ["visitor_to_member_job"]),
+    # Run active to inactive conversion job daily at 2:30 AM
+    ("30 2 * * *", "django.core.management.call_command", ["active_to_inactive_job"]),
 ]
