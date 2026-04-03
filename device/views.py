@@ -1,6 +1,9 @@
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListCreateAPIView, UpdateAPIView, DestroyAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from admin_custom.models import Log
 from .models import Device
@@ -71,3 +74,21 @@ class DeviceRegisterDeleteView(UpdateAPIView, DestroyAPIView):
         self.perform_destroy(instance)
         Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DeviceCheckView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, identifier, *args, **kwargs):
+        try:
+            device = Device.objects.only("identifier", "is_registered").get(identifier=identifier)
+        except Device.DoesNotExist as exc:
+            raise NotFound("Device not found.") from exc
+
+        return Response(
+            {
+                "identifier": device.identifier,
+                "is_registered": device.is_registered,
+            },
+            status=status.HTTP_200_OK,
+        )

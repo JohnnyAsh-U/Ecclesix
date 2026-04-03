@@ -214,34 +214,34 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 TEMPLATES[0]['DIRS'].append(os.path.join(BASE_DIR, 'frontend/dist'))
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
     
-LOGGING = {
-    "version": 1, 
-    "disable_existing_loggers": False, 
-    "formatters": {
-        "verbose": {
-            "format": "[{asctime}] {levelname} {name} {module} {message}",
-            "style": "{",
-        },
-    },
+# LOGGING = {
+#     "version": 1, 
+#     "disable_existing_loggers": False, 
+#     "formatters": {
+#         "verbose": {
+#             "format": "[{asctime}] {levelname} {name} {module} {message}",
+#             "style": "{",
+#         },
+#     },
     
-    "handlers": {
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": "general.log",
-            "level": "INFO",
-            "formatter": "verbose",
-        },
-    },
+#     "handlers": {
+#         "file": {
+#             "class": "logging.FileHandler",
+#             "filename": "general.log",
+#             "level": "INFO",
+#             "formatter": "verbose",
+#         },
+#     },
     
-    "loggers": {
-        "": {
-            "level": "INFO",
-            "handlers": ["file"],
-        },
-    },
-}
+#     "loggers": {
+#         "": {
+#             "level": "INFO",
+#             "handlers": ["file"],
+#         },
+#     },
+# }
 
 # Run on the first day of every month at 00:00.
 CRONTAB_PYTHON_EXECUTABLE = sys.executable.replace(" ", r"\ ")

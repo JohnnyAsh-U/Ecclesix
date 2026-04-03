@@ -223,11 +223,11 @@ class MobileLogin(APIView):
     permission_classes = []
 
     def post(self, request, format=None):
-        values = request.data.get("values", request.data)
-        email = values.get("email", "")
-        password = values.get("password", "")
-
+        email = request.data.get("email", request.data)
+        password = request.data.get("password", None)
+     
         if not email or not password:
+            print("Email or password missing")  # Debugging line
             return Response(
                 {"status": False, "err": "Remplissez les champs"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -239,7 +239,7 @@ class MobileLogin(APIView):
 
         if not existing_user or existing_user.password == "":
             return Response(
-                {"status": False, "err": "Ce compte n'existe pas"},
+                {"status": False, "err": "Mot de passe incorrect ou compte n'existe pas"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -249,7 +249,7 @@ class MobileLogin(APIView):
 
         if not admin:
             return Response(
-                {"status": False, "err": "Password ou Username Incorrecte "},
+                {"status": False, "err": "Mot de passe incorrect ou compte n'existe pas"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -284,7 +284,7 @@ class MobileLogin(APIView):
         return Response(
             {
                 "token": token,
-                "expiresIn": 86400,
+                "expiresIn": 60 * 24,
                 "user": {
                     "id": str(user.pk),
                     "name": user.get_full_name() or user.email,
@@ -314,7 +314,7 @@ class Reinitialization(APIView):
         # to make sure if the password is not default
         if not admin or admin.password == "":
             return Response(
-                {"status": False, "err": "Ce compte n'existe pas"},
+                {"status": False, "err": "Mot de passe incorrect ou compte n'existe pas"},
                 status.HTTP_400_BAD_REQUEST,
             )
 
