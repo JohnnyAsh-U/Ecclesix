@@ -218,6 +218,85 @@ class Login(APIView):
             return response
 
 
+class MobileLogin(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request, format=None):
+        values = request.data.get("values", request.data)
+        email = values.get("email", "")
+        password = values.get("password", "")
+
+        if not email or not password:
+            return Response(
+                {"status": False, "err": "Remplissez les champs"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        existing_user = Member.objects.filter(
+            email=email, is_admin=True, is_active=True
+        ).first()
+
+        if not existing_user or existing_user.password == "":
+            return Response(
+                {"status": False, "err": "Ce compte n'existe pas"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        device_id = str(uuid.uuid4())
+
+        admin = AuthBackend.authenticate(request, email=email, password=password)
+
+        if not admin:
+            return Response(
+                {"status": False, "err": "Password ou Username Incorrecte "},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not admin.user.verified:
+            return Response(
+                {
+                    "status": False,
+                    "err": "Veuillez vérifier votre adresse e-mail avant de vous connecter.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user = admin.user
+        user.device_id = device_id
+        user.last_login = timezone.now()
+        user.save(update_fields=["device_id", "last_login"])
+
+        payload = {
+            "id": user.pk,
+            "username": user.first_name,
+            "church_id": user.church_id,
+            "device_id": device_id,
+        }
+
+        token = jwtEncode(payload, age=60 * 24, secret=access_token_secret)
+        user_perms = user.get_all_permissions() or []
+        permissions = [perm.codename for perm in user_perms]
+
+        ip = request.META.get("REMOTE_ADDR", None)
+        auth_logger(user, "Connexion Mobile", ip)
+
+        return Response(
+            {
+                "token": token,
+                "expiresIn": 86400,
+                "user": {
+                    "id": str(user.pk),
+                    "name": user.get_full_name() or user.email,
+                    "email": user.email,
+                    "role": getattr(user.role, "role_name", "SuperAdmin" if user.is_superuser else "Admin"),
+                },
+                "permissions": permissions,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class Reinitialization(APIView):
     authentication_classes = []
     permission_classes = []

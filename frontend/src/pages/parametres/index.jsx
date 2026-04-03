@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import BreadCrumb from '../../components/breadcrumbs/breadcrumb'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCalendar, faCartArrowDown, faChurch, faCity, faGear, faMoneyBillTransfer, faMoneyBillTrendUp, faUserGear } from '@fortawesome/free-solid-svg-icons'
+import { faCalendar, faCartArrowDown, faChurch, faCity, faGear, faMobileAlt, faMoneyBillTransfer, faMoneyBillTrendUp, faUserGear } from '@fortawesome/free-solid-svg-icons'
 import TypeVille from './type_ville'
 import Comptes from './comptes'
 import './style.css'
@@ -10,6 +10,7 @@ import Categories from './categories'
 import Regles from './regles'
 import RolesPerms from './roles_et_perms'
 import Eglise from './eglise'
+import Devices from './devices'
 
 const Parametres = () => {
     const [settings, setSettings] = useState(5)
@@ -57,6 +58,11 @@ const Parametres = () => {
                                 className={`list-group-item list-group-item-action py-3 ${settings == 6 ? 'active' : ''}`}
                                 onClick={() => setSettings(6)}>
                                 <FontAwesomeIcon icon={faUserGear} /> Les Roles Et Permissions</li>
+                            <li
+                                style={{ cursor: 'pointer' }}
+                                className={`list-group-item list-group-item-action py-3 ${settings == 8 ? 'active' : ''}`}
+                                onClick={() => setSettings(8)}>
+                                <FontAwesomeIcon icon={faMobileAlt} /> Les Appareils</li>
                         </ul>
                     </div>
 
@@ -70,6 +76,7 @@ const Parametres = () => {
                     {settings === 5 && <TypeVille />}
                     {settings === 6 && <RolesPerms />}
                     {settings === 7 && <Eglise />}
+                    {settings === 8 && <Devices />}
 
                 </div>
             </div >

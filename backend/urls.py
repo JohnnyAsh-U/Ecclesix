@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/finance', include('finance.urls')),
     path('api/communication', include('communication.urls')),
     path('api/presence', include('attendance.urls')),
+    path('api/device', include('device.urls')),
 
     # Catch-all to serve React
     re_path(r'^(?!static|assets|media).*$', FrontendAppView.as_view(), name='frontend'),
