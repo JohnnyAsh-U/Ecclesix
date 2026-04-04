@@ -25,7 +25,7 @@ urlpatterns = [
     path('api/evenement', include('event.urls')),
     path('api/finance', include('finance.urls')),
     path('api/communication', include('communication.urls')),
-    path('api/presence', include('attendance.urls')),
+    path('api/attendance', include('attendance.urls')),
     path('api/device', include('device.urls')),
 
     # Catch-all to serve React

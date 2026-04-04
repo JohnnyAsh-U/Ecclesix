@@ -72,8 +72,13 @@ class EventListCreateView(ListCreateAPIView):
         )
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        data = request.data.copy()
+        if not data.get("church") and getattr(request.user, "church_id", None):
+            data["church"] = request.user.church_id
+
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
+
         self.perform_create(serializer)
         detail = {
             "resource": "Evenement",
@@ -200,10 +205,16 @@ class EventTypeListCreateView(ListCreateAPIView):
     def list(self, request, *args, **kwargs):
         user = request.user
         queryset = self.filter_queryset(self.get_queryset())
+        church_id = (
+            request.query_params.get("church_id")
+            or request.query_params.get("church")
+            or request.query_params.get("eglise")
+            or user.church_id
+        )
 
         # find the oldest event
         oldest_event = (
-            Event.objects.filter(church_id=user.church_id)
+            Event.objects.filter(church_id=church_id)
             .order_by("event_date")
             .first()
         )

@@ -9,7 +9,8 @@ from .serializers import AttendanceSerializer
 from admin_custom.models import Log
 from members.models import Member
 from event.models import Event
-from datetime import date
+from event.serializers import EventSerializer
+from datetime import date, timedelta
 import json
 import math
 import re
@@ -171,6 +172,59 @@ class MobileOutboxSyncView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class AttendanceMembersListView(APIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["ajouter_evenement"],
+    }
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.church_id:
+            return Response([], status=status.HTTP_200_OK)
+
+        members = (
+            Member.objects.filter(church_id=request.user.church_id, is_active=True)
+            .order_by("first_name", "last_name")
+        )
+
+        data = [
+            {
+                "id": member.id,
+                "get_full_name": member.get_full_name(),
+                "phone": member.phone,
+            }
+            for member in members
+        ]
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class AttendanceEventsListView(APIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["voir_evenement", "voir_touts_evenements"],
+    }
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.church_id:
+            return Response([], status=status.HTTP_200_OK)
+
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+
+        events = (
+            Event.objects.select_related("event_type", "church")
+            .filter(
+                church_id=request.user.church_id,
+                event_date__in=[yesterday, today],
+            )
+            .order_by("-event_date", "event_type__start_time", "id")
+        )
+
+        serializer = EventSerializer(events, many=True)
+        print("Events for attendance:", serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AttendanceListCreateView(ListCreateAPIView):

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils import timezone
 from .models import Event, Event_Type
 from admin_custom.models import Log
 from church.models import Church
@@ -12,9 +13,12 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
+
+    def validate_event_date(self, value):
+        if value < timezone.localdate():
+            raise serializers.ValidationError("La date de l'événement ne peut pas être antérieure à aujourd'hui.")
+        return value
         
-        
-           
     def update(self, instance, validated_data):
         original_instance = type(instance).objects.get(pk=instance.pk)
         changes = {"old": {}, "new": {}}
