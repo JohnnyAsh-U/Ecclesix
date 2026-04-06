@@ -2,7 +2,6 @@ import React from 'react'
 import Alert from '../../components/alert/alert'
 import { Formik, Form } from 'formik'
 import * as yup from 'yup';
-import IconPNG1 from '../../assets/images/logo-dark.png'
 import InputBox from '../../components/Inputbox/authBox';
 import { LoadingButton } from '../../components/buttons/loadingbuttons';
 
@@ -19,10 +18,15 @@ const VerifyEmail = ({ verify, email, verification, loading }) => {
                 })}
                 onSubmit={(values) => verify(values)}>
                 <Form className="md-float-material">
-                    <div className="text-center">
-                        <img src={IconPNG1} alt="logo.png" />
-                    </div>
                     <div className="auth-box">
+                        <div className="text-center mb-3 border-bottom pb-2">
+                            <img
+                                src={"/ecclesiaos-logo-light.png"}
+                                alt="logo.png"
+                                className="img-fluid"
+                                style={{ maxHeight: '60px', width: 'auto' }}
+                            />
+                        </div>
                         <div className="row mb-3">
                             <div className="col-md-12">
                                 <h3 className="text-left txt-primary">Verification Email</h3>

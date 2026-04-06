@@ -178,6 +178,7 @@ class EventAttendanceListView(ListAPIView):
                 "id": attendance.id,
                 "full_name": attendance.member.get_full_name(),
                 "time": attendance.arrival_time,
+                "phone": attendance.member.phone,
             }
             for attendance in queryset
         ]

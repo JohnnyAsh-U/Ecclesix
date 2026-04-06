@@ -2,86 +2,25 @@ from rest_framework.generics import ListCreateAPIView, UpdateAPIView, DestroyAPI
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from django.core.signing import Signer, BadSignature
+from django.db import transaction
 from django.utils import timezone
 from .models import Attendance
 from .serializers import AttendanceSerializer
+from .utils import (
+    create_visitor_member,
+    get_member_by_id,
+    parse_birthdate,
+    parse_bool,
+    resolve_member_from_identity,
+    update_event_attendance_totals,
+    validate_qr,
+)
 from admin_custom.models import Log
 from members.models import Member
 from event.models import Event
 from event.serializers import EventSerializer
 from datetime import date, timedelta
-import json
 import math
-import re
-
-
-signer = Signer()
-mobile_qr_pattern = re.compile(r'^\{\s*"?id"?\s*:\s*"?([^}"\s]+)"?\s*\}\s*:(.+)$', re.IGNORECASE)
-
-
-def validate_qr(signed_payload):
-    try:
-        unsigned = signer.unsign(signed_payload)
-        data = json.loads(unsigned)
-
-        member_id = data.get("id")
-        member = Member.objects.get(pk=member_id)
-
-        if member.qr_secret != data.get("sec"):
-            return None
-
-        return member
-    except (BadSignature, Member.DoesNotExist, json.JSONDecodeError, TypeError, ValueError):
-        return None
-
-
-def resolve_member_from_mobile_qr(qrcode):
-    if not qrcode:
-        return None
-
-    match = mobile_qr_pattern.match(str(qrcode).strip())
-    if not match:
-        return None
-
-    member_id = match.group(1).strip()
-    return Member.objects.filter(pk=member_id).first()
-
-
-def resolve_member_from_identity(first_name, last_name, phone, church_id):
-    queryset = Member.objects.filter(church_id=church_id)
-
-    if phone:
-        member = queryset.filter(phone=phone).first()
-        if member:
-            return member
-
-    if first_name and last_name:
-        return queryset.filter(
-            first_name__iexact=first_name,
-            last_name__iexact=last_name,
-        ).first()
-
-    return None
-
-
-def create_visitor_member(first_name, last_name, phone, church_id):
-    normalized_first_name = (first_name or "Visiteur").strip() or "Visiteur"
-    normalized_last_name = (last_name or "Mobile").strip() or "Mobile"
-    normalized_phone = (phone or "").strip() or None
-    email_seed = normalized_phone or f"{normalized_first_name}.{normalized_last_name}"
-    email_seed = re.sub(r"[^a-z0-9]+", ".", str(email_seed).lower()).strip(".") or "guest"
-    generated_email = f"visitor.{email_seed}.{timezone.now().timestamp():.0f}@chmsmobile.local"
-
-    return Member.objects.create_user(
-        email=generated_email,
-        password="None",
-        first_name=normalized_first_name,
-        last_name=normalized_last_name,
-        phone=normalized_phone,
-        church_id=church_id,
-        status="Visiteur",
-    )
 
 
 class MobileOutboxSyncView(APIView):
@@ -91,6 +30,7 @@ class MobileOutboxSyncView(APIView):
     }
 
     def post(self, request, *args, **kwargs):
+        print(request.data)
         raw_items = request.data if isinstance(request.data, list) else request.data.get("items", [])
 
         if not isinstance(raw_items, list):
@@ -104,7 +44,16 @@ class MobileOutboxSyncView(APIView):
 
         for raw_item in raw_items:
             outbox_id = str(raw_item.get("id", "")).strip()
+            user_id = str(raw_item.get("user_id", "")).strip()
             event_id = raw_item.get("event_id")
+            arrival_time_str = raw_item.get("arrival_time")
+            if arrival_time_str:
+                try:
+                    arrival_time = timezone.datetime.fromisoformat(arrival_time_str)
+                except ValueError:
+                    arrival_time = timezone.localtime()
+            else:
+                arrival_time = timezone.localtime()
 
             if not outbox_id or not event_id:
                 skipped.append({"id": outbox_id or None, "reason": "missing-event-or-id"})
@@ -115,53 +64,74 @@ class MobileOutboxSyncView(APIView):
                 skipped.append({"id": outbox_id, "reason": "event-not-found"})
                 continue
 
-            if request.user.church_id and event.church_id != request.user.church_id and not request.user.is_superuser:
-                skipped.append({"id": outbox_id, "reason": "forbidden-church"})
-                continue
+            # if request.user.church_id and event.church_id != request.user.church_id and not request.user.is_superuser:
+            #     skipped.append({"id": outbox_id, "reason": "forbidden-church"})
+            #     continue
 
-            is_visitor = bool(raw_item.get("is_visitor"))
+            is_visitor = parse_bool(raw_item.get("is_visitor"))
             qrcode = (raw_item.get("qrcode") or "").strip()
             first_name = (raw_item.get("user_first_name") or "").strip()
             last_name = (raw_item.get("user_last_name") or "").strip()
             phone = (raw_item.get("phone") or "").strip() or None
+            gender = raw_item.get("gender")
+            birthdate = parse_birthdate(raw_item.get("dob"))
 
-            member = resolve_member_from_mobile_qr(qrcode)
-            if not member:
-                member = resolve_member_from_identity(first_name, last_name, phone, event.church_id)
-            if not member and is_visitor:
-                member = create_visitor_member(first_name, last_name, phone, event.church_id)
+            with transaction.atomic():
+                if is_visitor:
+                    member = resolve_member_from_identity(first_name, last_name, phone, event.church_id)
+                    if not member:
+                        member = create_visitor_member(
+                            first_name,
+                            last_name,
+                            phone,
+                            event.church_id,
+                            gender=gender,
+                            birthdate=birthdate,
+                        )
+                elif not qrcode:
+                    member = get_member_by_id(user_id)
+                    if not member:
+                        skipped.append({"id": outbox_id, "reason": "member-not-found"})
+                        continue
+                else:
+                    member = validate_qr(qrcode)
+                    if not member:
+                        skipped.append({"id": outbox_id, "reason": "invalid-qrcode"})
+                        continue
 
-            if not member:
-                skipped.append({"id": outbox_id, "reason": "member-not-found"})
-                continue
+                # if member.church_id and member.church_id != event.church_id and not request.user.is_superuser:
+                #     skipped.append({"id": outbox_id, "reason": "member-not-in-church"})
+                #     continue
 
-            attendance, created = Attendance.objects.get_or_create(
-                member_id=member.pk,
-                event_type_id=event.event_type_id,
-                church_id=event.church_id,
-                date=event.event_date,
-                defaults={
-                    "created_by_id": request.user.id,
-                    "arrival_time": timezone.localtime().time(),
-                    "notes": "Synchronisé depuis l'application mobile",
-                },
-            )
+                attendance_row, created = Attendance.objects.get_or_create(
+                    member_id=member.pk,
+                    event_type_id=event.event_type_id,
+                    church_id=event.church_id,
+                    date=event.event_date,
+                    defaults={
+                        "created_by_id": request.user.id,
+                        "arrival_time": arrival_time.time(),
+                        "notes": "Synchronisé depuis l'application mobile",
+                    },
+                )
 
-            if not created:
-                fields_to_update = []
-                if attendance.arrival_time is None:
-                    attendance.arrival_time = timezone.localtime().time()
-                    fields_to_update.append("arrival_time")
-                if not attendance.created_by_id:
-                    attendance.created_by_id = request.user.id
-                    fields_to_update.append("created_by")
-                if not attendance.notes:
-                    attendance.notes = "Synchronisé depuis l'application mobile"
-                    fields_to_update.append("notes")
-                if fields_to_update:
-                    attendance.save(update_fields=fields_to_update)
+                if created:
+                    update_event_attendance_totals(event, member, birthdate=birthdate, gender=gender)
+                else:
+                    fields_to_update = []
+                    if attendance_row.arrival_time is None:
+                        attendance_row.arrival_time = arrival_time.time()
+                        fields_to_update.append("arrival_time")
+                    if not attendance_row.created_by_id:
+                        attendance_row.created_by_id = request.user.id
+                        fields_to_update.append("created_by")
+                    if not attendance_row.notes:
+                        attendance_row.notes = "Synchronisé depuis l'application mobile"
+                        fields_to_update.append("notes")
+                    if fields_to_update:
+                        attendance_row.save(update_fields=fields_to_update)
 
-            synced_ids.append(outbox_id)
+                synced_ids.append(outbox_id)
 
         return Response(
             {

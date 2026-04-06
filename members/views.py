@@ -377,6 +377,7 @@ class MemberLastSixMonthEventsView(GenericAPIView):
 
             attended_events = Attendance.objects.filter(
                 member_id=member.id,
+                church_id=member.church_id,
                 date__gte=month_start,
                 date__lt=next_month,
             ).count()

@@ -13,7 +13,6 @@ const RoleDepartement = ({ membre, roles, ...props }) => {
     const [modifierRole, setModifierRole] = useState(false)
     const [membreRole, setMembreRole] = useState(membre.role?.id_role || '0')
 
-    console.log(roles)
 
     const handleRole = async (e) => {
         if (membreRole === '0') return

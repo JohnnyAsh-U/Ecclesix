@@ -1,6 +1,7 @@
 import React from 'react'
 import Image from '../../assets/images/logo.png'
 import { AppGlobalContext } from '../../hooks/AppContext'
+import { Theme1 } from '../../utils/theme/color'
 
 
 const Headerlogo = () => {
@@ -9,15 +10,20 @@ const Headerlogo = () => {
         userIconShow } = AppGlobalContext()
 
     return (
-        <div className="navbar-logo" logo-theme="theme1">
+        <div className="navbar-logo" logo-theme="theme1" style={{backgroundColor: Theme1}}>
 
             {/* To show or hide sidebar */}
             <a className="mobile-menu" id="mobile-collapse" onClick={() => handleSideBarIconClick()}>
                 <i className="ti-menu"></i>
             </a>
 
-            <a href="index-2.html">
-                <img className="img-fluid" src={Image} alt="Theme-Logo" />
+            <a href="#" style={{ padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>
+                <img
+                    className="img-fluid"
+                    src={"/ecclesiaos-logo-dark.png"}
+                    alt="Theme-Logo"
+                    style={{ maxHeight: '65px', width: 'auto' }}
+                />
             </a>
 
             {/* To show userprofile icon */}

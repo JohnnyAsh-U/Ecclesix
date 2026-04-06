@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik';
 import * as yup from 'yup';
-import IconPNG1 from '../../assets/images/logo-dark.png'
 import InputBox from '../../components/Inputbox/authBox';
 import axios from 'axios';
 import Alert from '../../components/alert/alert';
@@ -69,10 +68,15 @@ const SetupOTP = ({ token, user }) => {
                 validationSchema={validationSchema}
                 onSubmit={submit}>
                 <Form className="md-float-material">
-                    <div className="text-center">
-                        <img src={IconPNG1} alt="logo.png" />
-                    </div>
                     <div className="auth-box">
+                        <div className="text-center mb-3 border-bottom pb-2">
+                            <img
+                                src={"/ecclesiaos-logo-light.png"}
+                                alt="logo.png"
+                                className="img-fluid"
+                                style={{ maxHeight: '60px', width: 'auto' }}
+                            />
+                        </div>
                         <div className="row mb-2">
                             <div className="col-md-12">
                                 <h3 className="text-left txt-primary">Verification</h3>
