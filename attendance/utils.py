@@ -79,12 +79,12 @@ def validate_qr(signed_payload):
 
 
 def resolve_member_from_identity(first_name, last_name, phone, church_id):
-    queryset = Member.objects.filter(church_id=church_id)
+    # Check unique by phone
+    queryset = Member.objects.filter(phone=phone)
 
-    if phone:
-        member = queryset.filter(phone=phone).first()
-        if member:
-            return member
+    if queryset.exists():
+        return queryset.first()
+
 
     if first_name and last_name:
         return queryset.filter(

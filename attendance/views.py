@@ -30,7 +30,6 @@ class MobileOutboxSyncView(APIView):
     }
 
     def post(self, request, *args, **kwargs):
-        print(request.data)
         raw_items = request.data if isinstance(request.data, list) else request.data.get("items", [])
 
         if not isinstance(raw_items, list):
@@ -78,7 +77,10 @@ class MobileOutboxSyncView(APIView):
 
             with transaction.atomic():
                 if is_visitor:
+                    print(phone)
                     member = resolve_member_from_identity(first_name, last_name, phone, event.church_id)
+                    print(member)
+                    
                     if not member:
                         member = create_visitor_member(
                             first_name,
@@ -193,7 +195,6 @@ class AttendanceEventsListView(APIView):
         )
 
         serializer = EventSerializer(events, many=True)
-        print("Events for attendance:", serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
