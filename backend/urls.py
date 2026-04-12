@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-from backend.views import FrontendAppView
 from django.conf import settings
 from django.conf.urls.static import static
 import os
@@ -29,8 +28,8 @@ urlpatterns = [
     path('api/device', include('device.urls')),
 
     # Catch-all to serve React
-    re_path(r'^(?!static|assets|media).*$', FrontendAppView.as_view(), name='frontend'),
+    # re_path(r'^(?!static|assets|media).*$', FrontendAppView.as_view(), name='frontend'),
 ]
 
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-urlpatterns += static('/assets/', document_root=settings.STATIC_ROOT)
+# urlpatterns += static('/assets/', document_root=settings.STATIC_ROOT)

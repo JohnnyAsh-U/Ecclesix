@@ -1,3 +1,3 @@
-export const Theme1 = "#0d1b3e"
-export const Theme2 = "#cf9d2d"
-export const Theme3 = "#3753a3"
+export const Theme1 = "#0b172b"
+export const Theme2 = "#c8960a"
+export const Theme3 = "#183170"

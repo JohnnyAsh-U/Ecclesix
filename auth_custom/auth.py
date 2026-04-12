@@ -109,7 +109,7 @@ class AuthBackend:
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,
-                "Church Management System <info@chms.site>",
+                "Ecclesix <info@chms.site>",
                 [self.user.email],
             )
             msg.content_subtype = "html"
@@ -142,7 +142,7 @@ class AuthBackend:
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,
-                "Church Management System <info@chms.site>",
+                "Ecclesix <info@chms.site>",
                 [self.user.email],
             )
             msg.content_subtype = "html"

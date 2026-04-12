@@ -1,7 +1,7 @@
 
-# Church Management System (ChMS)  
+# Ecclesix - Vos Eglises Centralisées, Votre Administration Simplifiée
 
-Le **ChMS** est une application web conçue pour simplifier la gestion des églises, qu’il s’agisse du siège ou des différentes annexes. Son but principal est de centraliser l’administration de toutes les églises, tout en permettant aux responsables locaux de gérer efficacement leurs paroisses grâce à un système de rôles et de permissions. Les pasteurs et dirigeants peuvent ainsi superviser leurs églises dans le cadre défini par le siège.
+**Ecclesix** est une application web conçue pour simplifier la gestion des églises, qu’il s’agisse du siège ou des différentes annexes. Son but principal est de centraliser l’administration de toutes les églises, tout en permettant aux responsables locaux de gérer efficacement leurs paroisses grâce à un système de rôles et de permissions. Les pasteurs et dirigeants peuvent ainsi superviser leurs églises dans le cadre défini par le siège.
 
 ---
 
@@ -190,4 +190,4 @@ Seuls les SuperAdmins ont accès aux paramètres du système.
 
 ## Conclusion  
 
-Le Church Management System (ChMS) centralise la gestion des églises et simplifie l’administration grâce à un système de rôles précis. Il offre aux administrateurs les outils nécessaires pour gérer efficacement leurs responsabilités. Avec une gestion financière complète et des permissions détaillées, le ChMS répond aux besoins d’une organisation ecclésiastique moderne.
+ **Ecclesix** centralise la gestion des églises et simplifie l’administration grâce à un système de rôles précis. Il offre aux administrateurs les outils nécessaires pour gérer efficacement leurs responsabilités. Avec une gestion financière complète et des permissions détaillées, **Ecclesix** répond aux besoins d’une organisation ecclésiastique moderne.

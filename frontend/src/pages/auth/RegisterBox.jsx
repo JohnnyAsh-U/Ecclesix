@@ -32,7 +32,7 @@ const RegisterBox = ({ error, submit, loading }) => {
                     <div className="auth-box">
                         <div className="text-center mb-3 border-bottom pb-2">
                             <img
-                                src={"/ecclesiaos-logo-light.png"}
+                                src={"/ecclesix-logo-light.png"}
                                 alt="logo.png"
                                 className="img-fluid"
                                 style={{ maxHeight: '60px', width: 'auto' }}

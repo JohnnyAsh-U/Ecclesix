@@ -26,7 +26,7 @@ class CommunicationService:
         msg = EmailMultiAlternatives(
             subject,
             message,
-            "Church Management System <info@chms.site>",
+            "Ecclesix <info@chms.site>",
             [],
             bcc=emails,
         )

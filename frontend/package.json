@@ -1,7 +1,7 @@
 {
-  "name": "ChMS",
+  "name": "Ecclesix-frontend",
   "private": true,
-  "description": "Church Management System",
+  "description": "Ecclesix Church Management System",
   "version": "1.0.0",
   "author": "JohnnyAsh",
   "type": "module",
@@ -39,7 +39,7 @@
     "@eslint/js": "^9.11.1",
     "@types/react": "^18.3.10",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.2",
+    "@vitejs/plugin-react": "^5.0.0",
     "eslint": "^9.11.1",
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",

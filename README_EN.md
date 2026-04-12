@@ -1,6 +1,6 @@
-# Church Management System (ChMS)
+#  Ecclesix - Your Churches Centralized, Your Administration Simplified
 
-ChMS is a web app designed to help churches, including headquarters and branches, manage their operations smoothly. It centralizes church administration while giving different leaders and staff the ability to manage tasks according to their roles and permissions. Headquarters can oversee all activities across branches, while branch leaders focus on their local churches.
+**Ecclesix** is a web app designed to help churches, including headquarters and branches, manage their operations smoothly. It centralizes church administration while giving different leaders and staff the ability to manage tasks according to their roles and permissions. Headquarters can oversee all activities across branches, while branch leaders focus on their local churches.
 
 ## Core Features
 
@@ -194,4 +194,4 @@ The settings module allows SuperAdmins to configure system-wide options.
 
 ## Conclusion
 
-The Church Management System (ChMS) is a complete solution for managing both headquarters and branch churches. Its flexible role-based permissions ensure that each admin only accesses what they need. With tools for member management, events, departments, finances, and more, ChMS simplifies church operations and provides useful insights for leaders. Whether managing a single branch or an entire network of churches, ChMS offers the structure and features needed to keep everything running smoothly.
+**Ecclesix** is a complete solution for managing both headquarters and branch churches. Its flexible role-based permissions ensure that each admin only accesses what they need. With tools for member management, events, departments, finances, and more, ChMS simplifies church operations and provides useful insights for leaders. Whether managing a single branch or an entire network of churches, ChMS offers the structure and features needed to keep everything running smoothly.

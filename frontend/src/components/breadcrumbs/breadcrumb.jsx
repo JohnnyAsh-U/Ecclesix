@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 const BreadCrumb = ({ title, icon, children }) => {
 
     useEffect(() => {
-        document.title = `${title} | Church Management System`
+        document.title = `${title} | Ecclesix`
     }, [title])
 
     if(title==='Dashboard' || title === 'Eglises' || title === 'Profile') return;

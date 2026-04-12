@@ -20,7 +20,7 @@ const Headerlogo = () => {
             <a href="#" style={{ padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>
                 <img
                     className="img-fluid"
-                    src={"/ecclesiaos-logo-dark.png"}
+                    src={"/ecclesix-logo-dark.png"}
                     alt="Theme-Logo"
                     style={{ maxHeight: '65px', width: 'auto' }}
                 />

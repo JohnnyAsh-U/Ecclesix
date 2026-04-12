@@ -1,1 +1,0 @@
-const a=s=>{if(!s)return"";let n=new Date,r=new Date(s).getTime(),e=n.getTime()-r;if(e<36e5){let t=parseInt(e/6e4);return t==0?"A l'instant":`il y a ${t} minutes`}else return e>36e5&&e<864e5?`il y a ${parseInt(e/36e5)} heures`:`il y a ${parseInt(e/864e5)} jour(s)`};export{a as t};
