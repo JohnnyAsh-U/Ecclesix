@@ -34,7 +34,13 @@ DEBUG = True if os.getenv("DJANGO_ENV") == "development" else False
 
 # Application definition
 
-INSTALLED_APPS = [
+SHARED_APPS = [
+    "django_tenants",
+    "tenants",
+    "django.contrib.contenttypes",
+]
+
+TENANT_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -59,6 +65,8 @@ INSTALLED_APPS = [
     "attendance",
     "device",
 ]
+
+INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
 
 REST_FRAMEWORK = {
@@ -94,6 +102,7 @@ SPECTACULAR_SETTINGS = {
 
 
 MIDDLEWARE = [
+    "django_tenants.middleware.main.TenantMainMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -106,10 +115,31 @@ MIDDLEWARE = [
 
 
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if os.getenv("CORS_ALLOWED_ORIGINS") else []
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 CORS_ALLOW_CREDENTIALS = True
-# CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
+
+
+
+# REDIS_URL = os.getenv("REDIS_URL")
+# if REDIS_URL:
+#     CACHES = {
+#         "default": {
+#             "BACKEND": "django_redis.cache.RedisCache",
+#             "LOCATION": REDIS_URL,
+#             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+#             "KEY_PREFIX": "ecclesix",
+#             "TIMEOUT": TENANT_CACHE_TTL,
+#         }
+#     }
+# else:
+#     CACHES = {
+#         "default": {
+#             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#             "LOCATION": "ecclesix-tenant-cache",
+#             "TIMEOUT": TENANT_CACHE_TTL,
+#         }
+#     }
 
 
 ROOT_URLCONF = "backend.urls"
@@ -138,14 +168,21 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv("DB_ENGINE"),
+        "ENGINE": "django_tenants.postgresql_backend",
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": os.getenv("DB_HOST"),
         "PORT": os.getenv("DB_PORT"),
+        "CONN_MAX_AGE": int(os.getenv("DB_CONN_MAX_AGE", "60")),
+        "OPTIONS": {"sslmode": os.getenv("DB_SSLMODE", "prefer")},
     }
 }
+
+DATABASE_ROUTERS = ["django_tenants.routers.TenantSyncRouter"]
+TENANT_MODEL = "tenants.Tenant"
+TENANT_DOMAIN_MODEL = "tenants.TenantDomain"
+
 
 EMAIL_BACKEND = (
     "django.core.mail.backends.console.EmailBackend"
@@ -241,13 +278,25 @@ TEMPLATES[0]['DIRS'].append(os.path.join(BASE_DIR, 'frontend/dist'))
 #     },
 # }
 
-# Run on the first day of every month at 00:00.
+# Run tenant-aware jobs on all church schemas.
 CRONTAB_PYTHON_EXECUTABLE = sys.executable.replace(" ", r"\ ")
 CRONTAB_DJANGO_MANAGE_PATH = str(BASE_DIR / "manage.py").replace(" ", r"\ ")
 CRONJOBS = [
-    ("0 0 1 * *", "django.core.management.call_command", ["monthly_balance_job"]),
-    # Run visitor to member conversion job daily at 2 AM
-    ("0 2 * * *", "django.core.management.call_command", ["visitor_to_member_job"]),
-    # Run active to inactive conversion job daily at 2:30 AM
-    ("30 2 * * *", "django.core.management.call_command", ["active_to_inactive_job"]),
+    (
+        "0 0 1 * *",
+        "django.core.management.call_command",
+        ["run_command_for_all_tenants", "monthly_balance_job"],
+    ),
+    # Run visitor to member conversion job daily at 2 AM for all tenants
+    (
+        "0 2 * * *",
+        "django.core.management.call_command",
+        ["run_command_for_all_tenants", "visitor_to_member_job"],
+    ),
+    # Run active to inactive conversion job daily at 2:30 AM for all tenants
+    (
+        "30 2 * * *",
+        "django.core.management.call_command",
+        ["run_command_for_all_tenants", "active_to_inactive_job"],
+    ),
 ]

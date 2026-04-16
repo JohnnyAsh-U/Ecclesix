@@ -62,12 +62,13 @@ class Event(models.Model):
 
 
 class Event_stats(models.Model):
-    event_type_name = models.CharField(max_length=20)
-    month = models.CharField("month", max_length=50)
-    year = models.CharField("year", max_length=50)
-    church_id = models.CharField("church", max_length=50)
-    totals = models.CharField("total", max_length=50)
-    average = models.CharField("average", max_length=50)
+    id = models.BigIntegerField(primary_key=True)
+    event_type_name = models.CharField(max_length=50)
+    month = models.PositiveSmallIntegerField("month")
+    year = models.PositiveIntegerField("year")
+    church_id = models.IntegerField("church")
+    totals = models.IntegerField("total")
+    average = models.IntegerField("average")
 
     class Meta:
         verbose_name = "event_stat"
@@ -75,27 +76,8 @@ class Event_stats(models.Model):
         default_permissions = ()
         managed = False
         db_table = "events_stats"
-        
-        
+        ordering = ["year", "month", "church_id", "event_type_name"]
 
 
-# This is the sql for the event_stat view for mysql
-
-# CREATE VIEW events_stats AS
-# SELECT event_event_type.id, event_event_type.event_type_name, month(event_event.event_date) AS month, year(event_event.event_date) AS year, event_event.church_id, SUM(event_event.total) AS totals, ROUND(AVG(event_event.total), 0) AS average
-# FROM event_event_type
-# JOIN event_event ON event_event_type.id = event_event.event_type_id
-# WHERE event_event_type.weekly_event = True
-# GROUP BY month(event_event.event_date), year( event_event.event_date), event_event_type.id,
-# event_event.church_id
-# ORDER BY event_event_type.id, event_event.church_id, MONTH, YEAR
-
-#for postgres
-
-# CREATE VIEW events_stats AS
-# SELECT event_event_type.id, event_event_type.event_type_name, extract(month from event_event.event_date) AS month, extract(year from event_event.event_date) AS year, event_event.church_id, SUM(event_event.total) AS totals, ROUND(AVG(event_event.total), 0) AS average
-# FROM event_event_type
-# JOIN event_event ON event_event_type.id = event_event.event_type_id WHERE event_event_type.weekly_event = True
-# GROUP BY extract(month from event_event.event_date), extract(year from event_event.event_date), event_event_type.id,
-# event_event.church_id
-# ORDER BY event_event_type.id, event_event.church_id, MONTH, YEAR
+# The PostgreSQL view for this model is created in a migration.
+# It aggregates weekly event attendance by event type, month, year, and church.
