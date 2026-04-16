@@ -121,25 +121,22 @@ CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.ge
 
 
 
-# REDIS_URL = os.getenv("REDIS_URL")
-# if REDIS_URL:
-#     CACHES = {
-#         "default": {
-#             "BACKEND": "django_redis.cache.RedisCache",
-#             "LOCATION": REDIS_URL,
-#             "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
-#             "KEY_PREFIX": "ecclesix",
-#             "TIMEOUT": TENANT_CACHE_TTL,
-#         }
-#     }
-# else:
-#     CACHES = {
-#         "default": {
-#             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-#             "LOCATION": "ecclesix-tenant-cache",
-#             "TIMEOUT": TENANT_CACHE_TTL,
-#         }
-#     }
+REDIS_URL = os.getenv("REDIS_URL")
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "KEY_PREFIX": "ecclesix",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "ecclesix-tenant-cache",
+        }
+    }
 
 
 ROOT_URLCONF = "backend.urls"
