@@ -62,7 +62,7 @@ function SecondChart({ chartData }) {
       })
     );
 
-    let xRenderer = am5xy.AxisRendererX.new(root, {minGridDistance:0})
+    let xRenderer = am5xy.AxisRendererX.new(root, { minGridDistance: 0 })
 
     // Create X-Axis
     let xAxis = chart.xAxes.push(
@@ -73,15 +73,25 @@ function SecondChart({ chartData }) {
       })
     );
 
-    xRenderer.labels.template.setAll({oversizedBehavior:'wrap', textAlign: 'start'})
+    xRenderer.labels.template.setAll({ oversizedBehavior: 'wrap', textAlign: 'start' })
 
 
     xAxis.data.setAll(data);
 
-    let color = ['rgba(70,128,255,1)','#FC6180', '#FFB64D']
+    // let color = ['rgba(70,128,255,1)','#FC6180', '#FFB64D']
+    let color = [
+      'rgba(70,128,255,1)',
+      '#FC6180',
+      '#FFB64D',
+      '#2ED8B6',
+      '#A389F4',
+      '#FF6F91',
+      '#26C6DA'
+    ]
 
 
     chartData?.forEach((e, index) => {
+      console.log(e.event, data)
       let series2 = chart.series.push(
         am5xy.SmoothedXLineSeries.new(root, {
           name: e.event,
@@ -97,7 +107,7 @@ function SecondChart({ chartData }) {
           // stacked: true
           // legendRangeLabelText: "{name} : {name}",
           tension: 0.5,
-          locationX:0,
+          locationX: 0,
           fill: am5.color(color[index]),
           stroke: am5.color(color[index]),
         })
@@ -114,14 +124,14 @@ function SecondChart({ chartData }) {
             radius: 4,
             fill: color[index],
             position: 'relative',
-          
+
           })
         })
       })
 
       series2.fills.template.setAll({
         fillOpacity: 0.1,
-        visible: index===0,
+        visible: index === 0,
       })
 
       // series2.columns.template.setAll({

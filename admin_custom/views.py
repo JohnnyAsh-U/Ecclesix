@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from django.contrib.auth.models import Permission
+from django.core.cache import cache
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
@@ -152,17 +153,21 @@ class AdminPermissions(APIView):
     permission_classes = []
 
     def get(self, request, format=None):
-        serialized_church = SimpleChurchSerializer(Church.objects.all(), many=True)
         user: Member = request.user
-        perms = []
-        user_perms = user.get_all_permissions()
-        if user_perms:
-            for perm in user_perms:
-                perms.append(model_to_dict(perm)["codename"])
+        cache_key = f"admin_permissions:{user.id}:{int(user.is_superuser)}"
+        cached_payload = cache.get(cache_key)
+
+        if cached_payload is not None:
+            return Response(cached_payload)
+
+        serialized_church = SimpleChurchSerializer(Church.objects.all(), many=True)
+        perms = sorted(list(user.get_all_permissions())) if user.get_all_permissions() else []
         permissions = {"superAdmin": user.is_superuser, "perms": perms}
-        return Response(
-            {"permissions": permissions, "churches": serialized_church.data}
-        )
+        payload = {"permissions": permissions, "churches": serialized_church.data}
+        
+
+        cache.set(cache_key, payload, timeout=300)  # Cache for 5 minutes
+        return Response(payload)
 
 
 class RolesListCreateView(ListCreateAPIView):

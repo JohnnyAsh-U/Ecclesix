@@ -23,13 +23,13 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
         initialValues: {
             department_name: '',
             description: '',
-            church: admin.church_id || '',
+            church: admin.church_id || '0',
             department_head: '',
             // id_c: { value: '', label: '' }
         },
         validationSchema: yup.object({
             department_name: yup.string().required('Ce champ est requis'),
-            church: yup.string().required('Ce champ est requis'),
+            church: yup.string().notOneOf([0]).required('Ce champ est requis'),
             description: yup.string().notRequired(),
             department_head: yup.string().required('Ce champ est requis'),
             // date_de_creation: yup.string().required('Ce champ est requis'),
@@ -52,19 +52,31 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
         }
     })
 
-    const loadMembers = async () => {
+    const loadMembers = async (churchId = formik.values.church) => {
+        if (!churchId || churchId === '0') {
+            setOptions([])
+            return
+        }
+
         const query = new URLSearchParams({
             Ministre: true,
             Ouvrier: true,
-            eglise: formik.values.church
+            eglise: churchId
         }).toString()
         try {
             const { data } = await axios.get(`/membre/liste?${query}`)
             setOptions(data.map((item) => ({ value: item.id, label: item.get_full_name })))
         } catch (err) {
+            setOptions([])
         }
     }
 
+    useEffect(() => {
+        if (modal === 'ajouter-dep') {
+            formik.setFieldValue('department_head', '')
+            loadMembers(formik.values.church)
+        }
+    }, [formik.values.church, modal])
 
 
     return (
@@ -102,7 +114,18 @@ export default function AjouterModal({ fetch, modal, handleModal }) {
                                 Eglise
                             </label>
                             <div className="col-sm-9">
-                                <select type="text" className='form-control form-select' name="church" id="church" placeholder='Eglise' {...formik.getFieldProps('church')}>
+                                <select
+                                    type="text"
+                                    className='form-control form-select'
+                                    name="church"
+                                    id="church"
+                                    placeholder='Eglise'
+                                    {...formik.getFieldProps('church')}
+                                    onChange={(e) => {
+                                        formik.handleChange(e)
+                                        formik.setFieldValue('department_head', '')
+                                    }}
+                                >
                                     <option value={0} disabled>Eglise </option>
                                     {eglises.map((eglise) =>
                                         <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
@@ -146,20 +169,27 @@ export const ModifierModal = ({ groupe, setModal, modal, fetch }) => {
     const [options, setOptions] = useState([])
     const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        const loadMembers = async () => {
-            const query = new URLSearchParams({
-                Ministre: true,
-                Ouvrier: true,
-                eglise: groupe.church
-            }).toString()
-            try {
-                const { data } = await axios.get(`/membre/liste?${query}`)
-                setOptions(data.map((item) => ({ value: item.id, label: item.get_full_name })))
-            } catch (err) {
-            }
+    const loadMembers = async (churchId = groupe.church) => {
+        if (!churchId || churchId === '0') {
+            setOptions([])
+            return
         }
-        if (groupe.church) loadMembers();
+
+        const query = new URLSearchParams({
+            Ministre: true,
+            Ouvrier: true,
+            eglise: churchId
+        }).toString()
+        try {
+            const { data } = await axios.get(`/membre/liste?${query}`)
+            setOptions(data.map((item) => ({ value: item.id, label: item.get_full_name })))
+        } catch (err) {
+            setOptions([])
+        }
+    }
+
+    useEffect(() => {
+        if (groupe.church) loadMembers(groupe.church);
     }, [groupe.church])
 
     const initialValues = {
@@ -186,7 +216,7 @@ export const ModifierModal = ({ groupe, setModal, modal, fetch }) => {
         })
             .catch(err => {
                 toast.error(err.message);
-                handleModal()
+                setModal(null)
                 setLoading(false)
             })
     }
@@ -201,48 +231,66 @@ export const ModifierModal = ({ groupe, setModal, modal, fetch }) => {
                     initialValues={initialValues}
                     validationSchema={validationSchema}
                     onSubmit={submit} >
-                    <Form >
+                    {({ values, setFieldValue }) => (
+                        <Form >
 
-                        <FormInputWithLabel name={"department_name"} title={"Departement"} />
-                        <FormInputWithLabel name={"description"} title={"Description"} />
-                        {permissions.superAdmin &&
-                            <FormSelectWithLabel name={'church'} title={"Eglise"} disabled={true}>
-                                <option disabled value={0}>Choississez le eglise </option>
-                                {eglises.map((eglise) =>
-                                    <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
-                                )}
-                            </FormSelectWithLabel>
-                        }
+                            <FormInputWithLabel name={"department_name"} title={"Departement"} />
+                            <FormInputWithLabel name={"description"} title={"Description"} />
+                            {permissions.superAdmin &&
+                                <div className="form-group row mb-2">
+                                    <label className="col-sm-3 col-form-label fw-bold">Eglise</label>
+                                    <div className="col-sm-9">
+                                        <Field
+                                            name='church'
+                                            className="form-control form-select"
+                                            as={'select'}
+                                            onChange={(e) => {
+                                                const churchId = e.target.value
+                                                setFieldValue('church', churchId)
+                                                setFieldValue('department_head', '')
+                                                loadMembers(churchId)
+                                            }}
+                                        >
+                                            <option disabled value={0}>Choississez le eglise </option>
+                                            {eglises.map((eglise) =>
+                                                <option key={eglise.id} value={eglise.id}>{eglise.church_name}</option>
+                                            )}
+                                        </Field>
+                                        <small className='text-danger'><ErrorMessage name="church" /></small>
+                                    </div>
+                                </div>
+                            }
 
 
-                        <div className='form-group row mb-2'>
-                            <label htmlFor="department_head" className="fw-bold col-sm-3 col-form-label">
-                                Chef
-                            </label>
-                            <div className="col-sm-9">
-                                <Field name='department_head'>
-                                    {({ field, form }) => (
-                                        <Select {...field}
-                                            name='department_head'
-                                            options={options}
-                                            value={options ? options.find(option => option.value === form.values.department_head) : ''}
-                                            placeholder={"Choisissez le chef"}
-                                            onChange={(option) => form.setFieldValue('department_head', option.value)}
-                                        />
-                                    )}
-                                </Field>
-                                <small className='text-danger'><ErrorMessage name="department_head" /></small>
+                            <div className='form-group row mb-2'>
+                                <label htmlFor="department_head" className="fw-bold col-sm-3 col-form-label">
+                                    Chef
+                                </label>
+                                <div className="col-sm-9">
+                                    <Field name='department_head'>
+                                        {({ field, form }) => (
+                                            <Select {...field}
+                                                name='department_head'
+                                                options={options}
+                                                value={options ? options.find(option => option.value === form.values.department_head) : ''}
+                                                placeholder={"Choisissez le chef"}
+                                                onChange={(option) => form.setFieldValue('department_head', option.value)}
+                                            />
+                                        )}
+                                    </Field>
+                                    <small className='text-danger'><ErrorMessage name="department_head" /></small>
+                                </div>
                             </div>
-                        </div>
 
-                        <Modal.Footer>
-                            <button type="button" className={`btn btn-danger btn-outline-danger`} onClick={() => setModal(null)}>
-                                Fermer
-                            </button>
-                            <LoadingButton2 loading={loading} color={"primary"} name={"Modifier"} />
-                        </Modal.Footer>
+                            <Modal.Footer>
+                                <button type="button" className={`btn btn-danger btn-outline-danger`} onClick={() => setModal(null)}>
+                                    Fermer
+                                </button>
+                                <LoadingButton2 loading={loading} color={"primary"} name={"Modifier"} />
+                            </Modal.Footer>
 
-                    </Form>
+                        </Form>
+                    )}
                 </Formik>
             </Modal.Body>
         </Modal>

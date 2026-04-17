@@ -6,6 +6,7 @@ from backend.utils import time_date
 from datetime import date, datetime
 from dateutil.relativedelta import *
 from functools import reduce
+from django.db import OperationalError, ProgrammingError
 # from django.forms.models import model_to_dict
 # from django.db.models import Sum
 
@@ -31,8 +32,6 @@ def TotalMembersForSixMonth():
         start_date = today.replace(day=1) + relativedelta(months=-a)
         # end_date = today.replace(day=31) + relativedelta(months=-a)
         end_date = today + relativedelta(day=31, months=-a)
-
-        print(end_date)
 
         count = Member.objects.filter(
             date_joined__date__range=(start_date, end_date), is_active=True
@@ -276,36 +275,35 @@ def AgeRangeCount():
 
 
 def YearTraffic():
-    month_data = [None for a in range(0, 12)]
+    month_data = [None for _ in range(12)]
     result = {}
 
-    totalEvent = Event_stats.objects.all()
-
-    if totalEvent.count() == 0:
+    try:
+        totalEvent = list(Event_stats.objects.all().order_by("year", "month", "church_id", "event_type_name"))
+    except (ProgrammingError, OperationalError):
         return {}
 
-    oldest_event_stat =reduce(lambda x,y: min(x,y), [ev.year for ev in totalEvent])
+    if not totalEvent:
+        return {}
+
+    oldest_event_stat = reduce(lambda x, y: min(x, y), [ev.year for ev in totalEvent])
 
     for ev in totalEvent:
-        event_by_year = result.get(str(ev.year), None)
-        if not event_by_year:
-            result[str(ev.year)] = []
+        year_key = str(ev.year)
+        if year_key not in result:
+            result[year_key] = []
 
         found_event = next(
-            (event for event in result[str(ev.year)] if event['id'] == ev.pk),
+            (event for event in result[year_key] if event["event"] == ev.event_type_name),
             None,
         )
 
         if not found_event:
-            result[str(ev.year)].append(
-                {"id": ev.pk, "event": ev.event_type_name, "data": [*month_data]}
-            )
+            found_event = {"event": ev.event_type_name, "data": [*month_data]}
+            result[year_key].append(found_event)
 
-            found_event = next(
-                (event for event in result[str(ev.year)] if event['id'] == ev.pk),
-                None,
-            )
-
-        found_event["data"][int(ev.month)-1] = int(ev.totals)
+        month_index = int(ev.month) - 1
+        current_value = found_event["data"][month_index] or 0
+        found_event["data"][month_index] = current_value + int(ev.totals)
 
     return {"year": oldest_event_stat, **result}

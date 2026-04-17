@@ -102,7 +102,8 @@ SPECTACULAR_SETTINGS = {
 
 
 MIDDLEWARE = [
-    "django_tenants.middleware.main.TenantMainMiddleware",
+    "backend.middleware.MetricsAwareTenantMainMiddleware",
+    "backend.middleware.PrometheusMetricsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -119,7 +120,13 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
 
-
+PROMETHEUS_METRICS_PATH = os.getenv("PROMETHEUS_METRICS_PATH", "/metrics")
+PROMETHEUS_TENANT_LABEL_MODE = os.getenv("PROMETHEUS_TENANT_LABEL_MODE", "grouped")
+PROMETHEUS_TENANT_LABEL_ALLOWLIST = [
+    item.strip()
+    for item in os.getenv("PROMETHEUS_TENANT_LABEL_ALLOWLIST", "").split(",")
+    if item.strip()
+]
 
 REDIS_URL = os.getenv("REDIS_URL")
 if REDIS_URL:

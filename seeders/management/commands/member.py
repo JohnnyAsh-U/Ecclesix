@@ -1,69 +1,64 @@
+import random
+from datetime import date
+
 from django.core.management.base import BaseCommand, CommandError
+from faker import Faker
+
 from church.models import Church, City
 from members.models import Member
-from datetime import date
-from faker import Faker
-import random
+
+from ._tenant_utils import TenantDomainCommandMixin
 
 faker = Faker()
-types = ["Siege", "Annexes", "Missionaires"]
 gender_options = ["H", "F"]
 professions = ["Travailleur", "Entrepreneur", "Eleve/Etudiant", "Autres"]
-cities = City.objects.all()
-churches = Church.objects.all()
 
 
-class Command(BaseCommand):
+class Command(TenantDomainCommandMixin, BaseCommand):
     help = "Populates members table"
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        self.add_tenant_arguments(parser)
+
+    def seed_data(self):
+        cities = list(City.objects.all())
+        churches = list(Church.objects.all())
+
+        if not cities or not churches:
+            raise CommandError("Seed cities and churches before seeding members.")
 
         data = []
         for a in range(5000):
             sex = random.choice(gender_options)
             data.append(
                 Member(
-                    first_name=(
-                        faker.first_name_female()
-                        if sex == "F"
-                        else faker.first_name_male()
-                    ),
-                    last_name=(
-                        faker.last_name_female()
-                        if sex == "F"
-                        else faker.last_name_male()
-                    ),
+                    first_name=faker.first_name_female() if sex == "F" else faker.first_name_male(),
+                    last_name=faker.last_name_female() if sex == "F" else faker.last_name_male(),
                     gender=sex,
-                    birthdate=faker.date_between(
-                        start_date=date(1950, 1, 1), end_date=date(2024, 8, 1)
-                    ),
+                    birthdate=faker.date_between(start_date=date(1950, 1, 1), end_date=date(2024, 8, 1)),
                     phone=faker.basic_phone_number(),
                     profession_type=random.choice(professions),
                     profession=faker.job(),
                     address=faker.address(),
-                    date_joined=faker.date_between(
-                        start_date=date(2024, 5, 1), end_date=date(2024, 12, 10)
-                    ),
+                    date_joined=faker.date_between(start_date=date(2024, 5, 1), end_date=date(2024, 12, 10)),
                     email=faker.company_email(),
                     baptism_date=(
-                        faker.date_between(
-                            start_date=date(2000, 1, 1), end_date=date(2024, 2, 1)
-                        )
+                        faker.date_between(start_date=date(2000, 1, 1), end_date=date(2024, 2, 1))
                         if a % 3 == 0
                         else None
                     ),
                     marital_status=random.choice(["M", "C", "V"]),
                     is_active=False if a % 333 == 0 else True,
-                    status=random.choice(
-                        ["Ministre", "Ouvrier", "Membre", "Visiteur"]
-                    ),
+                    status=random.choice(["Ministre", "Ouvrier", "Membre", "Visiteur"]),
                     category=random.choice(["Ecodim", "Jeunesse", "Adulte"]),
                     is_admin=True if a % 501 == 0 else False,
                     city_id=random.choice(cities).pk,
-                    church_id = random.choice(churches).pk
+                    church_id=random.choice(churches).pk,
                 )
             )
 
         Member.objects.bulk_create(data)
-
         self.stdout.write(self.style.SUCCESS("Member table Seeding Completed"))
+
+    def handle(self, *args, **options):
+        self.run_for_domains(options, self.seed_data)

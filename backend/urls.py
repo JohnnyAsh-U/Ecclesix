@@ -3,17 +3,19 @@ from django.urls import path, include, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
+from .metrics import metrics_view
 import os
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('metrics', metrics_view, name='metrics'),
+    path('metrics/', metrics_view, name='metrics-slash'),
     # path('api-auth/', include('rest_framework.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     # Optional UI:
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-    
-    
+
     #api routes
     path('api/auth', include('auth_custom.urls')),
     path('api/membre', include('members.urls')),

@@ -1,24 +1,22 @@
-from django.core.management.base import BaseCommand, CommandError
-from church.models import City
-from faker import Faker
+from django.core.management.base import BaseCommand
 
-faker = Faker()
+from church.models import City
+
+from ._tenant_utils import TenantDomainCommandMixin
+
 cities = ["Abidjan", "Yakro", "San Pedro"]
 
 
-class Command(BaseCommand):
+class Command(TenantDomainCommandMixin, BaseCommand):
     help = "Populates city table"
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        self.add_tenant_arguments(parser)
 
-        data = []
-        for city in cities:
-            data.append(
-                City(city_name=city)
-            )
-        
+    def seed_data(self):
+        data = [City(city_name=city) for city in cities]
         City.objects.bulk_create(data)
+        self.stdout.write(self.style.SUCCESS("City Seeding Completed"))
 
-        self.stdout.write(
-            self.style.SUCCESS('City Seeding Completed')
-        )
+    def handle(self, *args, **options):
+        self.run_for_domains(options, self.seed_data)

@@ -77,9 +77,7 @@ class MobileOutboxSyncView(APIView):
 
             with transaction.atomic():
                 if is_visitor:
-                    print(phone)
                     member = resolve_member_from_identity(first_name, last_name, phone, event.church_id)
-                    print(member)
                     
                     if not member:
                         member = create_visitor_member(

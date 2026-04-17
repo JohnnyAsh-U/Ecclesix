@@ -1,26 +1,35 @@
-from django.core.management.base import BaseCommand, CommandError
-from church.models import Church
-from event.models import Event_Type, Event
-from datetime import date
-from faker import Faker
 import random
+from datetime import date
+
 from dateutil.relativedelta import relativedelta
+from django.core.management.base import BaseCommand, CommandError
 
-faker = Faker()
-event_types = Event_Type.objects.filter(weekly_event=True)
-churches = Church.objects.all()
+from church.models import Church
+from event.models import Event, Event_Type
+
+from ._tenant_utils import TenantDomainCommandMixin
 
 
-class Command(BaseCommand):
+class Command(TenantDomainCommandMixin, BaseCommand):
     help = "Populates event table"
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        self.add_tenant_arguments(parser)
+
+    def seed_data(self):
+        event_types = {
+            ev.event_type_name: ev
+            for ev in Event_Type.objects.filter(weekly_event=True)
+        }
+        churches = list(Church.objects.all())
+
+        required_event_types = ["Culte de Mardi", "Culte de Vendredi", "Culte de Dimanche"]
+        if not churches or any(name not in event_types for name in required_event_types):
+            raise CommandError("Seed churches and weekly event types before seeding events.")
 
         ev_date = date(2019, 12, 31)
         data = []
         while ev_date < date.today():
-
-            # culte de mardi
             for ch in churches:
                 men = random.randint(20, 30)
                 women = random.randint(30, 40)
@@ -29,9 +38,7 @@ class Command(BaseCommand):
                 data.append(
                     Event(
                         event_date=ev_date,
-                        event_type=event_types.filter(
-                            event_type_name="Culte de Mardi"
-                        ).first(),
+                        event_type=event_types["Culte de Mardi"],
                         men=men,
                         women=women,
                         children=children,
@@ -40,10 +47,8 @@ class Command(BaseCommand):
                     )
                 )
 
-            # increase the date to friday
             ev_date = ev_date + relativedelta(days=+3)
 
-            # culte de vendredi
             for ch in churches:
                 men = random.randint(40, 50)
                 women = random.randint(50, 60)
@@ -52,9 +57,7 @@ class Command(BaseCommand):
                 data.append(
                     Event(
                         event_date=ev_date,
-                        event_type=event_types.filter(
-                            event_type_name="Culte de Vendredi"
-                        ).first(),
+                        event_type=event_types["Culte de Vendredi"],
                         men=men,
                         women=women,
                         children=children,
@@ -63,10 +66,8 @@ class Command(BaseCommand):
                     )
                 )
 
-            # increase the date to sunday
             ev_date = ev_date + relativedelta(days=+2)
 
-            # culte de vendredi
             for ch in churches:
                 men = random.randint(60, 80)
                 women = random.randint(70, 90)
@@ -75,9 +76,7 @@ class Command(BaseCommand):
                 data.append(
                     Event(
                         event_date=ev_date,
-                        event_type=event_types.filter(
-                            event_type_name="Culte de Dimanche"
-                        ).first(),
+                        event_type=event_types["Culte de Dimanche"],
                         men=men,
                         women=women,
                         children=children,
@@ -86,9 +85,10 @@ class Command(BaseCommand):
                     )
                 )
 
-            # increase the date to sunday
             ev_date = ev_date + relativedelta(days=+2)
 
         Event.objects.bulk_create(data)
-
         self.stdout.write(self.style.SUCCESS("Event Table Seeding Completed"))
+
+    def handle(self, *args, **options):
+        self.run_for_domains(options, self.seed_data)

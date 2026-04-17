@@ -227,7 +227,6 @@ class MobileLogin(APIView):
         password = request.data.get("password", None)
      
         if not email or not password:
-            print("Email or password missing")  # Debugging line
             return Response(
                 {"status": False, "err": "Remplissez les champs"},
                 status=status.HTTP_400_BAD_REQUEST,

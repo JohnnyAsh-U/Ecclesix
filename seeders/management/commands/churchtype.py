@@ -1,24 +1,25 @@
-from django.core.management.base import BaseCommand, CommandError
-from church.models import Church_type
-from faker import Faker
+from django.core.management.base import BaseCommand
 
-faker = Faker()
+from church.models import Church_type
+
+from ._tenant_utils import TenantDomainCommandMixin
+
 types = ["Siege", "Annexes", "Missionaires"]
 
 
-class Command(BaseCommand):
+class Command(TenantDomainCommandMixin, BaseCommand):
     help = "Populates church type table"
 
-    def handle(self, *args, **options):
+    def add_arguments(self, parser):
+        self.add_tenant_arguments(parser)
 
-        data = []
-        for type in types:
-            data.append(
-                Church_type(church_type_name=type, description=f"Description of {type}")
-            )
-        
+    def seed_data(self):
+        data = [
+            Church_type(church_type_name=church_type, description=f"Description of {church_type}")
+            for church_type in types
+        ]
         Church_type.objects.bulk_create(data)
+        self.stdout.write(self.style.SUCCESS("Church Type Seeding Completed"))
 
-        self.stdout.write(
-            self.style.SUCCESS('Church Type Seeding Completed')
-        )
+    def handle(self, *args, **options):
+        self.run_for_domains(options, self.seed_data)

@@ -116,7 +116,6 @@ class AuthBackend:
             msg.send()
             return True
         except smtplib.SMTPException as e:
-            print(e)
             return False
 
     def verify_refresh_token(self, token, secret):
