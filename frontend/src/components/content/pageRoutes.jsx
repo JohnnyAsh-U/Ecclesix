@@ -17,6 +17,8 @@ const Evenements = React.lazy(() => import('../../pages/evenement'))
 const Logs = React.lazy(()=>import('../../pages/logs'))
 const Eglises = React.lazy(()=>import('../../pages/eglise'))
 const Parametres = React.lazy(()=>import('../../pages/parametres'))
+const Abonnement = React.lazy(() => import('../../pages/billing'))
+const Support = React.lazy(() => import('../../pages/support'))
 const Communication = React.lazy(() => import('../../pages/communication'))
 const Rapports = React.lazy(()=>import('../../pages/finance/rapports'))
 const Transactions = React.lazy(()=>import('../../pages/finance/transactions'))
@@ -100,6 +102,18 @@ export const routes = [
     name: "Logs",
     element: Logs,
     PermissionRequises: ['voir_adminlog']
+  },
+  {
+    path: '/abonnement',
+    name: "Abonnement",
+    element: Abonnement,
+    PermissionRequises: ['superAdmin']
+  },
+  {
+    path: '/support',
+    name: "Support",
+    element: Support,
+    PermissionRequises: []
   },
   { 
     path: '/parametres', 

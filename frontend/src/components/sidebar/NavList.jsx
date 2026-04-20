@@ -4,6 +4,8 @@ import { AppGlobalContext } from "../../hooks/AppContext"
 
 export const NavList = () => {
     const { eglises } = AppGlobalContext()
+    const egliseItems = eglises.map(e => ({ name: e.church_name, to: '/eglise/' + e.id }))
+
     return [
         {
             title: 'Dashboard',
@@ -95,11 +97,11 @@ export const NavList = () => {
         },
         {
             name: 'Eglises',
-            to: '/eglise',
+            to: '/eglise' + (eglises.length > 0 ? '/' + eglises[0].id : ''),
             icon: <i className="icofont icofont-court"></i>,
             color: '#4680ff',
             perms: [],
-            items: eglises.map(e => ({ name: e.church_name, to: '/eglise/' + e.id }))
+            // items: eglises.map(e => ({ name: e.church_name, to: '/eglise/' + e.id }))
         },
         {
             name: 'Finances',

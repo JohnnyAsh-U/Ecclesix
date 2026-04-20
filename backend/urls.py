@@ -28,10 +28,14 @@ urlpatterns = [
     path('api/communication', include('communication.urls')),
     path('api/attendance', include('attendance.urls')),
     path('api/device', include('device.urls')),
+    path('api/tenant', include('tenants.urls')),
 
     # Catch-all to serve React
     # re_path(r'^(?!static|assets|media).*$', FrontendAppView.as_view(), name='frontend'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 # urlpatterns += static('/assets/', document_root=settings.STATIC_ROOT)

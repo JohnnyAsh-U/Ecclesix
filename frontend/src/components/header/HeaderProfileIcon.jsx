@@ -9,7 +9,7 @@ import { faUser } from '@fortawesome/free-solid-svg-icons'
 
 
 const HeaderProfileIcon = () => {
-    const { deconnexion } = AppGlobalContext()
+    const { deconnexion, permissions } = AppGlobalContext()
 
     const admin = jwtDecode(localStorage.getItem('chms'))
 
@@ -32,6 +32,18 @@ const HeaderProfileIcon = () => {
                 <li>
                     <NavLink to={`/membres/profile/${admin.id}`}>
                         <i className="ti-user"></i> Profil
+                    </NavLink>
+                </li>
+                {permissions?.superAdmin &&
+                    <li>
+                        <NavLink to="/abonnement">
+                            <i className="ti-wallet"></i> Abonnement
+                        </NavLink>
+                    </li>
+                }
+                <li>
+                    <NavLink to="/support">
+                        <i className="ti-email"></i> Support
                     </NavLink>
                 </li>
                 {/* <li>

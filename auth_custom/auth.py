@@ -18,7 +18,7 @@ import os, pyotp
 temp_token_secret = os.getenv("TEMP_TOKEN")
 email_token_secret = os.getenv("EMAIL_TOKEN")
 access_token_secret = os.getenv("ACCESS_TOKEN")
-domain_name = os.getenv("URL")
+default_domain_name = os.getenv("URL")
 
 
 class AuthBackend:
@@ -129,15 +129,24 @@ class AuthBackend:
         else:
             return False
 
-    def send_reset_password_email(self):
+    def send_reset_password_email(self, request=None):
         try:
             payload = {"id": self.user.id, "email": self.user.email}
             token = jwtEncode(payload, age=60, secret=email_token_secret)
-            verification_link = f"{domain_name}/reset?token={token}"
+
+            tenant_domain = None
+            if request is not None:
+                tenant = getattr(request, "tenant", None)
+                if tenant and getattr(tenant, "domain", None):
+                    tenant_domain = f"{request.scheme}://{tenant.domain}"
+                else:
+                    tenant_domain = f"{request.scheme}://{request.get_host()}"
+
+            verification_link = f"{tenant_domain or default_domain_name}/reset?token={token}"
             content = render_to_string(
                 "reset_password.html", context={"token_link": verification_link}
             )
-          
+
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import BreadCrumb from '../../components/breadcrumbs/breadcrumb'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChurch, faEdit } from '@fortawesome/free-solid-svg-icons'
@@ -16,6 +16,7 @@ import { ContentPermsWrapper } from '../../utils/permissions/permwrapper'
 
 const Eglises = () => {
     const { eglises } = AppGlobalContext()
+    const navigate = useNavigate()
     const [modal, setModal] = useState(false)
     let id_eglise = useParams().id
     let egliseName = eglises.find(d => d.id == id_eglise)?.church_name
@@ -34,11 +35,26 @@ const Eglises = () => {
     return (
         <div>
             <BreadCrumb icon={<FontAwesomeIcon icon={faChurch} />} title={egliseName}>
-                <ContentPermsWrapper requiredPerms={['modifier_eglise']}>
-                    <button className='btn btn-primary rounded btn-sm' onClick={() => setModal("modifier")}>
-                        <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                </ContentPermsWrapper>
+                <div className='d-flex align-items-center gap-2'>
+                    <select
+                        className='form-select form-select-md'
+                        style={{ width: '220px' }}
+                        value={id_eglise || ''}
+                        onChange={(e) => navigate(`/eglise/${e.target.value}`)}
+                    >
+                        {eglises.map((eglise) => (
+                            <option key={eglise.id} value={eglise.id}>
+                                {eglise.church_name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <ContentPermsWrapper requiredPerms={['modifier_eglise']}>
+                        <button className='btn btn-primary rounded btn-sm' onClick={() => setModal("modifier")}>
+                            <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                    </ContentPermsWrapper>
+                </div>
             </BreadCrumb>
 
             <Widgets

@@ -7,5 +7,6 @@ urlpatterns = [
     path('/type', views.TypeListCreateView.as_view(), name='type'),
     path('/type/<int:pk>', views.TypeRUDView.as_view(), name='type-rud'),
     path('', views.ChurchListCreateView.as_view(), name='church'),
-    path('/<int:pk>', views.ChurchRUDView.as_view(), name='church-rud')
+    path('/<int:pk>', views.ChurchRUDView.as_view(), name='church-rud'),
+    path('/logo', views.get_church_logo_from_domain, name='church-logo')
 ]

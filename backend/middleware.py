@@ -1,3 +1,4 @@
+import logging
 import time
 from types import SimpleNamespace
 
@@ -10,7 +11,10 @@ from django_tenants.middleware.main import TenantMainMiddleware
 from django_tenants.utils import get_public_schema_name
 
 from .db_instrumentation import instrument_database_connections
+from .logging_utils import clear_request_context, set_request_context
 from .metrics import ERROR_COUNT, REQUEST_COUNT, REQUEST_LATENCY, get_tenant_label, normalize_endpoint
+
+request_logger = logging.getLogger("backend.request")
 
 
 class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
@@ -22,6 +26,71 @@ class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
             self.setup_url_routing(request, force_public=True)
             return None
         return super().process_request(request)
+
+
+@sync_and_async_middleware
+def RequestLoggingMiddleware(get_response):
+    metrics_path = getattr(settings, "PROMETHEUS_METRICS_PATH", "/metrics")
+    def should_skip(path):
+        return path.rstrip("/") == metrics_path.rstrip("/")
+
+    async def async_middleware(request):
+        if should_skip(request.path):
+            return await get_response(request)
+
+        token = set_request_context(request)
+        response = None
+        start = time.perf_counter()
+
+        try:
+            response = await get_response(request)
+            return response
+        except Exception:
+            request_logger.exception("request_failed")
+            raise
+        finally:
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            status_code = getattr(response, "status_code", 500)
+
+            if response is not None:
+                response["X-Request-ID"] = getattr(request, "request_id", "")
+
+            request_logger.info(
+                "request_completed",
+                extra={"status_code": status_code, "duration_ms": duration_ms},
+            )
+            clear_request_context(token)
+
+    def sync_middleware(request):
+        if should_skip(request.path):
+            return get_response(request)
+
+        token = set_request_context(request)
+        response = None
+        start = time.perf_counter()
+
+        try:
+            response = get_response(request)
+            return response
+        except Exception:
+            request_logger.exception("request_failed")
+            raise
+        finally:
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            status_code = getattr(response, "status_code", 500)
+
+            if response is not None:
+                response["X-Request-ID"] = getattr(request, "request_id", "")
+
+            request_logger.info(
+                "request_completed",
+                extra={"status_code": status_code, "duration_ms": duration_ms},
+            )
+            clear_request_context(token)
+
+    if iscoroutinefunction(get_response):
+        return async_middleware
+    return sync_middleware
 
 
 @sync_and_async_middleware

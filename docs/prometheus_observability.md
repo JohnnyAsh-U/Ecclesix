@@ -60,3 +60,51 @@ histogram_quantile(
 - Use traces for request-path debugging across services.
 - Restrict the /metrics endpoint to internal networks or a monitoring ingress.
 - Prefer grouped tenant labels over raw schema labels in production.
+
+## Loki and Promtail logging
+
+The API now emits structured JSON logs with these fields:
+
+- service
+- environment
+- request_id
+- tenant
+- user_id
+- remote_addr
+- method
+- path
+- status_code
+- duration_ms
+
+Recommended environment values:
+
+- LOG_LEVEL=INFO
+- LOG_SERVICE_NAME=ecclesix-api
+- LOG_TO_FILE=false for container stdout scraping
+- LOG_TO_FILE=true and LOG_DIR=/var/log/ecclesix when Promtail reads local files
+
+Example Promtail scrape config:
+
+scrape_configs:
+  - job_name: ecclesix-json-logs
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: ecclesix
+          __path__: /var/log/ecclesix/*.log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            levelname: levelname
+            name: name
+            tenant: tenant
+            request_id: request_id
+            status_code: status_code
+            method: method
+            path: path
+      - labels:
+          tenant:
+          levelname:
+          method:
+          status_code:

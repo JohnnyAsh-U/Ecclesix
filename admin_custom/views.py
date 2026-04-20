@@ -1,3 +1,5 @@
+import os
+
 from rest_framework.views import APIView
 from django.contrib.auth.models import Permission
 from django.core.cache import cache
@@ -9,6 +11,8 @@ from rest_framework.generics import (
 )
 from rest_framework.response import Response
 from .serializers import AdminMemberSerializer, SimpleChurchSerializer
+from django.conf import settings as django_settings
+from django.core.mail import EmailMultiAlternatives, get_connection
 from rest_framework.mixins import UpdateModelMixin
 from django.forms.models import model_to_dict
 from .services import ViewLogger, load_app_configs_to_cache
@@ -17,11 +21,17 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from church.models import Church
 from members.models import Member
-from .models import Log, Role
+from .models import Appconfig, Log, Role
 from dateutil.relativedelta import relativedelta
 from datetime import date
 from .serializers import LogSerializer, RoleSerializer, PermissionSerializer
 from dateutil.parser import parse
+from .constant import (
+    EMAIL_SMTP_HOST_KEY,
+    EMAIL_SMTP_PASSWORD_KEY,
+    EMAIL_SMTP_PORT_KEY,
+    EMAIL_SMTP_USERNAME_KEY,
+)
 
 
 class LogView(ListAPIView):
@@ -146,7 +156,211 @@ def AddSuperAdmin(request, pk, *args, **kwargs):
 @permission_classes([])
 def AppConfigView(request, *args, **kwargs):
     configs = load_app_configs_to_cache()
-    return Response(configs)
+    sensitive_keys = {
+        EMAIL_SMTP_HOST_KEY,
+        EMAIL_SMTP_PORT_KEY,
+        EMAIL_SMTP_USERNAME_KEY,
+        EMAIL_SMTP_PASSWORD_KEY,
+    }
+    public_configs = {
+        key: value for key, value in configs.items() if key not in sensitive_keys
+    }
+    return Response(public_configs)
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([])
+def EmailConfigView(request, *args, **kwargs):
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    if request.method == "GET":
+        configs = load_app_configs_to_cache(force=True)
+        return Response(
+            {
+                "smtp_host": configs.get(EMAIL_SMTP_HOST_KEY, ""),
+                "smtp_port": configs.get(EMAIL_SMTP_PORT_KEY, "587"),
+                "smtp_username": configs.get(EMAIL_SMTP_USERNAME_KEY, ""),
+                "smtp_password": configs.get(EMAIL_SMTP_PASSWORD_KEY, ""),
+            }
+        )
+
+    config_data = request.data if isinstance(request.data, dict) else {}
+    tracked_config = {
+        EMAIL_SMTP_HOST_KEY: config_data.get("smtp_host", ""),
+        EMAIL_SMTP_PORT_KEY: config_data.get("smtp_port", "587"),
+        EMAIL_SMTP_USERNAME_KEY: config_data.get("smtp_username", ""),
+        EMAIL_SMTP_PASSWORD_KEY: config_data.get("smtp_password", ""),
+    }
+
+    for key, value in tracked_config.items():
+        Appconfig.objects.update_or_create(
+            config_key=key,
+            defaults={"config_value": value, "is_active": True},
+        )
+
+    load_app_configs_to_cache(force=True)
+    Log.objects.create(
+        admin=request.user,
+        log_type="UPDATE",
+        detail={
+            "resource": "AppConfig",
+            "changes": {"updated_keys": list(tracked_config.keys())},
+        },
+    )
+    return Response(
+        {
+            "smtp_host": tracked_config[EMAIL_SMTP_HOST_KEY],
+            "smtp_port": tracked_config[EMAIL_SMTP_PORT_KEY],
+            "smtp_username": tracked_config[EMAIL_SMTP_USERNAME_KEY],
+            "smtp_password": tracked_config[EMAIL_SMTP_PASSWORD_KEY],
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([])
+def SupportEmailView(request, *args, **kwargs):
+    payload = request.data if isinstance(request.data, dict) else {}
+    title = payload.get("title")
+    message = payload.get("message")
+
+    if not title or not message:
+        return Response(
+            {"detail": "Le titre et le message sont requis"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    email_config = load_app_configs_to_cache(force=True)
+
+    smtp_host = email_config.get(EMAIL_SMTP_HOST_KEY, "")
+    smtp_port = email_config.get(EMAIL_SMTP_PORT_KEY, "587")
+    smtp_username = email_config.get(EMAIL_SMTP_USERNAME_KEY, "")
+    smtp_password = email_config.get(EMAIL_SMTP_PASSWORD_KEY, "")
+
+    support_recipient = (
+        os.getenv("SUPPORT_EMAIL")
+        or os.getenv("support_email")
+        or smtp_username
+        or getattr(django_settings, "EMAIL_HOST_USER", None)
+    )
+
+    if not support_recipient:
+        return Response(
+            {"detail": "Veuillez configurer l’email du support dans les paramètres"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    connection_kwargs = {"fail_silently": False}
+
+    if smtp_host:
+        connection_kwargs.update(
+            {
+                "host": smtp_host,
+                "port": int(smtp_port or 587),
+                "username": smtp_username,
+                "password": smtp_password,
+                "use_tls": True,
+                "use_ssl": False,
+            }
+        )
+
+    try:
+        connection = get_connection(**connection_kwargs)
+        sender_email = smtp_username or getattr(
+            django_settings, "EMAIL_HOST_USER", "no-reply@ecclesix.app"
+        )
+        sender_name = "Ecclesix"
+
+        composed_message = (
+            f"Nom: {payload.get('fullName', '')}\n"
+            f"Client: {payload.get('clientName', '')}\n"
+            f"Eglise: {payload.get('churchName', '')}\n"
+            f"Téléphone: {payload.get('phone', '')}\n"
+            f"Email: {payload.get('email', '')}\n\n"
+            f"Message:\n{message}"
+        )
+
+        email = EmailMultiAlternatives(
+            f"[Support Ecclesix] {title}",
+            composed_message,
+            f"{sender_name} <{sender_email}>",
+            [support_recipient],
+            reply_to=[payload.get("email")] if payload.get("email") else None,
+            connection=connection,
+        )
+        email.send(fail_silently=False)
+    except Exception as exc:
+        return Response(
+            {"detail": f"Echec d’envoi de l’email: {str(exc)}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return Response(
+        {"detail": "Message envoyé au support avec succès"},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([])
+def TestEmailConfigView(request, *args, **kwargs):
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    payload = request.data if isinstance(request.data, dict) else {}
+    smtp_host = payload.get("smtp_host")
+    smtp_port = payload.get("smtp_port")
+    smtp_username = payload.get("smtp_username")
+    smtp_password = payload.get("smtp_password")
+
+    if not smtp_host or not smtp_port or not smtp_username or not smtp_password:
+        return Response(
+            {"detail": "Veuillez renseigner smtp_host, port, username et password"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    support_recipient = (
+        os.getenv("SUPPORT_EMAIL")
+        or os.getenv("support_email")
+        or getattr(django_settings, "EMAIL_HOST_USER", None)
+    )
+
+    if not support_recipient:
+        return Response(
+            {"detail": "Veuillez définir SUPPORT_EMAIL dans l’environnement"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        connection = get_connection(
+            host=smtp_host,
+            port=int(smtp_port),
+            username=smtp_username,
+            password=smtp_password,
+            use_tls=True,
+            use_ssl=False,
+            fail_silently=False,
+        )
+        email = EmailMultiAlternatives(
+            "Test de configuration SMTP",
+            "Votre configuration email fonctionne correctement.",
+            f"Ecclesix <{smtp_username}>",
+            [support_recipient],
+            connection=connection,
+        )
+        email.send(fail_silently=False)
+    except Exception as exc:
+        return Response(
+            {"detail": f"Echec d’envoi de l’email de test: {str(exc)}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return Response(
+        {"detail": "Email de test envoyé avec succès"},
+        status=status.HTTP_200_OK,
+    )
 
 
 class AdminPermissions(APIView):

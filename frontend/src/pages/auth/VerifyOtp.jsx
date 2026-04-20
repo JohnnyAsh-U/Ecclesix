@@ -4,6 +4,7 @@ import { Formik, Form } from 'formik'
 import * as yup from 'yup';
 import InputBox from '../../components/Inputbox/authBox';
 import { LoadingButton } from '../../components/buttons/loadingbuttons';
+import Logo from '../../components/logo';
 
 
 
@@ -22,12 +23,7 @@ const VerifyOtp = ({ verify, verification, loading }) => {
                 <Form className="md-float-material">
                     <div className="auth-box">
                         <div className="text-center mb-3 border-bottom pb-2">
-                            <img
-                                src={"/ecclesix-logo-light.png"}
-                                alt="logo.png"
-                                className="img-fluid"
-                                style={{ maxHeight: '60px', width: 'auto' }}
-                            />
+                            <Logo />
                         </div>
                         <div className="row mb-3">
                             <div className="col-md-12">

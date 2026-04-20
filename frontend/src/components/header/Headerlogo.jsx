@@ -2,6 +2,7 @@ import React from 'react'
 import Image from '../../assets/images/logo.png'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { Theme1 } from '../../utils/theme/color'
+import Logo from '../logo'
 
 
 const Headerlogo = () => {
@@ -18,12 +19,13 @@ const Headerlogo = () => {
             </a>
 
             <a href="#" style={{ padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>
-                <img
+                {/* <img
                     className="img-fluid"
                     src={"/ecclesix-logo-dark.png"}
                     alt="Theme-Logo"
                     style={{ maxHeight: '65px', width: 'auto' }}
-                />
+                /> */}
+                <Logo />
             </a>
 
             {/* To show userprofile icon */}

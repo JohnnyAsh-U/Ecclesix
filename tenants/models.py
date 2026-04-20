@@ -10,10 +10,39 @@ domain_validator = RegexValidator(
 )
 
 
+class BillingPlan(models.Model):
+
+    code = models.SlugField(max_length=50, unique=True)
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=10, default="FCFA")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["price", "name"]
+        indexes = [models.Index(fields=["code"])]
+
+    def __str__(self):
+        return f"{self.name} ({self.currency} {self.price})"
+
+
 class Tenant(TenantMixin):
+    BILLING_CYCLE_CHOICES = [
+        ("monthly", "Monthly"),
+        ("yearly", "Yearly"),
+        ("custom", "Custom"),
+    ]
+    
     name = models.SlugField(max_length=80, unique=True)
     church_name = models.CharField(max_length=150)
     domain = models.CharField(max_length=255, unique=True, validators=[domain_validator])
+    plan = models.ForeignKey("BillingPlan", null=True, blank=True, on_delete=models.SET_NULL, related_name="tenants")
+    logo = models.ImageField(upload_to="tenant_logos/", null=True, blank=True)
+    custom_domain = models.BooleanField(default=False)
+    custom_domain_verified = models.BooleanField(default=False)
+    custom_logo = models.BooleanField(default=False)
+    billing_cycle = models.CharField(max_length=20, choices=BILLING_CYCLE_CHOICES, default="monthly")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -39,6 +68,38 @@ class Tenant(TenantMixin):
         if not self.schema_name:
             self.schema_name = self.name.replace("-", "_")
         super().save(*args, **kwargs)
+
+
+class TenantPaymentHistory(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ("paid", "Paid"),
+        ("pending", "Pending"),
+        ("failed", "Failed"),
+        ("refunded", "Refunded"),
+    ]
+
+    tenant = models.ForeignKey("Tenant", on_delete=models.CASCADE, related_name="payment_history")
+    plan = models.ForeignKey("BillingPlan", null=True, blank=True, on_delete=models.SET_NULL, related_name="payment_history")
+    invoice_number = models.CharField(max_length=100, unique=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=10, default="FCFA")
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="pending")
+    month = models.CharField(max_length=20, blank=True, default="")
+    year = models.CharField(max_length=4, blank=True, default="")
+    payment_method = models.CharField(max_length=100, blank=True, default="")
+    paid_at = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-paid_at", "-created_at"]
+        indexes = [
+            models.Index(fields=["tenant", "status"]),
+            models.Index(fields=["invoice_number"]),
+        ]
+
+    def __str__(self):
+        return f"{self.invoice_number} - {self.tenant.church_name}"
 
 
 class TenantDomain(DomainMixin):

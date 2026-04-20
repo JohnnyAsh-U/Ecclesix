@@ -318,7 +318,7 @@ class Reinitialization(APIView):
             )
 
         auth_instance = AuthBackend(admin)
-        token = auth_instance.send_reset_password_email()
+        token = auth_instance.send_reset_password_email(request)
         return (
             Response({"email": email})
             if token

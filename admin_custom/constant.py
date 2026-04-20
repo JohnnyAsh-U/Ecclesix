@@ -22,4 +22,10 @@ ACTIVE_TO_INACTIVE_PERIOD_DAYS_KEY = "active_to_inactive_period_days"
 # Attendance entry mode: if True, attendance is added manually; if False, it is added automatically.
 ADD_EVENTS_ATTENDANCE_MANUALLY_KEY = "add_events_attendance_manually"
 
+# Email configuration keys stored in app config.
+EMAIL_SMTP_HOST_KEY = "email_smtp_host"
+EMAIL_SMTP_PORT_KEY = "email_smtp_port"
+EMAIL_SMTP_USERNAME_KEY = "email_smtp_username"
+EMAIL_SMTP_PASSWORD_KEY = "email_smtp_password"
+
 

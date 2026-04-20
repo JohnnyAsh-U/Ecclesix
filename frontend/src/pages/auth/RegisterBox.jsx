@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import InputBox from '../../components/Inputbox/authBox';
 import Alert from '../../components/alert/alert';
 import { LoadingButton } from '../../components/buttons/loadingbuttons';
+import { Logo } from '../../components/logo';
 
 
 
@@ -31,12 +32,7 @@ const RegisterBox = ({ error, submit, loading }) => {
                 <Form className="md-float-material">
                     <div className="auth-box">
                         <div className="text-center mb-3 border-bottom pb-2">
-                            <img
-                                src={"/ecclesix-logo-light.png"}
-                                alt="logo.png"
-                                className="img-fluid"
-                                style={{ maxHeight: '60px', width: 'auto' }}
-                            />
+                           <Logo />
                         </div>
                         <div className="row mb-3">
                             <div className="col-md-12">

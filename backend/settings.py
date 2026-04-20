@@ -110,6 +110,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "backend.middleware.RequestLoggingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -237,6 +238,9 @@ USE_TZ = True
 
 AUTH_USER_MODEL = "members.Member"
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -254,33 +258,55 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 TEMPLATES[0]['DIRS'].append(os.path.join(BASE_DIR, 'frontend/dist'))
 
-    
-# LOGGING = {
-#     "version": 1, 
-#     "disable_existing_loggers": False, 
-#     "formatters": {
-#         "verbose": {
-#             "format": "[{asctime}] {levelname} {name} {module} {message}",
-#             "style": "{",
-#         },
-#     },
-    
-#     "handlers": {
-#         "file": {
-#             "class": "logging.FileHandler",
-#             "filename": "general.log",
-#             "level": "INFO",
-#             "formatter": "verbose",
-#         },
-#     },
-    
-#     "loggers": {
-#         "": {
-#             "level": "INFO",
-#             "handlers": ["file"],
-#         },
-#     },
-# }
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_SERVICE_NAME = os.getenv("LOG_SERVICE_NAME", "ecclesix-api")
+LOG_TO_FILE = os.getenv("LOG_TO_FILE", "false").lower() == "true"
+LOG_DIR = Path(os.getenv("LOG_DIR", BASE_DIR / "logs"))
+LOG_FILE_PATH = LOG_DIR / os.getenv("LOG_FILE_NAME", "app.json.log")
+
+LOG_HANDLERS = {
+    "console": {
+        "class": "logging.StreamHandler",
+        "stream": "ext://sys.stdout",
+        "formatter": "json",
+        "filters": ["request_context"],
+    }
+}
+
+if LOG_TO_FILE:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_HANDLERS["file"] = {
+        "class": "logging.handlers.TimedRotatingFileHandler",
+        "filename": str(LOG_FILE_PATH),
+        "when": "midnight",
+        "backupCount": 14,
+        "encoding": "utf-8",
+        "formatter": "json",
+        "filters": ["request_context"],
+    }
+
+DEFAULT_LOG_HANDLERS = list(LOG_HANDLERS.keys())
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_context": {
+            "()": "backend.logging_utils.RequestContextFilter",
+        }
+    },
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(levelname)s %(name)s %(message)s %(service)s %(environment)s %(request_id)s %(tenant)s %(user_id)s %(remote_addr)s %(method)s %(path)s %(status_code)s %(duration_ms)s %(pathname)s %(lineno)d",
+        },
+    },
+    "handlers": LOG_HANDLERS,
+    "root": {
+        "level": LOG_LEVEL,
+        "handlers": DEFAULT_LOG_HANDLERS,
+    },
+}
 
 # Run tenant-aware jobs on all church schemas.
 CRONTAB_PYTHON_EXECUTABLE = sys.executable.replace(" ", r"\ ")

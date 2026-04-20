@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import { Formik, Form } from 'formik';
 import InputBox from '../../components/Inputbox/authBox'
 import Alert from '../../components/alert/alert'
+import Logo from '../../components/logo'
 
 
 
@@ -62,12 +63,7 @@ const Reset = () => {
                                     <Form className="md-float-material">
                                         <div className="auth-box">
                                             <div className="text-center mb-3 border-bottom pb-2">
-                                                <img
-                                                    src={"/ecclesix-logo-light.png"}
-                                                    alt="logo.png"
-                                                    className="img-fluid"
-                                                    style={{ maxHeight: '60px', width: 'auto' }}
-                                                />
+                                               <Logo />
                                             </div>
                                             <div className="row mb-3">
                                                 <div className="col-md-12">
@@ -102,12 +98,7 @@ const Reset = () => {
                                 <form className="md-float-material">
                                     <div className="auth-box">
                                         <div className="text-center mb-3">
-                                            <img
-                                                src={"/ecclesix-logo-dark.png"}
-                                                alt="logo.png"
-                                                className="img-fluid"
-                                                style={{ maxHeight: '60px', width: 'auto' }}
-                                            />
+                                           <Logo />
                                         </div>
                                         <div className="row mb-3">
                                             <div className="col-md-12">
