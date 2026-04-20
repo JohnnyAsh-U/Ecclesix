@@ -7,104 +7,84 @@ import { toast } from 'react-toastify'
 import axios from '../../utils/config/axiosConfig'
 
 const Support = () => {
-  const { admin, eglises } = AppGlobalContext()
+    const { admin, eglises } = AppGlobalContext()
 
-  const churchName = useMemo(() => {
-    return eglises?.find((eglise) => eglise.id == admin?.church_id)?.church_name || 'Ecclesix Client Church'
-  }, [eglises, admin])
+    const [sending, setSending] = useState(false)
+    const [formData, setFormData] = useState({
+        phone: '',
+        email: admin?.email,
+        title: '',
+        message: '',
+    })
 
-  const [sending, setSending] = useState(false)
-  const [formData, setFormData] = useState({
-    fullName: admin?.full_name || admin?.username || '',
-    clientName: admin?.client_name || churchName || 'Ecclesix Client',
-    churchName: churchName,
-    phone: admin?.phone || admin?.telephone || '+243 ',
-    email: admin?.email || '',
-    title: '',
-    message: '',
-  })
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    if (!formData.title || !formData.message) {
-      toast.error('Veuillez renseigner le titre et le message')
-      return
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setFormData((prev) => ({ ...prev, [name]: value }))
     }
 
-    setSending(true)
-    try {
-      await axios.post('/admin/support-email', formData)
-      toast.success('Votre message a été envoyé au support')
-      setFormData((prev) => ({ ...prev, title: '', message: '' }))
-    } catch (error) {
-      toast.error(error?.response?.data?.detail || 'Impossible d’envoyer le message au support')
-    } finally {
-      setSending(false)
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+
+        if (!formData.title || !formData.message) {
+            toast.error('Veuillez renseigner le titre et le message')
+            return
+        }
+
+        setSending(true)
+        try {
+            await axios.post('/admin/support-email', formData)
+            toast.success('Votre message a été envoyé au support')
+            setFormData((prev) => ({ ...prev, title: '', message: '' }))
+        } catch (error) {
+            toast.error(error?.response?.data?.detail || 'Impossible d’envoyer le message au support')
+        } finally {
+            setSending(false)
+        }
     }
-  }
 
-  return (
-    <>
-      <BreadCrumb title={'Support & Feedback'} icon={<FontAwesomeIcon icon={faHeadset} />} />
+    return (
+        <>
+            <BreadCrumb title={'Support & Feedback'} icon={<FontAwesomeIcon icon={faHeadset} />} />
 
-      <div className="row justify-content-center">
-        <div className="col-xl-8 col-md-12">
-          <div className="card">
-            <div className="card-body">
-              <h4 className="mb-2">Contacter le support</h4>
-              <p className="text-muted mb-4">
-                Envoyez un ticket ou un retour à l’équipe support. Les informations du client sont déjà préremplies.
-              </p>
+            <div className="row justify-content-center">
+                <div className="col-xl-8 col-md-12">
+                    <div className="card">
+                        <div className="card-body">
+                            <h4 className="mb-2">Contacter le support</h4>
+                            <p className="text-muted mb-4">
+                                Envoyez un ticket ou un retour à l’équipe support.
+                            </p>
 
-              <form onSubmit={handleSubmit}>
-                <div className="row">
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Nom de la personne</label>
-                    <input type="text" className="form-control" name="fullName" value={formData.fullName} onChange={handleChange} />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Nom du client</label>
-                    <input type="text" className="form-control" name="clientName" value={formData.clientName} onChange={handleChange} />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Nom de l'église</label>
-                    <input type="text" className="form-control" name="churchName" value={formData.churchName} onChange={handleChange} />
-                  </div>
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Numéro</label>
-                    <input type="text" className="form-control" name="phone" value={formData.phone} onChange={handleChange} />
-                  </div>
-                  <div className="col-md-12 mb-3">
-                    <label className="form-label">Email</label>
-                    <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} />
-                  </div>
-                  <div className="col-md-12 mb-3">
-                    <label className="form-label">Titre</label>
-                    <input type="text" className="form-control" name="title" placeholder="Ex: Problème de connexion ou demande d’assistance" value={formData.title} onChange={handleChange} />
-                  </div>
-                  <div className="col-md-12 mb-3">
-                    <label className="form-label">Message</label>
-                    <textarea className="form-control" rows="6" name="message" placeholder="Décrivez votre problème, votre question ou votre retour..." value={formData.message} onChange={handleChange}></textarea>
-                  </div>
+                            <form onSubmit={handleSubmit}>
+                                <div className="row">
+                                    <div className="col-md-6 mb-3">
+                                        <label className="form-label">Numéro Tel</label>
+                                        <input type="text" className="form-control" name="phone" value={formData.phone} onChange={handleChange} />
+                                    </div>
+                                    <div className="col-md-6 mb-3">
+                                        <label className="form-label">Email</label>
+                                        <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} />
+                                    </div>
+                                    <div className="col-md-12 mb-3">
+                                        <label className="form-label">Titre</label>
+                                        <input type="text" className="form-control" name="title" placeholder="Ex: Problème de connexion ou demande d’assistance" value={formData.title} onChange={handleChange} />
+                                    </div>
+                                    <div className="col-md-12 mb-3">
+                                        <label className="form-label">Message</label>
+                                        <textarea className="form-control" rows="6" name="message" placeholder="Décrivez votre problème, votre question ou votre retour..." value={formData.message} onChange={handleChange}></textarea>
+                                    </div>
+                                </div>
+                                <button type="submit" className="btn btn-primary" disabled={sending}>
+                                    <FontAwesomeIcon icon={faPaperPlane} className="me-2" />
+                                    {sending ? 'Envoi...' : 'Envoyer au support'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-
-                <button type="submit" className="btn btn-primary" disabled={sending}>
-                  <FontAwesomeIcon icon={faPaperPlane} className="me-2" />
-                  {sending ? 'Envoi...' : 'Envoyer au support'}
-                </button>
-              </form>
             </div>
-          </div>
-        </div>
-      </div>
-    </>
-  )
+        </>
+    )
 }
 
 export default Support

@@ -122,7 +122,7 @@ class SendCommunicationView(APIView):
         member_ids = serializer.validated_data["member_ids"]
 
         recipients = CommunicationService.get_recipients(request.user, member_ids)
-
+        
         if not recipients:
             return Response(
                 {"detail": "No recipients found for this user scope"},
@@ -130,7 +130,7 @@ class SendCommunicationView(APIView):
             )
 
         if channel == "email":
-            result = CommunicationService.send_email(subject, message, recipients)
+            result = CommunicationService.send_email(subject, message, recipients, request)
         else:
             result = CommunicationService.send_sms(message, recipients)
 

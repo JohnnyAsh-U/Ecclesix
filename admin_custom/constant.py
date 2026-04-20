@@ -27,5 +27,6 @@ EMAIL_SMTP_HOST_KEY = "email_smtp_host"
 EMAIL_SMTP_PORT_KEY = "email_smtp_port"
 EMAIL_SMTP_USERNAME_KEY = "email_smtp_username"
 EMAIL_SMTP_PASSWORD_KEY = "email_smtp_password"
+EMAIL_SMTP_PROTOCOL_KEY = "email_smtp_protocol"
 
 

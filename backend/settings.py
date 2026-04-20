@@ -265,12 +265,12 @@ LOG_DIR = Path(os.getenv("LOG_DIR", BASE_DIR / "logs"))
 LOG_FILE_PATH = LOG_DIR / os.getenv("LOG_FILE_NAME", "app.json.log")
 
 LOG_HANDLERS = {
-    "console": {
-        "class": "logging.StreamHandler",
-        "stream": "ext://sys.stdout",
-        "formatter": "json",
-        "filters": ["request_context"],
-    }
+    # "console": {
+    #     "class": "logging.StreamHandler",
+    #     "stream": "ext://sys.stdout",
+    #     "formatter": "json",
+    #     "filters": ["request_context"],
+    # }
 }
 
 if LOG_TO_FILE:

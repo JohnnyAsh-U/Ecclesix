@@ -30,6 +30,7 @@ from .constant import (
     EMAIL_SMTP_HOST_KEY,
     EMAIL_SMTP_PASSWORD_KEY,
     EMAIL_SMTP_PORT_KEY,
+    EMAIL_SMTP_PROTOCOL_KEY,
     EMAIL_SMTP_USERNAME_KEY,
 )
 
@@ -156,14 +157,8 @@ def AddSuperAdmin(request, pk, *args, **kwargs):
 @permission_classes([])
 def AppConfigView(request, *args, **kwargs):
     configs = load_app_configs_to_cache()
-    sensitive_keys = {
-        EMAIL_SMTP_HOST_KEY,
-        EMAIL_SMTP_PORT_KEY,
-        EMAIL_SMTP_USERNAME_KEY,
-        EMAIL_SMTP_PASSWORD_KEY,
-    }
     public_configs = {
-        key: value for key, value in configs.items() if key not in sensitive_keys
+        key: value for key, value in configs.items()
     }
     return Response(public_configs)
 
@@ -181,7 +176,7 @@ def EmailConfigView(request, *args, **kwargs):
                 "smtp_host": configs.get(EMAIL_SMTP_HOST_KEY, ""),
                 "smtp_port": configs.get(EMAIL_SMTP_PORT_KEY, "587"),
                 "smtp_username": configs.get(EMAIL_SMTP_USERNAME_KEY, ""),
-                "smtp_password": configs.get(EMAIL_SMTP_PASSWORD_KEY, ""),
+                "smtp_protocol": configs.get(EMAIL_SMTP_PROTOCOL_KEY, "SSL"),
             }
         )
 
@@ -191,12 +186,13 @@ def EmailConfigView(request, *args, **kwargs):
         EMAIL_SMTP_PORT_KEY: config_data.get("smtp_port", "587"),
         EMAIL_SMTP_USERNAME_KEY: config_data.get("smtp_username", ""),
         EMAIL_SMTP_PASSWORD_KEY: config_data.get("smtp_password", ""),
+        EMAIL_SMTP_PROTOCOL_KEY: config_data.get("smtp_protocol", "SSL"),
     }
 
     for key, value in tracked_config.items():
         Appconfig.objects.update_or_create(
-            config_key=key,
-            defaults={"config_value": value, "is_active": True},
+           config_key=key,
+           defaults={"config_value": value}
         )
 
     load_app_configs_to_cache(force=True)
@@ -214,6 +210,7 @@ def EmailConfigView(request, *args, **kwargs):
             "smtp_port": tracked_config[EMAIL_SMTP_PORT_KEY],
             "smtp_username": tracked_config[EMAIL_SMTP_USERNAME_KEY],
             "smtp_password": tracked_config[EMAIL_SMTP_PASSWORD_KEY],
+            "smtp_protocol": tracked_config[EMAIL_SMTP_PROTOCOL_KEY],
         },
         status=status.HTTP_200_OK,
     )
@@ -225,32 +222,34 @@ def SupportEmailView(request, *args, **kwargs):
     payload = request.data if isinstance(request.data, dict) else {}
     title = payload.get("title")
     message = payload.get("message")
+    email = payload.get("email")
+    phone = payload.get("phone")
 
     if not title or not message:
         return Response(
             {"detail": "Le titre et le message sont requis"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+        
+    if not request.user.is_authenticated:
+        return Response(
+            {"detail": "Vous devez être connecté pour contacter le support"},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
 
+    # Get the user name and church name if available
+    user = request.user if request.user.is_authenticated else None
+    full_name = user.get_full_name() if user else "Utilisateur non authentifié"
+    church_name = getattr(getattr(request, "tenant", None), "name", "Eglise inconnue")
     email_config = load_app_configs_to_cache(force=True)
 
     smtp_host = email_config.get(EMAIL_SMTP_HOST_KEY, "")
     smtp_port = email_config.get(EMAIL_SMTP_PORT_KEY, "587")
     smtp_username = email_config.get(EMAIL_SMTP_USERNAME_KEY, "")
     smtp_password = email_config.get(EMAIL_SMTP_PASSWORD_KEY, "")
+    smtp_protocol = email_config.get(EMAIL_SMTP_PROTOCOL_KEY, "SSL")
 
-    support_recipient = (
-        os.getenv("SUPPORT_EMAIL")
-        or os.getenv("support_email")
-        or smtp_username
-        or getattr(django_settings, "EMAIL_HOST_USER", None)
-    )
-
-    if not support_recipient:
-        return Response(
-            {"detail": "Veuillez configurer l’email du support dans les paramètres"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    support_recipient = os.getenv("SUPPORT_EMAIL") or os.getenv("support_email") or getattr(django_settings, "EMAIL_HOST_USER", None)
 
     connection_kwargs = {"fail_silently": False}
 
@@ -261,24 +260,23 @@ def SupportEmailView(request, *args, **kwargs):
                 "port": int(smtp_port or 587),
                 "username": smtp_username,
                 "password": smtp_password,
-                "use_tls": True,
-                "use_ssl": False,
+                "use_tls": smtp_protocol.upper() == "TLS",
+                "use_ssl": smtp_protocol.upper() == "SSL",
             }
         )
 
     try:
         connection = get_connection(**connection_kwargs)
         sender_email = smtp_username or getattr(
-            django_settings, "EMAIL_HOST_USER", "no-reply@ecclesix.app"
+            django_settings, "EMAIL_HOST_USER", "support@ecclesix.com"
         )
         sender_name = "Ecclesix"
 
         composed_message = (
-            f"Nom: {payload.get('fullName', '')}\n"
-            f"Client: {payload.get('clientName', '')}\n"
-            f"Eglise: {payload.get('churchName', '')}\n"
-            f"Téléphone: {payload.get('phone', '')}\n"
-            f"Email: {payload.get('email', '')}\n\n"
+            f"Nom: {full_name}\n"
+            f"Eglise: {church_name}\n"
+            f"Téléphone: {phone}\n"
+            f"Email: {email}\n\n"
             f"Message:\n{message}"
         )
 
@@ -287,7 +285,7 @@ def SupportEmailView(request, *args, **kwargs):
             composed_message,
             f"{sender_name} <{sender_email}>",
             [support_recipient],
-            reply_to=[payload.get("email")] if payload.get("email") else None,
+            reply_to=[email] if email else None,
             connection=connection,
         )
         email.send(fail_silently=False)
@@ -314,18 +312,15 @@ def TestEmailConfigView(request, *args, **kwargs):
     smtp_port = payload.get("smtp_port")
     smtp_username = payload.get("smtp_username")
     smtp_password = payload.get("smtp_password")
-
+    smtp_protocol = payload.get("smtp_protocol", "SSL")
     if not smtp_host or not smtp_port or not smtp_username or not smtp_password:
         return Response(
             {"detail": "Veuillez renseigner smtp_host, port, username et password"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    support_recipient = (
-        os.getenv("SUPPORT_EMAIL")
-        or os.getenv("support_email")
-        or getattr(django_settings, "EMAIL_HOST_USER", None)
-    )
+    support_recipient = os.getenv("SUPPORT_EMAIL")
+    
 
     if not support_recipient:
         return Response(
@@ -339,8 +334,8 @@ def TestEmailConfigView(request, *args, **kwargs):
             port=int(smtp_port),
             username=smtp_username,
             password=smtp_password,
-            use_tls=True,
-            use_ssl=False,
+            use_tls=smtp_protocol.upper() == "TLS",
+            use_ssl=smtp_protocol.upper() == "SSL",
             fail_silently=False,
         )
         email = EmailMultiAlternatives(
