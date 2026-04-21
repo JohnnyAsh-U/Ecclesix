@@ -1,0 +1,1 @@
+var e=e=>parseFloat(e).toLocaleString(`en-US`,{style:`decimal`,minimumFractionDigits:1})+` F`;export{e as t};

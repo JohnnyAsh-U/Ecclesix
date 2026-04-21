@@ -64,6 +64,8 @@ TENANT_APPS = [
     "seeders",
     "attendance",
     "device",
+    "storages",
+    "multimedia",
 ]
 
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
@@ -89,8 +91,8 @@ APPEND_SLASH = False
 
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Your Project API",
-    "DESCRIPTION": "Your project description",
+    "TITLE": "Ecclesix API",
+    "DESCRIPTION": "Church management system API",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     # OTHER SETTINGS
@@ -330,3 +332,28 @@ CRONJOBS = [
         ["run_command_for_all_tenants", "active_to_inactive_job"],
     ),
 ]
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+   
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "OPTIONS": {
+            "location": "staticfiles",
+        },
+    },
+}
+
+# DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME", "us-east-1")
+AWS_S3_ENDPOINT_URL = os.getenv("AWS_S3_ENDPOINT_URL")
+
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = "private"
+AWS_QUERYSTRING_AUTH = True
+AWS_S3_ADDRESSING_STYLE = "path"

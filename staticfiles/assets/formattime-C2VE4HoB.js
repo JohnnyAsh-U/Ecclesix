@@ -1,0 +1,1 @@
+var e=e=>{if(!e)return``;let t=new Date,n=new Date(e).getTime(),r=t.getTime()-n;if(r<3600*1e3){let e=parseInt(r/(60*1e3));return e==0?`A l'instant`:`il y a ${e} minutes`}else if(r>3600*1e3&&r<1440*60*1e3)return`il y a ${parseInt(r/(3600*1e3))} heures`;else return`il y a ${parseInt(r/(3600*1e3*24))} jour(s)`};export{e as t};

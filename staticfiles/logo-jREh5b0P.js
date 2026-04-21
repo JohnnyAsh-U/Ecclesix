@@ -1,0 +1,1 @@
+var e=`/assets/logo-DMYDy2c2.png`;export{e as t};

@@ -1,0 +1,1 @@
+import"./chunk-DECur_0Z.js";import{n as e,t}from"./jsx-runtime-M0brOElA.js";e();var n=t(),r=({text:e,color:t,className:r})=>(0,n.jsx)(`span`,{className:`badge text-bg-${t} text-white ${r}`,children:e});export{r as t};

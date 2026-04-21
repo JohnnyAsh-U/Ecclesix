@@ -131,3 +131,15 @@ class ProviderInformation(models.Model):
 
     def __str__(self):
         return f"{self.provider_name}"
+    
+    
+
+# models.py (public schema)
+class TenantStorageQuota(models.Model):
+    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE)
+    quota_bytes = models.BigIntegerField(default=5 * 1024**3)  # 5GB default
+    used_bytes = models.BigIntegerField(default=0)
+
+    @property
+    def is_exceeded(self):
+        return self.used_bytes >= self.quota_bytes
