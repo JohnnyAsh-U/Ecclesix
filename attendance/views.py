@@ -1,3 +1,5 @@
+from enum import member
+
 from rest_framework.generics import ListCreateAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -320,6 +322,36 @@ class AttendanceUpdateDestroyView(UpdateAPIView, DestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class EventAttendanceStatsView(APIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["voir_evenement", "voir_touts_evenements"],
+    }
+
+    def get(self, request, event_id, *args, **kwargs):
+        try:
+            event = Event.objects.get(pk=event_id)
+        except Event.DoesNotExist:
+            return Response({"detail": "Evenement non trouve"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not request.user.is_superuser and event.church_id != request.user.church_id:
+            return Response({"detail": "Acces refuse"}, status=status.HTTP_403_FORBIDDEN)
+
+        total_members = Member.objects.filter(church_id=event.church_id, is_active=True).count()
+        present = Attendance.objects.filter(
+            event_type_id=event.event_type_id,
+            church_id=event.church_id,
+            date=event.event_date,
+        ).count()
+        absent = total_members - present
+
+        return Response({
+            "total_members": total_members,
+            "present": present,
+            "absent": absent,
+        })
+
+
 class BulkMarkAttendanceView(APIView):
     perms = {
         "OPTIONS": ["superadmin"],
@@ -375,10 +407,14 @@ class BulkMarkAttendanceView(APIView):
                             date=event.event_date,
                             defaults={
                                 "created_by_id": request.user.id,
+                                "arrival_time": timezone.localtime().time(),
                             },
                         )
                         
                         if created:
+                            birthdate = getattr(attendance.member, "birthdate", None)
+                            gender = getattr(attendance.member, "gender", None)
+                            update_event_attendance_totals(event, attendance.member, birthdate=birthdate, gender=gender)
                             created_count += 1
                         else:
                             updated_count += 1
@@ -408,9 +444,3 @@ class BulkMarkAttendanceView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
             
-            
-    def update_event_attendance_totals(self, event, member, birthdate=None, gender=None):
-        # This function should update the attendance totals for the event based on the member's demographics
-        # For example, it could increment counters for total attendance, age groups, gender,
-        # etc. The implementation will depend on how you are tracking these totals in your Event model.
-        pass

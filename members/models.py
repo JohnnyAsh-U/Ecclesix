@@ -53,7 +53,7 @@ class UserManagerCustom(UserManager):
 
 class Member(User):
     gender = models.CharField(
-        max_length=20, choices=[("H", "Homme"), ("F", "Femme")], null=False, blank=False
+        max_length=20, choices=[("H", "Homme"), ("F", "Femme")], null=False, blank=False, db_index=True
     )
     birthdate = models.DateField(null=True, blank=True)
     phone = models.CharField(max_length=15, null=True, blank=True)
@@ -87,6 +87,7 @@ class Member(User):
             ("Membre", "Membre"),
             ("Visiteur", "Visiteur"),
         ],
+        db_index=True,
     )
 
     city = models.ForeignKey(
@@ -102,6 +103,7 @@ class Member(User):
         related_name="church_member",
         related_query_name="church",
         null=True,
+        db_index=True,
     )
     role = models.ForeignKey(
         "admin_custom.Role",
@@ -146,6 +148,11 @@ class Member(User):
         verbose_name_plural = "members"
         unique_together = ["email", "first_name", "last_name"]
         default_permissions = ()
+        indexes = [
+            models.Index(fields=["church", "is_active"]),
+            models.Index(fields=["church", "status"]),
+            models.Index(fields=["church", "gender"]),
+        ]
         permissions = [
             ("ajouter_membre", "Ajouter Membre"),
             ("modifier_membre", "Modifier Membre"),

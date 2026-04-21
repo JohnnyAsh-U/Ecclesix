@@ -49,6 +49,9 @@ class Event(models.Model):
         verbose_name_plural = "events"
         default_permissions = ()
         unique_together = ["event_date", "event_type", "church"]
+        indexes = [
+            models.Index(fields=["church", "event_date"]),
+        ]
         permissions = [
             ("ajouter_evenement", "Ajouter Evenement"),
             ("modifier_evenement", "Modifier Evenement"),
@@ -79,5 +82,3 @@ class Event_stats(models.Model):
         ordering = ["year", "month", "church_id", "event_type_name"]
 
 
-# The PostgreSQL view for this model is created in a migration.
-# It aggregates weekly event attendance by event type, month, year, and church.

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Member, Relationship
-from church.models import City, Church_type, Church
+from church.models import City, Church
 from admin_custom.models import Role, Log
 from members.models import Member
 
@@ -51,6 +51,49 @@ class SimpleMemberSerializer(serializers.ModelSerializer):
             "phone",
             "birthdate"
         ]
+
+
+
+class MemberListSerializer(serializers.ModelSerializer):
+    city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all())
+    church = serializers.PrimaryKeyRelatedField(queryset=Church.objects.all())
+    city_name = serializers.SerializerMethodField()
+    church_name = serializers.SerializerMethodField()
+    
+    
+    class Meta:
+        model = Member
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "is_active",
+            "gender",
+            "baptism_date",
+            "category",
+            "status",
+            "date_joined",
+            "get_full_name",
+            "marital_status",
+            "profession_type",
+            "phone",
+            "birthdate",
+            "city",
+            "church",
+            "church_name",
+            "city_name",
+        ]
+        
+    def get_city_name(self, obj):
+        if obj.city:
+            return f"{obj.city.city_name}"
+        return None
+
+    def get_church_name(self, obj):
+        if obj.church:
+            return f"{obj.church.church_name}"
+        return None
+
 
 
 class MemberSerializer(serializers.ModelSerializer):
@@ -160,12 +203,15 @@ class MemberSerializer(serializers.ModelSerializer):
         return None
 
     def get_relations(self, obj):
-        relations = Relationship.objects.filter(to_member=obj)
+        prefetched_relations = getattr(obj, "_prefetched_objects_cache", {}).get("to_member_relations")
+        relations = prefetched_relations if prefetched_relations is not None else Relationship.objects.filter(to_member=obj)
         if relations:
             return RelationshipSerializer(relations, many=True).data
+        return None
         
     def get_departments(self, obj):
-        deps = obj.departments.all()
+        prefetched_departments = getattr(obj, "_prefetched_objects_cache", {}).get("departments")
+        deps = prefetched_departments if prefetched_departments is not None else obj.departments.all()
         if deps:
             res = []
             for dep in deps:
@@ -175,6 +221,7 @@ class MemberSerializer(serializers.ModelSerializer):
                     "head": dep.department_head_id
                 })
             return res
+        return None
 
     def get_qr_code(self, obj):
         return obj.generate_qr_payload()

@@ -37,7 +37,7 @@ from .constant import (
 
 class LogView(ListAPIView):
     serializer_class = LogSerializer
-    queryset = Log.objects.all().order_by("-action_time")
+    queryset = Log.objects.all().select_related("admin").order_by("-action_time")
     perms = {
         "OPTIONS": ["superadmin"],
         "GET": ["voir_adminlog"],

@@ -9,12 +9,13 @@ from rest_framework.generics import (
 from members.models import Relationship
 from rest_framework.mixins import DestroyModelMixin, CreateModelMixin
 from .serializers import (
+    MemberListSerializer,
     MemberSerializer,
     SimpleMemberSerializer,
     RelationshipSerializer,
 )
 from .models import Member
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from rest_framework import status
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
@@ -70,7 +71,7 @@ class MinisterWorkerMembers(ListAPIView):
 
 
 class MemberListCreateView(ListCreateAPIView):
-    serializer_class = MemberSerializer
+    serializer_class = MemberListSerializer
     queryset = Member.objects.all()
     perms = {"OPTIONS": ["superadmin"], "GET": [], "POST": ["ajouter_membre"]}
 
@@ -104,7 +105,7 @@ class MemberListCreateView(ListCreateAPIView):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         offset = (page - 1) * limit
-        queryset = self.get_queryset().order_by("first_name", "last_name")
+        queryset = self.get_queryset().select_related("church", "city").order_by("first_name", "last_name")
 
         if search:
             # split into first and last name
@@ -149,9 +150,6 @@ class MemberListCreateView(ListCreateAPIView):
 
         if not Membre:
             queryset = queryset.exclude(status="Membre")
-
-        if not Visiteur:
-            queryset = queryset.exclude(status="Visiteur")
 
         if not Visiteur:
             queryset = queryset.exclude(status="Visiteur")
@@ -219,7 +217,18 @@ class MemberRUDView(RetrieveUpdateDestroyAPIView):
         "DELETE": ["superadmin"],
     }
     serializer_class = MemberSerializer
-    queryset = Member.objects.prefetch_related("relations")
+    queryset = Member.objects.select_related(
+        "city",
+        "church",
+        "role",
+        "followed_up_by",
+    ).prefetch_related(
+        "departments",
+        Prefetch(
+            "to_member_relations",
+            queryset=Relationship.objects.select_related("from_member", "to_member"),
+        ),
+    )
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

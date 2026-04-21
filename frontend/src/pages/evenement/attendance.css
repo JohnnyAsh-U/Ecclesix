@@ -1,29 +1,39 @@
-.attendance-list {
-    border: 1px solid #dee2e6;
-    border-radius: 0.25rem;
-}
-
 .attendance-list .list-group-item {
     border-left: none;
     border-right: none;
     cursor: pointer;
     padding: 0.75rem 1rem;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.15s ease;
+    user-select: none;
 }
 
 .attendance-list .list-group-item:hover {
-    background-color: #f8f9fa;
+    background-color: #f0fdf4;
 }
 
-.attendance-list .list-group-item:first-child {
-    border-top: none;
+.attendance-list .list-group-item.list-group-item-success {
+    background-color: #d1fae5;
+    border-color: #a7f3d0;
 }
 
 .attendance-list .list-group-item .form-check-input {
     cursor: pointer;
+    width: 1.2em;
+    height: 1.2em;
 }
 
-.attendance-list .list-group-item .form-check-input:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+.present-card {
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    border-width: 1.5px;
+}
+
+.present-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(25, 135, 84, 0.2);
+}
+
+.present-card .card-body {
+    background-color: #f0fdf4;
+    border-radius: inherit;
 }

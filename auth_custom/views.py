@@ -532,6 +532,7 @@ class RefreshToken(APIView):
 
 class Logout(APIView):
 
+    authentication_classes = []
     permission_classes = []
 
     def post(self, request, format=None):

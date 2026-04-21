@@ -38,7 +38,7 @@ class EventListCreateView(ListCreateAPIView):
         year = params.get("annee", today.year)
 
         offset = (page - 1) * limit
-        queryset = self.get_queryset().order_by("event_date")
+        queryset = self.get_queryset().order_by("-event_date")
 
         queryset = queryset.filter(event_date__year=year)
 
@@ -93,7 +93,7 @@ class EventListCreateView(ListCreateAPIView):
 
 
 class EventUpdateDestroyView(RetrieveUpdateDestroyAPIView):
-    queryset = Event.objects.all()
+    queryset = Event.objects.all().order_by("event_date")
     serializer_class = EventSerializer
     perms = {
         "OPTIONS": ["superadmin"],
@@ -177,8 +177,9 @@ class EventAttendanceListView(ListAPIView):
         attendance_list = [
             {
                 "id": attendance.id,
+                "member_id": attendance.member_id,
                 "full_name": attendance.member.get_full_name(),
-                "time": attendance.arrival_time,
+                "time": str(attendance.arrival_time) if attendance.arrival_time else None,
                 "phone": attendance.member.phone,
             }
             for attendance in queryset

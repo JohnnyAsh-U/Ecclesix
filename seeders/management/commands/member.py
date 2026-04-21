@@ -28,7 +28,7 @@ class Command(TenantDomainCommandMixin, BaseCommand):
             raise CommandError("Seed cities and churches before seeding members.")
 
         data = []
-        for a in range(5000):
+        for a in range(10000):
             sex = random.choice(gender_options)
             data.append(
                 Member(

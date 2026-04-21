@@ -34,6 +34,11 @@ class Attendance(models.Model):
         verbose_name_plural = "attendances"
         default_permissions = ()
         unique_together = ["member", "event_type", "date", "church"]
+        indexes = [
+            models.Index(fields=["church", "date"]),
+            models.Index(fields=["church", "event_type", "date"]),
+            models.Index(fields=["member", "church", "date"]),
+        ]
 
     def __str__(self):
         return f"{self.member} - {self.event_type} ({self.date})"
