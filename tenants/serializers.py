@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import BillingPlan, Tenant, TenantPaymentHistory
+from .models import BillingPlan, ProviderInformation, Tenant, TenantPaymentHistory
 
 
 class BillingPlanSerializer(serializers.ModelSerializer):
@@ -48,6 +48,19 @@ class TenantPaymentHistorySerializer(serializers.ModelSerializer):
             "plan_name",
             "created_at",
         ]
+        
+class ProviderInformationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProviderInformation
+        fields = [
+            "id",
+            "provider_name",
+            "provider_email",
+            "provider_phone",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class TenantBillingSerializer(serializers.ModelSerializer):

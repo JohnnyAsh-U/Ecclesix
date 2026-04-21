@@ -24,6 +24,7 @@ const Rapports = React.lazy(()=>import('../../pages/finance/rapports'))
 const Transactions = React.lazy(()=>import('../../pages/finance/transactions'))
 const Budgets = React.lazy(()=>import('../../pages/finance/budgets'))
 const FinanceLog = React.lazy(()=>import('../../pages/finance/logs'))
+const AttendancePage = React.lazy(() => import('../../pages/evenement/attendance'))
 
 
 export const routes = [
@@ -119,5 +120,12 @@ export const routes = [
     path: '/parametres', 
     name: "Parametres", 
     element: Parametres, 
-    PermissionRequises: ['superAdmin'] },
+    PermissionRequises: ['superAdmin'] 
+  },
+  { 
+    path: '/attendance/:eventId', 
+    name: "Marquer Presence", 
+    element: AttendancePage, 
+    PermissionRequises: ['ajouter_evenement'] 
+  },
 ]

@@ -26,22 +26,14 @@ const Abonnement = () => {
   const [logoFile, setLogoFile] = useState(null)
   const [uploading, setUploading] = useState(false)
 
-  const billing = data || {}
-  const plan = billing.plan || {
-    name: 'Plan Professionnel',
-    description: 'Gestion centralisée de vos églises et de vos administrateurs.',
-    price: '49.00',
-    currency: 'USD',
-    billing_cycle: 'monthly',
-    features: fallbackFeatures,
-  }
+  console.log('Billing data:', data) // Debug log to inspect the billing data structure
 
-  const features = useMemo(() => {
-    return Array.isArray(plan.features) && plan.features.length ? plan.features : fallbackFeatures
-  }, [plan])
+  const billing = data || {}
+  const plan = billing.plan
 
   const payments = billing.payment_history || []
   const tenant = billing.tenant || {}
+  const providerInfo = billing.provider_info || {}
 
   const handleLogoUpload = async () => {
     if (!logoFile) {
@@ -86,11 +78,11 @@ const Abonnement = () => {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                 <div>
-                  <h4 className="mb-1">{plan.name}</h4>
-                  <p className="text-muted mb-2">{plan.description}</p>
-                  <h2 className="mb-0">{plan.currency} {plan.price}<span className="fs-6 text-muted"> / {plan.billing_cycle}</span></h2>
+                  <h4 className="mb-1">Plan {plan.code}</h4>
+                  <p className="text-muted mb-2">{plan.name}</p>
+                  <h2 className="mb-0">{Number(plan.price).toLocaleString('fr-FR')} {plan.currency}<span className="fs-6 text-muted"> / Mois</span></h2>
                 </div>
-                <span className="badge bg-success">Actif</span>
+                <span className={`badge ${tenant.is_active ? 'bg-success' : 'bg-danger'}`}>{tenant.is_active ? 'Actif' : 'Inactif'}</span>
               </div>
 
               <hr />
@@ -99,11 +91,9 @@ const Abonnement = () => {
                 <div className="col-md-6">
                   <p><strong>Responsable :</strong> {admin?.username || 'Super Admin'}</p>
                   <p><strong>Eglise :</strong> {tenant.church_name || '-'}</p>
-                  <p><strong>Domaine :</strong> {tenant.domain || '-'}</p>
                 </div>
                 <div className="col-md-6">
-                  <p><strong>Cycle :</strong> {plan.billing_cycle}</p>
-                  <p><strong>Devise :</strong> {plan.currency}</p>
+                  <p><strong>Domaine :</strong> {tenant.domain || '-'}</p>
                   <p><strong>Tenant ID :</strong> {tenant.tenant_id || '-'}</p>
                 </div>
               </div>
@@ -133,7 +123,7 @@ const Abonnement = () => {
                       <tr key={payment.id}>
                         <td>{payment.invoice_number}</td>
                         <td>{formatDate(payment.paid_at || payment.created_at)}</td>
-                        <td>{payment.currency} {payment.amount}</td>
+                        <td>{Number(payment.amount).toLocaleString('fr-FR')} {payment.currency} </td>
                         <td>{payment.payment_method || '-'}</td>
                         <td><span className={`badge ${payment.status === 'paid' ? 'bg-success' : 'bg-warning'}`}>{payment.status}</span></td>
                       </tr>
@@ -149,21 +139,19 @@ const Abonnement = () => {
           </div>
         </div>
 
+         
+
         <div className="col-xl-4 col-md-12">
-          <div className="card">
+              <div className="card">
             <div className="card-body">
-              <h5 className="mb-3">
-                <FontAwesomeIcon icon={faWallet} className="me-2" />
-                Ce qui est inclus
-              </h5>
-              <ul className="mb-0 ps-3">
-                {features.map((feature) => (
-                  <li key={feature} className="mb-2">{feature}</li>
-                ))}
-              </ul>
+              <h5 className="mb-3">Contact du fournisseur SaaS</h5>
+              <p className="mb-1"><strong>Entreprise :</strong> {providerInfo?.provider_name}</p>
+              <p className="mb-1"><strong>Email :</strong> {providerInfo?.provider_email }</p>
+              <p className="mb-1"><strong>Téléphone :</strong> {providerInfo?.provider_phone}</p>
+              <p className="mb-1"><strong>Adresse :</strong> {providerInfo?.provider_address }</p>
+              <p className="mb-0 text-muted">Pour toute question liée à l’abonnement ou aux paiements.</p>
             </div>
           </div>
-
           <div className="card">
             <div className="card-body">
               <h5 className="mb-3">Logo de l'église</h5>
@@ -180,16 +168,7 @@ const Abonnement = () => {
             </div>
           </div>
 
-          <div className="card">
-            <div className="card-body">
-              <h5 className="mb-3">Contact du fournisseur SaaS</h5>
-              <p className="mb-1"><strong>Entreprise :</strong> Ecclesix Cloud</p>
-              <p className="mb-1"><strong>Email :</strong> support@ecclesix.app</p>
-              <p className="mb-1"><strong>Téléphone :</strong> +243 900 000 000</p>
-              <p className="mb-1"><strong>Adresse :</strong> Kinshasa, RDC</p>
-              <p className="mb-0 text-muted">Pour toute question liée à l’abonnement ou aux paiements.</p>
-            </div>
-          </div>
+        
         </div>
       </div>
     </>

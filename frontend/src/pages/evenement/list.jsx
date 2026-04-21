@@ -7,7 +7,7 @@ import { toast } from 'react-toastify'
 import useFetch from '../../hooks/fetchHook'
 import axios from 'axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCalendar, faEllipsisVertical, faPencil, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faCalendar, faEllipsisVertical, faPencil, faTrash, faClipboardList } from '@fortawesome/free-solid-svg-icons'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import Dropdown from 'react-bootstrap/Dropdown'
 import Modal from 'react-bootstrap/Modal'
@@ -17,6 +17,7 @@ import { ModifierModal, SupprimerModal } from './modals'
 
 const List = ({ filters, modal, handleModal,setModal, listetype }) => {
     const { admin, permissions, eglises, appConfig } = AppGlobalContext()
+    const navigate = useNavigate()
     const [page, setPage] = useState(1)
     const [modifierEvenement, setModifierEvenement] = useState({})
     const [supprimerEvenement, setSupprimerEvenement] = useState({})
@@ -161,7 +162,7 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                                     </td>
 
                                     <td onClick={(e) => e.stopPropagation()}>
-                                        {appConfig.add_events_attendance_manually && diffInDaysFromNow(evenement.event_date) <= 7 &&
+                                        {diffInDaysFromNow(evenement.event_date) <= 7 &&
                                             <ContentPermsWrapper requiredPerms={['modifier_evenement', 'supprimer_evenement']}>
                                                 {/* Checks if the admin is superadin or the event belong to the admin church events  */}
                                                 {(permissions.superAdmin || evenement.church == admin.church_id)
@@ -176,6 +177,13 @@ const List = ({ filters, modal, handleModal,setModal, listetype }) => {
                                                                     <FontAwesomeIcon icon={faPencil} /> Modifier
                                                                 </Dropdown.Item>
                                                             </ContentPermsWrapper>
+                                                            {diffInDaysFromNow(evenement.event_date) === 0 &&
+                                                                <ContentPermsWrapper requiredPerms={['ajouter_evenement']}>
+                                                                    <Dropdown.Item onClick={() => navigate(`/attendance/${evenement.id}`)} >
+                                                                        <FontAwesomeIcon icon={faClipboardList} /> Marquer Presence
+                                                                    </Dropdown.Item>
+                                                                </ContentPermsWrapper>
+                                                            }
                                                             <ContentPermsWrapper requiredPerms={['supprimer_evenement']}>
                                                                 <Dropdown.Item onClick={() => { setSupprimerEvenement(evenement); setModal('supprimer-evenement') }}>
                                                                     <FontAwesomeIcon icon={faTrash} /> Supprimer

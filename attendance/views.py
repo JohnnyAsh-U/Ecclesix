@@ -235,7 +235,7 @@ class AttendanceListCreateView(ListCreateAPIView):
         if member != "tout":
             queryset = queryset.filter(member_id=member)
 
-        if not user.is_superuser and not user.has_perm_custom("voir_toutes_presences"):
+        if not user.is_superuser and not user.has_perm_custom("voir_touts_evenements"):
             queryset = queryset.filter(church_id=user.church_id)
         elif church != "tout":
             queryset = queryset.filter(church_id=church)
@@ -318,3 +318,99 @@ class AttendanceUpdateDestroyView(UpdateAPIView, DestroyAPIView):
         self.perform_destroy(instance)
         Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BulkMarkAttendanceView(APIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "POST": ["ajouter_evenement"],
+    }
+
+    def post(self, request, event_id, *args, **kwargs):
+        """
+        Mark multiple members as present for a specific event.
+        
+        Request body:
+        {
+            "ids": [member_id1, member_id2, ...]
+        }
+        """
+        try:
+            # Get the event
+            event = Event.objects.get(pk=event_id)
+            
+            # Get member IDs from request body
+            member_ids = request.data.get("ids", [])
+            if not isinstance(member_ids, list):
+                return Response(
+                    {"detail": "ids doit etre une liste d'identifiants membres"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            if not member_ids:
+                return Response(
+                    {"detail": "Aucun membre fourni"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            # Verify user has access to this church's event
+            if not request.user.is_superuser and event.church_id != request.user.church_id:
+                return Response(
+                    {"detail": "Acces refuse"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            
+            # Create or update attendance records
+            created_count = 0
+            updated_count = 0
+            failed_ids = []
+            
+            with transaction.atomic():
+                for member_id in member_ids:
+                    try:
+                        attendance, created = Attendance.objects.get_or_create(
+                            member_id=member_id,
+                            event_type_id=event.event_type_id,
+                            church_id=event.church_id,
+                            date=event.event_date,
+                            defaults={
+                                "created_by_id": request.user.id,
+                            },
+                        )
+                        
+                        if created:
+                            created_count += 1
+                        else:
+                            updated_count += 1
+                    except Exception as e:
+                        failed_ids.append(member_id)
+                        continue
+            
+            return Response(
+                {
+                    "message": "Presences enregistrees avec succes",
+                    "created": created_count,
+                    "updated": updated_count,
+                    "failed_ids": failed_ids,
+                    "total_processed": created_count + updated_count,
+                },
+                status=status.HTTP_200_OK,
+            )
+        
+        except Event.DoesNotExist:
+            return Response(
+                {"detail": "Evenement non trouve"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Erreur: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+            
+            
+    def update_event_attendance_totals(self, event, member, birthdate=None, gender=None):
+        # This function should update the attendance totals for the event based on the member's demographics
+        # For example, it could increment counters for total attendance, age groups, gender,
+        # etc. The implementation will depend on how you are tracking these totals in your Event model.
+        pass

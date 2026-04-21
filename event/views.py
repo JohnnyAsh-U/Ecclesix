@@ -92,11 +92,12 @@ class EventListCreateView(ListCreateAPIView):
         )
 
 
-class EventUpdateDestroyView(UpdateAPIView, DestroyAPIView):
+class EventUpdateDestroyView(RetrieveUpdateDestroyAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     perms = {
         "OPTIONS": ["superadmin"],
+        "GET": ["ajouter_evenement"],
         "PATCH": ["modifier_evenement"],
         "DELETE": ["supprimer_evenement"],
     }

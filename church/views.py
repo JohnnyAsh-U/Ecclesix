@@ -232,9 +232,6 @@ def get_church_logo_from_domain(request):
     # get tenant from request
     tenant = getattr(request, "tenant", None)
     if tenant and tenant.custom_logo and tenant.logo:
-        request_tenant_domain = tenant.domain.strip().lower().rstrip(".")
-        print(f"Processed tenant domain: {tenant.logo}")
         build_url = request.build_absolute_uri(tenant.logo.url)
-        print(f"Built absolute URL: {build_url}")
         return Response({"logo_url": build_url}, status=status.HTTP_200_OK)
     return Response({"logo_url": None}, status=status.HTTP_404_NOT_FOUND)

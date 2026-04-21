@@ -37,6 +37,8 @@ class Tenant(TenantMixin):
     name = models.SlugField(max_length=80, unique=True)
     church_name = models.CharField(max_length=150)
     domain = models.CharField(max_length=255, unique=True, validators=[domain_validator])
+    email = models.EmailField(max_length=255, blank=True, default="")
+    phone = models.CharField(max_length=20, blank=True, default="")
     plan = models.ForeignKey("BillingPlan", null=True, blank=True, on_delete=models.SET_NULL, related_name="tenants")
     logo = models.ImageField(upload_to="tenant_logos/", null=True, blank=True)
     custom_domain = models.BooleanField(default=False)
@@ -116,3 +118,16 @@ class TenantDomain(DomainMixin):
     def save(self, *args, **kwargs):
         self.domain = self.domain.strip().lower().rstrip(".")
         super().save(*args, **kwargs)
+        
+        
+        
+class ProviderInformation(models.Model):
+    provider_name = models.CharField(max_length=100)
+    provider_email = models.EmailField()
+    provider_phone = models.CharField(max_length=20, blank=True, default="")
+    provider_address = models.CharField(max_length=255, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.provider_name}"

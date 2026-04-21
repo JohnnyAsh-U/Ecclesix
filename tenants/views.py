@@ -3,8 +3,16 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import BillingPlan, Tenant
-from .serializers import BillingPlanSerializer, TenantBillingSerializer, TenantLogoSerializer
+from django.utils import timezone
+
+from .models import BillingPlan, ProviderInformation, Tenant
+from .serializers import (
+    BillingPlanSerializer,
+    ProviderInformationSerializer,
+    TenantBillingSerializer,
+    TenantLogoSerializer,
+    TenantPaymentHistorySerializer,
+)
 
 
 
@@ -74,13 +82,22 @@ class TenantBillingView(TenantLookupMixin, APIView):
         tenant, error = self.get_current_tenant(request)
         if error:
             return error
-
+        
+        provider_info_instance = ProviderInformation.objects.all().first()  # Assuming there's only one provider information record
         serializer = TenantBillingSerializer(tenant, context={"request": request})
+        provider_info = ProviderInformationSerializer(provider_info_instance)
+
+        # last 6 payment rows (most recent by paid_at)
+        last_payments_qs = tenant.payment_history.filter(paid_at__isnull=False).order_by("-paid_at")[:6]
+        
+        serializer_payments = TenantPaymentHistorySerializer(last_payments_qs, many=True)
+
         return Response(
             {
                 "tenant": serializer.data,
                 "plan": serializer.data.get("plan"),
-                "payment_history": serializer.data.get("payment_history", []),
+                "payment_history": serializer_payments.data,
+                "provider_info": provider_info.data,
             }
         )
 

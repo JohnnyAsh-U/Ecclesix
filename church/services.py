@@ -1,3 +1,5 @@
+from django.db import OperationalError, ProgrammingError
+
 from members.models import Member
 from event.models import Event, Event_Type, Event_stats
 from .models import Church
@@ -169,11 +171,14 @@ def AttendanceMonthGraph(id):
 def AttendanceYearGraph(id):
     month_data = [0 for a in range(0, 12)]
     result = {}
-
-    totalEvent = Event_stats.objects.filter(church_id=id)
-        
-    if totalEvent.count() == 0:
+    
+    try:
+        totalEvent = list(Event_stats.objects.filter(church_id=id).order_by("year", "month", "church_id", "event_type_name"))
+    except (ProgrammingError, OperationalError):
         return {}
+
+    if not totalEvent:
+        return {}    
     
     oldest_event_stat =reduce(lambda x,y: min(x,y), [ev.year for ev in totalEvent])
 
@@ -183,7 +188,7 @@ def AttendanceYearGraph(id):
             result[str(ev.year)] = []
 
         found_event = next(
-            (event for event in result[str(ev.year)] if event['id'] == ev.pk),
+            (event for event in result[str(ev.year)] if event['event'] == ev.event_type_name),
             None,
         )
 
@@ -193,7 +198,7 @@ def AttendanceYearGraph(id):
             )
             
             found_event = next(
-                (event for event in result[str(ev.year)] if event['id'] == ev.pk),
+                (event for event in result[str(ev.year)] if event['event'] == ev.event_type_name),
                 None,
             )
         

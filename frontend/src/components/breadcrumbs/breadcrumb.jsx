@@ -6,7 +6,7 @@ const BreadCrumb = ({ title, icon, children }) => {
         document.title = `${title} | Ecclesix`
     }, [title])
 
-    if(title==='Dashboard' || title === 'Eglises' || title === 'Profile') return;
+    if(title==='Dashboard' || title === 'Eglises' || title === 'Profile') return null;
 
     return (
         <div className="card mb-3">
