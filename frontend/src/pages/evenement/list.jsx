@@ -74,7 +74,7 @@ const List = ({ filters }) => {
                                 <tr
                                     key={index}
                                     className={getRowVariant(evenement.event_date)}
-                                    onClick={() => navigate(`/attendance/${evenement.id}`)}
+                                    onClick={() => navigate(`/evenements/${evenement.id}`)}
                                     style={{ cursor: 'pointer' }}
                                 >
                                     <td>

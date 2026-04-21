@@ -14,6 +14,7 @@ const Profile = React.lazy(() => import('../../pages/profile'))
 const Departements = React.lazy(() => import('../../pages/departement'))
 const Admins = React.lazy(() => import('../../pages/admins'))
 const Evenements = React.lazy(() => import('../../pages/evenement'))
+const Mediatheque = React.lazy(() => import('../../pages/mediatheque'))
 const Logs = React.lazy(()=>import('../../pages/logs'))
 const Eglises = React.lazy(()=>import('../../pages/eglise'))
 const Parametres = React.lazy(()=>import('../../pages/parametres'))
@@ -24,7 +25,7 @@ const Rapports = React.lazy(()=>import('../../pages/finance/rapports'))
 const Transactions = React.lazy(()=>import('../../pages/finance/transactions'))
 const Budgets = React.lazy(()=>import('../../pages/finance/budgets'))
 const FinanceLog = React.lazy(()=>import('../../pages/finance/logs'))
-const AttendancePage = React.lazy(() => import('../../pages/evenement/attendance'))
+const EventDetail = React.lazy(() => import('../../pages/evenementDetail'))
 
 
 export const routes = [
@@ -123,9 +124,15 @@ export const routes = [
     PermissionRequises: ['superAdmin'] 
   },
   { 
-    path: '/attendance/:eventId', 
-    name: "Marquer Presence", 
-    element: AttendancePage, 
+    path: '/evenements/:eventId', 
+    name: "Details Evenement", 
+    element: EventDetail, 
     PermissionRequises: ['ajouter_evenement'] 
   },
+  {
+    path: '/mediatheques',
+    name: 'Mediatheques',
+    element: Mediatheque,
+    PermissionRequises: ['voir_mediatheque']
+  }
 ]

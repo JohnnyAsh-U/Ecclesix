@@ -96,6 +96,13 @@ export const NavList = () => {
             perms: ['voir_evenement', 'voir_touts_evenements']
         },
         {
+            name: 'Mediatheques',
+            to: '/mediatheques',
+            icon: <i className="icofont icofont-film"></i>,
+            color: '#ff6b6b',
+            perms: ['voir_mediatheque']
+        },
+        {
             name: 'Eglises',
             to: '/eglise' + (eglises.length > 0 ? '/' + eglises[0].id : ''),
             icon: <i className="icofont icofont-court"></i>,

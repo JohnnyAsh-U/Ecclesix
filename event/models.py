@@ -80,5 +80,16 @@ class Event_stats(models.Model):
         managed = False
         db_table = "events_stats"
         ordering = ["year", "month", "church_id", "event_type_name"]
+        
+        
+ 
+# Rapport — new
+class ServiceReport(models.Model):
+    event = models.OneToOneField(Event, on_delete=models.CASCADE)
+    preacher = models.CharField(max_length=255)
+    sermon_theme = models.CharField(max_length=255)
+    bible_reference = models.CharField(max_length=100, blank=True)
+    sermon_summary = models.TextField(blank=True)
+    after_service_activities = models.TextField(blank=True)
 
 
