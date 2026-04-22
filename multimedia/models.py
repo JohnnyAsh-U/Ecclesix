@@ -58,3 +58,14 @@ class MediaFile(models.Model):
             self.file_size = file_size
 
         super().save(*args, **kwargs)
+        
+    class Meta:
+        verbose_name = "media file"
+        verbose_name_plural = "media files"
+        default_permissions = ()
+        permissions = [
+            ("ajouter_mediafile", "Ajouter MediaFile"),
+            ("voir_mediafile", "Voir MediaFile"),
+            ("voirs_touts_mediafiles", "Voir tous les MediaFiles"),
+            ("supprimer_mediafile", "Supprimer MediaFile"),
+        ]

@@ -92,4 +92,8 @@ class ServiceReport(models.Model):
     sermon_summary = models.TextField(blank=True)
     after_service_activities = models.TextField(blank=True)
 
+    class Meta:
+        verbose_name = "service_report"
+        verbose_name_plural = "service_reports"
+        default_permissions=()
 

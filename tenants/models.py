@@ -21,6 +21,7 @@ class BillingPlan(models.Model):
 
     class Meta:
         ordering = ["price", "name"]
+        default_permissions = ()
         indexes = [models.Index(fields=["code"])]
 
     def __str__(self):
@@ -54,6 +55,7 @@ class Tenant(TenantMixin):
 
     class Meta:
         ordering = ["church_name"]
+        default_permissions = ()
         indexes = [
             models.Index(fields=["domain", "is_active"]),
             models.Index(fields=["name", "is_active"]),
@@ -95,6 +97,7 @@ class TenantPaymentHistory(models.Model):
 
     class Meta:
         ordering = ["-paid_at", "-created_at"]
+        default_permissions = ()
         indexes = [
             models.Index(fields=["tenant", "status"]),
             models.Index(fields=["invoice_number"]),
@@ -110,6 +113,7 @@ class TenantDomain(DomainMixin):
 
     class Meta:
         ordering = ["domain"]
+        default_permissions = ()
         indexes = [models.Index(fields=["domain", "is_active"])]
 
     def __str__(self):
@@ -128,6 +132,11 @@ class ProviderInformation(models.Model):
     provider_address = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["provider_name"]
+        default_permissions = ()
+        indexes = [models.Index(fields=["provider_name"])]
 
     def __str__(self):
         return f"{self.provider_name}"
@@ -143,3 +152,9 @@ class TenantStorageQuota(models.Model):
     @property
     def is_exceeded(self):
         return self.used_bytes >= self.quota_bytes
+    
+    class Meta:
+        verbose_name = "tenant storage quota"
+        verbose_name_plural = "tenant storage quotas"
+        default_permissions = ()
+        indexes = [models.Index(fields=["tenant"])]
