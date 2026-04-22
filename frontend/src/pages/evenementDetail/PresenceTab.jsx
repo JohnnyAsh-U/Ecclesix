@@ -4,7 +4,7 @@ import { toast } from 'react-toastify'
 import axios from 'axios'
 import { LoadingData } from '../../components/Loading/loading'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUserCheck, faUsers, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faUserCheck, faUsers, faTimes, faMale, faChild, faFemale } from '@fortawesome/free-solid-svg-icons'
 import Modal from 'react-bootstrap/Modal'
 import './attendance.css'
 import { useParams } from 'react-router-dom'
@@ -139,14 +139,14 @@ const PresenceTab = ({ eventId: propEventId, event: propEvent, canMark }) => {
           </div>
         ))}
         {[
-          { symbol: '♂', color: 'info', value: event?.men ?? 0, label: 'Hommes' },
-          { symbol: '♀', color: 'danger', value: event?.women ?? 0, label: 'Femmes' },
-          { symbol: '●', color: 'warning', value: event?.children ?? 0, label: 'Enfants' },
+          { symbol: faMale, color: 'info', value: event?.men ?? 0, label: 'Hommes' },
+          { symbol: faFemale, color: 'danger', value: event?.women ?? 0, label: 'Femmes' },
+          { symbol: faChild, color: 'warning', value: event?.children ?? 0, label: 'Enfants' },
         ].map(s => (
           <div key={s.label} className="col-6 col-md-2">
             <div className="card text-center border-0 shadow-sm h-100">
               <div className="card-body py-2">
-                <div className={`text-${s.color} fw-bold`}>{s.symbol}</div>
+                <FontAwesomeIcon icon={s.symbol} className={`text-${s.color} fw-bold`} />
                 <div className="fw-bold fs-5">{s.value}</div>
                 <div className="text-muted small">{s.label}</div>
               </div>
@@ -170,9 +170,9 @@ const PresenceTab = ({ eventId: propEventId, event: propEvent, canMark }) => {
       {mode === 'past' && (
         <div className="card">
           <div className="card-header d-flex justify-content-between align-items-center">
-            <div>
-              <FontAwesomeIcon icon={faUserCheck} className="text-success me-2" />
-              <span className="fw-semibold">Presents ({presentCount})</span>
+            <div className='d-inline-flex align-items-center fs-6'>
+              <FontAwesomeIcon icon={faUserCheck} className="me-2" />
+              <span className="fw-semibold text-black">Presents ({presentCount})</span>
             </div>
             <input
               type="text"
@@ -186,15 +186,15 @@ const PresenceTab = ({ eventId: propEventId, event: propEvent, canMark }) => {
             {filteredPresentMembers.length === 0 ? (
               <div className="text-center py-4 text-muted">Aucun present enregistré</div>
             ) : (
-              <div className="row g-2">
+              <div className="row g-1">
                 {filteredPresentMembers.map(member => (
                   <div key={member.id} className="col-md-4 col-sm-6">
-                    <div className="present-card card border-success">
+                    <div className="present-card card shadow-none">
                       <div className="card-body py-2 px-3">
-                        <div className="fw-semibold small">{member.get_full_name}</div>
+                        <div className="fw-semibold">{member.get_full_name}</div>
                         {attendanceMap[member.id]?.time && (
-                          <div className="text-success" style={{ fontSize: '11px' }}>
-                            ✓ Arrivée: {attendanceMap[member.id].time}
+                          <div className="text-success fw-semibold" style={{ fontSize: '11px' }}>
+                            ✓ Arrivée: {new Date(`1970-01-01T${attendanceMap[member.id].time}Z`).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         )}
                       </div>
@@ -240,7 +240,7 @@ const PresenceTab = ({ eventId: propEventId, event: propEvent, canMark }) => {
                               <div className="fw-semibold">{member.get_full_name}</div>
                               {member.phone && <div className="text-muted small">{member.phone}</div>}
                               {isPresent && attendanceMap[member.id]?.time && (
-                                <div className="text-success small">✓ {new Date(`1970-01-01T${attendanceMap[member.id].time}Z`).toLocaleTimeString()}</div>
+                                <div className="text-success small">✓ {new Date(`1970-01-01T${attendanceMap[member.id].time}Z`).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
                               )}
                             </div>
                             {isProcessing
@@ -284,7 +284,7 @@ const PresenceTab = ({ eventId: propEventId, event: propEvent, canMark }) => {
                               <div className="fw-semibold small">{member.get_full_name}</div>
                               {attendanceMap[member.id]?.time && (
                                 <div className="text-success" style={{ fontSize: '11px' }}>
-                                  ✓ Arrivée: {new Date(`1970-01-01T${attendanceMap[member.id].time}Z`).toLocaleTimeString()}
+                                  ✓ Arrivée: {new Date(`1970-01-01T${attendanceMap[member.id].time}Z`).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                               )}
                             </div>

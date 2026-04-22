@@ -40,6 +40,8 @@ const Logs = () => {
 
     const DayLogs = active === 'tout' ? logs : logs.filter(log => log.date_time == active)
 
+    console.log(logs)
+
     return (
         <div>
             <BreadCrumb icon={<FontAwesomeIcon icon={faClipboardList} />} title={"Logs"} />

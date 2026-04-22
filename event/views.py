@@ -14,6 +14,8 @@ from attendance.models import Attendance
 from datetime import date
 from admin_custom.services import ViewLogger
 from admin_custom.models import Log
+from .models import ServiceReport
+from .serializers import ServiceReportSerializer
 import math
 
 
@@ -285,3 +287,89 @@ class EventTypeRUDView(RetrieveUpdateDestroyAPIView):
         self.perform_destroy(instance)
         Log.objects.create(admin_id=request.user.id, log_type="DELETE", detail=detail)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class ServiceReportView(ListAPIView):
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "GET": ["ajouter_evenement", "voir_evenement", "voir_touts_evenements"],
+        "POST": ["modifier_evenement"],
+        "PATCH": ["modifier_evenement"],
+    }
+
+    def get(self, request, *args, **kwargs):
+        user: Member = request.user
+        event = Event.objects.filter(pk=kwargs.get("pk")).first()
+
+        if not event:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if (
+            not user.is_superuser
+            and not user.has_perm_custom("voir_touts_evenements")
+            and user.church_id != event.church_id
+        ):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        report = ServiceReport.objects.filter(event=event).first()
+        if not report:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ServiceReportSerializer(report)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        user: Member = request.user
+        if not user.has_perm_custom("modifier_evenement") and not user.is_superuser:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        event = Event.objects.filter(pk=kwargs.get("pk")).first()
+        if not event:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # prevent creating more than one report per event
+        if ServiceReport.objects.filter(event=event).exists():
+            return Response({"detail": "Report already exists for this event."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data.copy()
+        data["event_id"] = event.id
+
+        serializer = ServiceReportSerializer(data=data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        detail = {
+            "resource": "ServiceReport",
+            "id": serializer.data.get("id"),
+            "event": event.id,
+        }
+        Log.objects.create(admin_id=request.user.id, log_type="INSERT", detail=detail)
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def patch(self, request, *args, **kwargs):
+        user: Member = request.user
+        if not user.has_perm_custom("modifier_evenement") and not user.is_superuser:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        event = Event.objects.filter(pk=kwargs.get("pk")).first()
+        if not event:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        report = ServiceReport.objects.filter(event=event).first()
+        if not report:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ServiceReportSerializer(report, data=request.data, partial=True, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        detail = {
+            "resource": "ServiceReport",
+            "id": report.pk,
+            "event": event.id,
+        }
+        Log.objects.create(admin_id=request.user.id, log_type="UPDATE", detail=detail)
+
+        return Response(serializer.data)

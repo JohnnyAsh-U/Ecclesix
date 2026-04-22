@@ -3,6 +3,7 @@ from django.utils import timezone
 from .models import Event, Event_Type
 from admin_custom.models import Log
 from church.models import Church
+from .models import ServiceReport
 
 class EventSerializer(serializers.ModelSerializer):
     church_name = serializers.SerializerMethodField()
@@ -40,6 +41,84 @@ class EventSerializer(serializers.ModelSerializer):
                 "resource": "Evenement",
                 "id": instance.pk,
                 "lib": f"{instance.event_type} ({instance.church.church_name})",
+                "changes": changes,
+            }
+            Log.objects.create(log_type="UPDATE", admin_id=admin, detail=details)
+
+        return super().update(instance, validated_data)
+    
+    def get_church_name(self, obj):
+        if obj.church:
+            return f"{obj.church.church_name}"
+        return None
+    
+    def get_event_type_name(self, obj):
+        if obj.event_type:
+            return f"{obj.event_type.event_type_name}"
+        return None
+
+    def get_event_type_start_time(self, obj):
+        if obj.event_type and obj.event_type.start_time:
+            return obj.event_type.start_time.strftime("%H:%M:%S")
+        return None
+
+    def get_event_type_end_time(self, obj):
+        if obj.event_type and obj.event_type.end_time:
+            return obj.event_type.end_time.strftime("%H:%M:%S")
+        return None
+
+
+class ServiceReportSerializer(serializers.ModelSerializer):
+    event_id = serializers.PrimaryKeyRelatedField(
+        source="event", queryset=Event.objects.all(), write_only=True
+    )
+
+    class Meta:
+        model = ServiceReport
+        fields = (
+            "id",
+            "event_id",
+            "event",
+            "preacher",
+            "sermon_theme",
+            "bible_reference",
+            "sermon_summary",
+            "after_service_activities",
+        )
+        read_only_fields = ("id", "event")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["event"] = instance.event.id
+        return data
+
+    def update(self, instance, validated_data):
+        original_instance = type(instance).objects.get(pk=instance.pk)
+        changes = {"old": {}, "new": {}}
+        admin = self.context["request"].user.id
+
+        field_map = {
+            "preacher": "predicateur",
+            "sermon_theme": "theme",
+            "bible_reference": "reference",
+            "sermon_summary": "resume",
+            "after_service_activities": "activites",
+        }
+
+        for field in validated_data:
+            old_value = getattr(original_instance, field)
+            new_value = validated_data[field]
+            target_field = field_map.get(field, field)
+
+            if old_value != new_value:
+                changes["old"][target_field] = str(old_value) if old_value is not None else None
+                changes["new"][target_field] = str(new_value) if new_value is not None else None
+
+        if len(changes["new"]) > 0 or len(changes["old"]) > 0:
+            details = {
+                "resource": "ServiceReport",
+                "id": instance.pk,
+                "event": instance.event.id,
                 "changes": changes,
             }
             Log.objects.create(log_type="UPDATE", admin_id=admin, detail=details)
