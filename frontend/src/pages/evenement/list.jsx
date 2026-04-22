@@ -7,6 +7,7 @@ import { toast } from 'react-toastify'
 import useFetch from '../../hooks/fetchHook'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCalendar } from '@fortawesome/free-solid-svg-icons'
+import Calendar from './calendar'
 
 
 const List = ({ filters }) => {
@@ -20,6 +21,15 @@ const List = ({ filters }) => {
     }).toString()
     const { loading, data, error, reload } = useFetch(`/evenement?${query}`, 'get')
     const { list: evenements, total_pages: totalPages, total_events: totalEvents } = data || {}
+    const evts = evenements || []
+
+    const headerLabel = (() => {
+        const year = (filters && filters.annee) ? filters.annee : new Date().getFullYear()
+        const monthIdx = (filters && filters.mois && filters.mois !== 'tout') ? Number(filters.mois) : new Date().getMonth()
+        return `${list_month[monthIdx]} ${year}`
+    })()
+
+    
 
     const handlePageChange = (num) => setPage(num)
 
@@ -42,63 +52,73 @@ const List = ({ filters }) => {
     }
 
 
+    
+
     return (
         <div className="card mb-0" >
             <div className="card-header border-bottom py-3" style={{ backgroundColor: '#cbd5e1' }}>
                 <h5><FontAwesomeIcon icon={faCalendar} className='mx-1' />
-                    {filters.mois == 'tout' ? filters.annee : list_month[filters.mois] + " " + filters.annee}
+                    {headerLabel}
                 </h5>
             </div>
-            <div className="card-body marketing-card" style={{ height: '57vh', overflowY: 'auto' }}>
+                <div className="card-body marketing-card" style={{ minHeight: '57vh', overflowY: 'auto' }}>
                 {loading && <LoadingData />}
-                {!loading && evenements.length == 0 &&
-                    <div className='position-absolute end-50 top-25 fw-semibold fs-6 mt-5 ms-5'>
-                        Aucune Evenement
-                    </div>
-                }
-                <div className="table-responsive mt-2">
-                    <table className="table table-hover table-bordered">
-                        <thead className='bg-inverse'>
-                            <tr className='bg-inverse'>
-                                <th>Evenement</th>
-                                <th>Date</th>
-                                <th>Eglise</th>
-                                <th>Hommes</th>
-                                <th>Femmes</th>
-                                <th>Enfants</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {!loading && evenements?.length > 0 && evenements.map((evenement, index) => (
-                                <tr
-                                    key={index}
-                                    className={getRowVariant(evenement.event_date)}
-                                    onClick={() => navigate(`/evenements/${evenement.id}`)}
-                                    style={{ cursor: 'pointer' }}
-                                >
-                                    <td>
-                                        {evenement.event_type_name}
-                                        {evenement.event_name && <><br /><span className="p-1 fw-normal small">{evenement.event_name}</span></>}
-                                    </td>
-                                    <td>{formatDate(evenement.event_date)}</td>
-                                    <td>{evenement.church_name}</td>
-                                    <td>{evenement.men}</td>
-                                    <td>{evenement.women}</td>
-                                    <td>{evenement.children}</td>
-                                    <td>{evenement.total}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                {!loading && (filters.view === 'calendar') && (
+                    (evenements || []).length === 0 ? (
+                        <div className='position-absolute end-50 top-25 fw-semibold fs-6 mt-5 ms-5'>Aucune Evenement</div>
+                    ) : <Calendar events={evts} filters={filters} navigate={navigate} />
+                )}
+
+                {!loading && (filters.view !== 'calendar') && (
+                    <>
+                        {(!evenements || evenements.length === 0) && (
+                            <div className='position-absolute end-50 top-25 fw-semibold fs-6 mt-5 ms-5'>Aucune Evenement</div>
+                        )}
+                        <div className="table-responsive mt-2">
+                            <table className="table table-hover table-bordered">
+                                <thead className='bg-inverse'>
+                                    <tr className='bg-inverse'>
+                                        <th>Evenement</th>
+                                        <th>Date</th>
+                                        <th>Eglise</th>
+                                        <th>Hommes</th>
+                                        <th>Femmes</th>
+                                        <th>Enfants</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {!loading && evenements?.length > 0 && evenements.map((evenement, index) => (
+                                        <tr
+                                            key={index}
+                                            className={getRowVariant(evenement.event_date)}
+                                            onClick={() => navigate(`/evenements/${evenement.id}`)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <td>
+                                                {evenement.event_type_name}
+                                                {evenement.event_name && <><br /><span className="p-1 fw-normal small">{evenement.event_name}</span></>}
+                                            </td>
+                                            <td>{formatDate(evenement.event_date)}</td>
+                                            <td>{evenement.church_name}</td>
+                                            <td>{evenement.men}</td>
+                                            <td>{evenement.women}</td>
+                                            <td>{evenement.children}</td>
+                                            <td>{evenement.total}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
             </div>
             <div className='card-footer'>
                 <div className="d-flex justify-content-between align-items-center">
                     <div className='fs-6 fw-semibold '>
                         {totalEvents} Evenements
                     </div>
-                    {totalEvents > 0 &&
+                    {filters.view !== 'calendar' && totalEvents > 0 &&
                         <Pagination
                             handler={handlePageChange}
                             totalPages={totalPages}
@@ -106,6 +126,8 @@ const List = ({ filters }) => {
                         />}
                 </div>
             </div>
+
+            
         </div>
     )
 }

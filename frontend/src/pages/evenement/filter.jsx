@@ -3,8 +3,9 @@ import { FormSelect } from '../../components/Inputbox/form-select'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { ContentPermsWrapper } from '../../utils/permissions/permwrapper'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTimesCircle } from '@fortawesome/free-solid-svg-icons'
+import { faTimesCircle, faCalendar, faList } from '@fortawesome/free-solid-svg-icons'
 import { list_month } from '../../utils/datetime/month'
+
 
 const Filter = ({ handleChange, firstDate, listetype, filters, filterDefault }) => {
     const { eglises } = AppGlobalContext()
@@ -27,6 +28,33 @@ const Filter = ({ handleChange, firstDate, listetype, filters, filterDefault }) 
             </div>
             <div className="card-body">
                 <form action="#">
+                      <div className="form-group row mb-1">
+                        <div className='col-sm-4'>
+                            <label className='col-form-label'>
+                                Vue
+                            </label>
+                        </div>
+                       <div className="col-sm-8 d-flex align-items-center" style={{cursor:'pointer'}}>
+                                <div className="form-check d-flex align-items-center cursor-pointer" >
+                                    <input
+                                        className="form-check-input"
+                                        style={{cursor:'pointer'}}
+                                        type="checkbox"
+                                        id="viewCalendar"
+                                        name="view"
+                                        checked={filters.view === 'calendar'}
+                                        onChange={(e) => handleChange('view', e.target.checked ? 'calendar' : 'list')}
+                                    />
+                                    <label className="form-check-label ms-2 d-flex align-items-center gap-2" htmlFor="viewCalendar">
+                                        <FontAwesomeIcon icon={faCalendar} className={filters.view === 'calendar' ? 'text-primary' : 'text-muted'} />
+                                        <span className='mx-1'>/</span>
+                                        <FontAwesomeIcon icon={faList} className={filters.view === 'list' ? 'text-primary' : 'text-muted'} />
+                                    </label>
+                                </div>
+                        </div>
+                    </div>
+                     
+                    
                     <div className="form-group row mb-1">
                         <div className='col-sm-4'>
                             <label className='col-form-label'>
@@ -82,6 +110,8 @@ const Filter = ({ handleChange, firstDate, listetype, filters, filterDefault }) 
                             </FormSelect>
                         </div>
                     </div>
+
+                  
 
                     <div className="form-group row mb-1">
                         <div className='col-sm-4'>

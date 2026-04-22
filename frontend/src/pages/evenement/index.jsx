@@ -22,6 +22,7 @@ const Evenements = () => {
         eglise: permissions.superAdmin ? 'tout' : admin.church_id,
         mois: new Date().getMonth(),
         annee: new Date().getFullYear(),
+        view: 'list',
     }
     const [filters, setFilters] = useState(filter)
     const [modal, setModal] = useState()
