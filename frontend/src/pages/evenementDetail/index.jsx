@@ -15,12 +15,23 @@ import { ContentPermsWrapper } from '../../utils/permissions/permwrapper'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { ModifierModal, SupprimerModal } from './modals'
 
-const QuickLinks = ({ activeTab = 'presence', onTabChange }) => {
-    const tabs = [
-        { id: 'presence', label: 'Présence', icon: faUserCheck, color: '#4680ff' },
-        { id: 'rapports', label: 'Rapports', icon: faFileAlt, color: '#4680ff' },
-        { id: 'mediatheque', label: 'Médias', icon: faVideo, color: '#4680ff' },
+const QuickLinks = ({ activeTab = 'presence', onTabChange, permissions = {} }) => {
+    // Build tabs and filter by the same requiredPerms used by ContentPermsWrapper
+    const allTabs = [
+        { id: 'presence', label: 'Présence', icon: faUserCheck, color: '#4680ff', requiredPerms: ['voir_evenement','voir_touts_evenements'] },
+        { id: 'rapports', label: 'Rapports', icon: faFileAlt, color: '#4680ff', requiredPerms: ['voir_evenement','voir_touts_evenements'] },
+        { id: 'mediatheque', label: 'Médias', icon: faVideo, color: '#4680ff', requiredPerms: ['voir_mediafile','voirs_touts_mediafiles'] },
     ]
+
+    const hasAnyPerm = (requiredPerms) => {
+        if (!requiredPerms || requiredPerms.length === 0) return true
+        if (!permissions) return false
+        if (permissions.superAdmin) return true
+        if (Array.isArray(permissions)) return requiredPerms.some(p => permissions.includes(p))
+        return requiredPerms.some(p => !!permissions[p])
+    }
+
+    const tabs = allTabs.filter(t => hasAnyPerm(t.requiredPerms))
 
     return (
         <div className="card mb-4 border-0 shadow-sm">
@@ -90,6 +101,26 @@ const AttendancePage = () => {
         fetchEvent()
     }, [eventId, navigate])
 
+    // Ensure the currently active tab is allowed by permissions; if not, pick the first allowed tab
+    useEffect(() => {
+        const allTabs = [
+            { id: 'presence', requiredPerms: ['voir_evenement','voir_touts_evenements'] },
+            { id: 'rapports', requiredPerms: ['voir_evenement','voir_touts_evenements'] },
+            { id: 'mediatheque', requiredPerms: ['voir_mediafile','voirs_touts_mediafiles'] },
+        ]
+
+        const hasAnyPerm = (requiredPerms) => {
+            if (!requiredPerms || requiredPerms.length === 0) return true
+            if (!permissions) return false
+            if (permissions.superAdmin) return true
+            if (Array.isArray(permissions)) return requiredPerms.some(p => permissions.includes(p))
+            return requiredPerms.some(p => !!permissions[p])
+        }
+
+        const allowed = allTabs.filter(t => hasAnyPerm(t.requiredPerms)).map(t => t.id)
+        if (allowed.length > 0 && !allowed.includes(activeTab)) setActiveTab(allowed[0])
+    }, [permissions])
+
     if (loading) return (
         <div className="container mt-5 text-center">
             <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
@@ -114,7 +145,7 @@ const AttendancePage = () => {
         future: <span className="badge bg-primary ms-2">À venir</span>,
     }[mode]
 
-    const isOwner = permissions.superAdmin || event?.church == admin.church_id
+    const isOwner = permissions && (permissions.superAdmin || event?.church == admin.church_id)
 
     return (
         <div className="">
@@ -141,10 +172,6 @@ const AttendancePage = () => {
             <div className="card mb-3 border-0 shadow-sm">
                 <div className="card-body py-2">
                     <div className="d-flex flex-wrap gap-3 align-items-center">
-                        {/* <div>
-                            <span className="fw-bold me-1">{event?.event_type_name}</span>
-                            {event?.event_name && <span className="text-muted small">— {event.event_name}</span>}
-                        </div> */}
                         <div className="text-muted small">
                             <FontAwesomeIcon icon={faCalendar} className="me-1" />
                             {new Date(event?.event_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -163,12 +190,12 @@ const AttendancePage = () => {
             </div>
 
             <div className="mb-3">
-                <QuickLinks activeTab={activeTab} onTabChange={setActiveTab} />
+                <QuickLinks activeTab={activeTab} onTabChange={setActiveTab} permissions={permissions} />
             </div>
 
-            {activeTab === 'presence' && <PresenceTab eventId={eventId} event={event} canMark={canMark} />}
-            {activeTab === 'rapports' && <RapportsTab eventId={eventId} event={event} />}
-            {activeTab === 'mediatheque' && <MediathequeTab eventId={eventId} event={event} />}
+            {activeTab === 'presence' && <ContentPermsWrapper requiredPerms={['voir_evenement','voir_touts_evenements']}><PresenceTab eventId={eventId} event={event} canMark={canMark} /></ContentPermsWrapper>}
+            {activeTab === 'rapports' && <ContentPermsWrapper requiredPerms={['voir_evenement','voir_touts_evenements']}><RapportsTab eventId={eventId} event={event} /></ContentPermsWrapper>}
+            {activeTab === 'mediatheque' && <ContentPermsWrapper requiredPerms={['voir_mediafile','voirs_touts_mediafiles']}><MediathequeTab eventId={eventId} event={event} /></ContentPermsWrapper>}
 
             {/* Edit / Delete modals */}
             {event && (

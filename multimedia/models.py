@@ -7,6 +7,7 @@ from event.models import Event
 from storages.backends.s3boto3 import S3Boto3Storage
 
 from members.models import Member
+from church.models import Church
 from tenants.models import TenantStorageQuota
 from .storage import TenantMediaStorage
 
@@ -22,6 +23,7 @@ class MediaFile(models.Model):
 
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='media')
     media_type = models.CharField(max_length=20, choices=MediaType.choices)
+    church = models.ForeignKey(Church, on_delete=models.SET_NULL, null=True, related_name='media_files')
     file = models.FileField(storage=TenantMediaStorage())
     file_size = models.BigIntegerField(null=True, blank=True)
     title = models.CharField(max_length=255, blank=True)

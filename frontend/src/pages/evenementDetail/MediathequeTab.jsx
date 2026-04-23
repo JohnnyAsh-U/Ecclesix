@@ -6,6 +6,7 @@ import { ContentPermsWrapper } from '../../utils/permissions/permwrapper'
 import axios from 'axios'
 import { MyPlayer } from '../../components/videoplayer'
 import { Thumbnail } from '@videojs/react'
+import { toast } from 'react-toastify'
 
 const MAX_FILE = 500 * 1024 * 1024 // 500MB
 const MAX_PHOTO = 20 * 1024 * 1024 // 20MB
@@ -45,6 +46,91 @@ const extMatches = (name, exts) => {
   const lower = name.toLowerCase()
   return exts.some(e => lower.endsWith(e))
 }
+
+// Memoized components for temp file items to prevent focus loss during typing
+const TempPhotoItem = React.memo(({ photo, preview, onTitleChange, onRemove }) => (
+  <div className="col-12 my-2">
+    <div className="card h-100">
+      <div className="card-body p-2 d-flex align-items-start">
+        {preview ? (
+          <img src={preview} alt={photo.file.name} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6, marginRight: 8 }} />
+        ) : (
+          <FontAwesomeIcon icon={faImage} className="me-2" />
+        )}
+        <div style={{ flex: 1 }}>
+          <div className="text-truncate" style={{ maxWidth: 160 }}>{photo.file.name}</div>
+          <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={photo.title} onChange={e => onTitleChange(e.target.value)} />
+        </div>
+        <div className="ms-2 text-end">
+          <small className="text-muted d-block">{bytesToSize(photo.file.size)}</small>
+          <button className="btn btn-sm text-danger p-0" onClick={onRemove}><FontAwesomeIcon icon={faTimes} /></button>
+        </div>
+      </div>
+    </div>
+  </div>
+))
+TempPhotoItem.displayName = 'TempPhotoItem'
+
+const TempVideoItem = React.memo(({ video, onTitleChange, onRemove }) => (
+  <div className="col-12 my-2">
+    <div className="card h-100">
+      <div className="card-body p-2">
+        <div className="d-flex align-items-start">
+          <FontAwesomeIcon icon={faFile} className="me-2" />
+          <div style={{ flex: 1 }}>
+            <div className="text-truncate" style={{ maxWidth: 180 }}>{video.file.name}</div>
+            <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={video.title} onChange={e => onTitleChange(e.target.value)} />
+          </div>
+          <div className="ms-2 text-end">
+            <small className="text-muted d-block">{bytesToSize(video.file.size)}</small>
+            <button className="btn btn-sm text-danger p-0" onClick={onRemove}><FontAwesomeIcon icon={faTimes} /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+))
+TempVideoItem.displayName = 'TempVideoItem'
+
+const TempAudioItem = React.memo(({ audio, onTitleChange, onRemove }) => (
+  <div className="col-12 my-2">
+    <div className="card h-100">
+      <div className="card-body p-2">
+        <div className="d-flex align-items-start">
+          <FontAwesomeIcon icon={faFile} className="me-2" />
+          <div style={{ flex: 1 }}>
+            <div className="text-truncate" style={{ maxWidth: 180 }}>{audio.file.name}</div>
+            <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={audio.title} onChange={e => onTitleChange(e.target.value)} />
+          </div>
+          <div className="ms-2 text-end">
+            <small className="text-muted d-block">{bytesToSize(audio.file.size)}</small>
+            <button className="btn btn-sm text-danger p-0" onClick={onRemove}><FontAwesomeIcon icon={faTimes} /></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+))
+TempAudioItem.displayName = 'TempAudioItem'
+
+const TempDocItem = React.memo(({ doc, onTitleChange, onRemove }) => (
+  <div className="col-12 mb-3">
+    <div className="card h-100">
+      <div className="card-body p-2 d-flex align-items-start">
+        <FontAwesomeIcon icon={faFileAlt} className="me-2" />
+        <div style={{ flex: 1 }}>
+          <div className="text-truncate" style={{ maxWidth: 160 }}>{doc.file.name}</div>
+          <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={doc.title} onChange={e => onTitleChange(e.target.value)} />
+        </div>
+        <div className="ms-2 text-end">
+          <small className="text-muted d-block">{bytesToSize(doc.file.size)}</small>
+          <button className="btn btn-sm text-danger p-0" onClick={onRemove}><FontAwesomeIcon icon={faTimes} /></button>
+        </div>
+      </div>
+    </div>
+  </div>
+))
+TempDocItem.displayName = 'TempDocItem'
 
 const MediathequeTab = ({ event }) => {
   const [videoFiles, setVideoFiles] = useState([])
@@ -99,7 +185,7 @@ const MediathequeTab = ({ event }) => {
       const accepted = ['.mp4', '.webm', '.mov', '.mkv']
       const good = fArr.filter(f => extMatches(f.name, accepted) && f.size <= MAX_FILE)
       if (good.length < fArr.length) alert('Fichiers vidéo non valides ignorés (format ou taille > 500MB).')
-      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2,9)}` }))
+      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}` }))
       if (showModal) setTempVideoFiles(prev => [...prev, ...wrapped])
       else setVideoFiles(prev => [...prev, ...wrapped])
     }
@@ -107,7 +193,7 @@ const MediathequeTab = ({ event }) => {
       const accepted = ['.mp3', '.wav', '.aac', '.m4a']
       const good = fArr.filter(f => extMatches(f.name, accepted) && f.size <= MAX_FILE)
       if (good.length < fArr.length) alert('Fichiers audio non valides ignorés (format ou taille > 500MB).')
-      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2,9)}` }))
+      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}` }))
       if (showModal) setTempAudioFiles(prev => [...prev, ...wrapped])
       else setAudioFiles(prev => [...prev, ...wrapped])
     }
@@ -115,7 +201,7 @@ const MediathequeTab = ({ event }) => {
       const accepted = ['.jpg', '.jpeg', '.png', '.webp']
       const good = fArr.filter(f => extMatches(f.name, accepted) && f.size <= MAX_PHOTO)
       if (good.length < fArr.length) alert('Certaines photos ont été ignorées (format non supporté ou > 20MB).')
-      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2,9)}` }))
+      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}` }))
       if (showModal) {
         setTempPhotoFiles(prev => [...prev, ...wrapped])
         const newPreviews = good.map(f => URL.createObjectURL(f))
@@ -126,7 +212,7 @@ const MediathequeTab = ({ event }) => {
       const accepted = ['.pdf', '.docx']
       const good = fArr.filter(f => extMatches(f.name, accepted) && f.size <= MAX_DOC)
       if (good.length < fArr.length) alert('Documents ignorés (format non supporté ou > 50MB).')
-      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2,9)}` }))
+      const wrapped = good.map(f => ({ file: f, title: '', uid: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}` }))
       if (showModal) setTempDocFiles(prev => [...prev, ...wrapped])
       else setDocFiles(prev => [...prev, ...wrapped])
     }
@@ -173,14 +259,20 @@ const MediathequeTab = ({ event }) => {
     } else {
       // Delete from server
       const fileList = zone === 'videos' ? videoFiles : zone === 'audios' ? audioFiles : zone === 'photos' ? photoFiles : docFiles
-      const fileToDelete = fileList[idx]
+      const fileToDelete = typeof idxOrUid === 'string'
+        ? fileList.find(f => f.uid === idxOrUid)
+        : fileList[idxOrUid]
       if (fileToDelete && fileToDelete.id) {
         try {
           await axios.delete(`/multimedia/${fileToDelete.id}`)
-          if (zone === 'videos') setVideoFiles(prev => prev.filter((_, i) => i !== idx))
-          if (zone === 'audios') setAudioFiles(prev => prev.filter((_, i) => i !== idx))
-          if (zone === 'photos') setPhotoFiles(prev => prev.filter((_, i) => i !== idx))
-          if (zone === 'docs') setDocFiles(prev => prev.filter((_, i) => i !== idx))
+          const filter = typeof idxOrUid === 'string'
+            ? (f) => f.uid !== idxOrUid
+            : (_, i) => i !== idxOrUid
+          if (zone === 'videos') setVideoFiles(prev => prev.filter(filter))
+          if (zone === 'audios') setAudioFiles(prev => prev.filter(filter))
+          if (zone === 'photos') setPhotoFiles(prev => prev.filter(filter))
+          if (zone === 'docs') setDocFiles(prev => prev.filter(filter))
+          toast.success('Fichier supprimé')
         } catch (err) {
           console.error('Failed to delete file:', err)
           alert('Erreur lors de la suppression.')
@@ -188,6 +280,9 @@ const MediathequeTab = ({ event }) => {
       }
     }
   }
+
+  // Helper to find preview index by uid (used in modal to keep inputs stable)
+  const getPreviewIndexByUid = (uid) => tempPhotoFiles.findIndex(p => p.uid === uid)
 
   // revoke previews when modal closes or component unmounts
   useEffect(() => {
@@ -204,28 +299,22 @@ const MediathequeTab = ({ event }) => {
 
   const getFileLink = (o) => {
     if (!o) return ''
-    if (o.url) return o.url
     if (o.file && o.file instanceof File) return URL.createObjectURL(o.file)
     return ''
   }
 
   const downloadFile = async (o) => {
     try {
-      if (o.id) {
-        // Server file: use API endpoint
-        window.location.href = `multimedia/${o.id}/download`
-      } else {
-        // Local file: use object URL
-        const link = getFileLink(o)
-        if (!link) return
-        const a = document.createElement('a')
-        a.href = link
-        a.download = (o.title && o.title.length) ? o.title : (o.file ? o.file.name : '')
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        if (o.file && o.file instanceof File) URL.revokeObjectURL(link)
-      }
+      // Local file: use object URL
+      const { data } = await axios.get(`/multimedia/${o.id}/download`, { responseType: 'blob' })
+      console.log('Download response:', data)
+      const link = URL.createObjectURL(data)
+      const a = document.createElement('a')
+      a.href = link
+      a.download = o.file_name || `file-${o.id}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
     } catch (err) {
       console.error(err)
       alert('Impossible de télécharger le fichier.')
@@ -277,6 +366,7 @@ const MediathequeTab = ({ event }) => {
         setTempPhotoFiles([])
         setTempDocFiles([])
         setShowModal(false)
+        toast.success(`Ajout de ${created.length} fichier(s)`)
       } catch (err) {
         console.error(err)
         alert('Une erreur est survenue lors de l\'upload. Réessayez.')
@@ -328,135 +418,183 @@ const MediathequeTab = ({ event }) => {
             </div>
           </div>
         )}
-       {!loading && (<>
-        <div className="mb-4">
-          <h6 className="fw-semibold">Vidéos</h6>
-          <div className="row">
-            {videoFiles.length === 0 && <div className="text-muted ms-2">Aucun fichier vidéo.</div>}
-            {videoFiles.map((o, i) => (
-              <div key={`${o.id || o.file.name}-${i}`} className="col-6 col-md-3 mb-3">
-                <div className="card h-100">
-                  <div className="card-body d-flex flex-column position-relative">
-                    <div style={{ cursor: 'pointer' }} onClick={() => {
-                      let src = ''
-                      let objectUrl = null
-                      if (o.url) src = o.url
-                      else if (o.file && o.file instanceof File) {
-                        objectUrl = URL.createObjectURL(o.file)
-                        src = objectUrl
-                      } else if (o.file && o.file.url) src = o.file.url
-                      setVideoPlayer({ open: true, src, title: o.title || o.file_name || o.file?.name, objectUrl })
-                    }}>
-                      <Thumbnail time={12} />
-                      <div style={{ width: '100%', height: 120, background: '#000', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FontAwesomeIcon icon={faPlay} style={{ color: '#fff', fontSize: 28 }} />
-                      </div>
-                    </div>
-
-                    <div className="d-flex align-items-center mb-2 mt-2">
-                      <FontAwesomeIcon icon={faFile} className="me-2" />
-                      <div style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title || o.file_name || o.file?.name}</div>
-                      <div style={{ marginLeft: 'auto' }}>
-                        <button className="btn btn-sm text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'videos' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'videos', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
-                        {menuOpen.zone === 'videos' && menuOpen.idx === i && (
-                          <div className="card position-absolute" style={{ right: 8, top: 28, zIndex: 10 }}>
-                            <div className="card-body p-2">
-                              <button className="btn btn-sm d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'videos', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
-                              <button className="btn btn-sm d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
-                              <button className="btn btn-sm d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-auto d-flex justify-content-between align-items-center">
-                      <small className="text-muted">{bytesToSize(o.file_size)}</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <h6 className="fw-semibold">Audios</h6>
-          <div className="row">
-            {audioFiles.length === 0 && <div className="text-muted ms-2">Aucun fichier audio.</div>}
-            {audioFiles.map((o, i) => (
-              <div key={`${o.id || o.file.name}-${i}`} className="col-6 col-md-3 mb-3">
-                <div className="card h-100">
-                  <div className="card-body d-flex flex-column position-relative">
-                    <div className="d-flex align-items-center mb-2">
-                      <div style={{ width: 48, height: 48, background: '#f8f9fa', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 8, cursor: 'pointer' }} onClick={() => {
-                        let src = ''
+        {!loading && (<>
+          <div className="mb-4">
+            <h6 className="fw-semibold">Vidéos</h6>
+            <div className="row">
+              {videoFiles.length === 0 && <div className="text-muted ms-2">Aucun fichier vidéo.</div>}
+              {videoFiles.map((o, i) => (
+                <div key={`${o.id || o.file.name}-${i}`} className="col-6 col-md-3 mb-3">
+                  <div className="card h-100">
+                    <div className="card-body d-flex flex-column position-relative">
+                      <div style={{ cursor: 'pointer' }} onClick={() => {
+                        let src = o.file
                         let objectUrl = null
-                        if (o.url) src = o.url
-                        else if (o.file && o.file instanceof File) { objectUrl = URL.createObjectURL(o.file); src = objectUrl }
-                        else if (o.file && o.file.url) src = o.file.url
-                        setVideoPlayer({ open: true, src, title: o.title || o.file_name || o.file?.name, objectUrl })
+                        setVideoPlayer({ open: true, src, title: o.title, objectUrl })
                       }}>
-                        <FontAwesomeIcon icon={faPlay} />
+                        <div style={{ width: '100%', height: 120, background: '#000', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <FontAwesomeIcon icon={faPlay} style={{ color: '#fff', fontSize: 28 }} />
+                        </div>
                       </div>
-                      <div style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title || o.file_name || o.file?.name}</div>
-                      <div style={{ marginLeft: 'auto' }}>
-                        <button className="btn btn-sm btn-link text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'audios' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'audios', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
-                        {menuOpen.zone === 'audios' && menuOpen.idx === i && (
-                          <div className="card position-absolute" style={{ right: 8, top: 28, zIndex: 10 }}>
-                            <div className="card-body p-2">
-                              <button className="btn btn-sm d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'audios', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
-                              <button className="btn btn-sm d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
-                              <button className="btn btn-sm d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
+
+                      <div className="d-flex align-items-center mb-2 mt-2">
+                        <FontAwesomeIcon icon={faFile} className="me-2" />
+                        <div style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title || o.file_name || o.file?.name}</div>
+                        <div style={{ marginLeft: 'auto' }}>
+                          <button className="btn btn-sm text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'videos' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'videos', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
+                          {menuOpen.zone === 'videos' && menuOpen.idx === i && (
+                            <div className="card position-absolute" style={{ right: 8, top: 28, zIndex: 10 }}>
+                              <div className="card-body p-2">
+                                <button className="btn btn-sm d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'videos', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
+                                <button className="btn btn-sm d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
+                                <button className="btn btn-sm d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="mt-auto d-flex justify-content-between align-items-center">
-                      <small className="text-muted">{bytesToSize(o.file_size || o.file?.size)}</small>
+                      <div className="mt-auto d-flex justify-content-between align-items-center">
+                        <small className="text-muted">{bytesToSize(o.file_size)}</small>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="mb-4">
-          <h6 className="fw-semibold">Photos</h6>
-          <div className="row">
-            {photoFiles.length === 0 && <div className="text-muted ms-2">Aucune photo ajoutée.</div>}
-            <PhotoProvider>
-              {photoFiles.map((o, i) => {
-                const src = o.url || (o.file && o.file.url) || ''
+          <div className="mb-4">
+            <h6 className="fw-semibold">Audios</h6>
+            <div className="row">
+              {audioFiles.length === 0 && <div className="text-muted ms-2">Aucun fichier audio.</div>}
+              {audioFiles.map((o, i) => (
+                <div key={`${o.id || o.file.name}-${i}`} className="col-6 col-md-3 mb-3">
+                  <div className="card h-100">
+                    <div className="card-body d-flex flex-column position-relative">
+                      <div className="d-flex align-items-center mb-2">
+                        <div style={{ width: 48, height: 48, background: '#f8f9fa', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 8, cursor: 'pointer' }} onClick={() => {
+                          let src = o.file
+                          let objectUrl = null
+                          setVideoPlayer({ open: true, src, title: o.title, objectUrl })
+                        }}>
+                          <FontAwesomeIcon icon={faPlay} />
+                        </div>
+                        <div style={{ maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title || o.file_name || o.file?.name}</div>
+                        <div style={{ marginLeft: 'auto' }}>
+                          <button className="btn btn-sm text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'audios' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'audios', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
+                          {menuOpen.zone === 'audios' && menuOpen.idx === i && (
+                            <div className="card position-absolute" style={{ right: 8, top: 28, zIndex: 10 }}>
+                              <div className="card-body p-2">
+                                <button className="btn btn-sm d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'audios', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
+                                <button className="btn btn-sm d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
+                                <button className="btn btn-sm d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-auto d-flex justify-content-between align-items-center">
+                        <small className="text-muted">{bytesToSize(o.file_size || o.file?.size)}</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h6 className="fw-semibold">Photos</h6>
+            <div className="row">
+              {photoFiles.length === 0 && <div className="text-muted ms-2">Aucune photo ajoutée.</div>}
+              <PhotoProvider>
+                {photoFiles.map((o, i) => {
+                  const src = o.file
+                  return (
+                    <div key={`${o.id || o.file}-${i}`} className="col-6 col-md-3 mb-3">
+                      <div className="card h-100">
+                        <div className="card-body d-flex flex-column position-relative">
+                          <div style={{ cursor: 'pointer' }}>
+                            {src ? (
+                              <PhotoView src={src}>
+                                <img src={src} alt={o.file} style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 6, marginBottom: 8, cursor: 'pointer' }} />
+                              </PhotoView>
+                            ) : (
+                              <div style={{ width: '100%', height: 120, background: '#f8f9fa', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                                <FontAwesomeIcon icon={faImage} />
+                              </div>
+                            )}
+
+                          </div>
+
+                          <div className="d-flex align-items-center mb-2">
+                            <FontAwesomeIcon icon={faImage} className="me-2" />
+                            <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title || o.file_name || o.file?.name}</div>
+                            <div style={{ marginLeft: 'auto' }}>
+                              <button className="btn btn-sm text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'photos' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'photos', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
+                              {menuOpen.zone === 'photos' && menuOpen.idx === i && (
+                                <div className="card position-absolute" style={{ right: 8, top: 28, zIndex: 10 }}>
+                                  <div className="card-body p-2">
+                                    <button className="btn btn-sm d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'photos', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
+                                    <button className="btn btn-sm d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
+                                    <button className="btn btn-sm d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-auto d-flex justify-content-between align-items-center">
+                            <small className="text-muted">{bytesToSize(o.file_size || o.file?.size)}</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </PhotoProvider>
+            </div>
+          </div>
+
+          <div>
+            <h6 className="fw-semibold">Documents</h6>
+            <div className="row">
+              {docFiles.length === 0 && <div className="text-muted ms-2">Aucun document.</div>}
+              {docFiles.map((o, i) => {
                 return (
                   <div key={`${o.id || o.file?.name}-${i}`} className="col-6 col-md-3 mb-3">
                     <div className="card h-100">
                       <div className="card-body d-flex flex-column position-relative">
-                        <div style={{ cursor: 'pointer' }}>
-                          {src ? (
-                            <PhotoView src={src}>
-                              <img src={src} alt={o.title || o.file_name || o.file?.name} style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 6, marginBottom: 8, cursor: 'pointer' }} />
-                            </PhotoView>
-                          ) : (
-                            <div style={{ width: '100%', height: 120, background: '#f8f9fa', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                              <FontAwesomeIcon icon={faImage} />
-                            </div>
-                          )}
-
+                        <div style={{ cursor: 'pointer' }} onClick={async () => {
+                          try {
+                            // If file persisted on server, fetch blob and open in new tab so browser can display PDFs inline
+                            const { data: blob } = await axios.get(`/multimedia/${o.id}/download`, { responseType: 'blob' })
+                            const objectUrl = URL.createObjectURL(blob)
+                            window.open(objectUrl, '_blank')
+                            // revoke after a delay to allow the new tab to load
+                            setTimeout(() => { try { URL.revokeObjectURL(objectUrl) } catch (e) { } }, 5000)
+                            return
+                          } catch (err) {
+                            console.error('Failed to open document:', err)
+                            alert('Impossible d\'ouvrir le document.')
+                          }
+                        }}>
+                          <div style={{ width: '100%', height: 120, background: '#f8f9fa', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                            <FontAwesomeIcon icon={faFileAlt} style={{ fontSize: 28 }} />
+                          </div>
                         </div>
 
                         <div className="d-flex align-items-center mb-2">
-                          <FontAwesomeIcon icon={faImage} className="me-2" />
+                          <FontAwesomeIcon icon={faFileAlt} className="me-2" />
                           <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title || o.file_name || o.file?.name}</div>
                           <div style={{ marginLeft: 'auto' }}>
-                            <button className="btn btn-sm btn-link text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'photos' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'photos', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
-                            {menuOpen.zone === 'photos' && menuOpen.idx === i && (
+                            <button className="btn btn-sm text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'docs' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'docs', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
+                            {menuOpen.zone === 'docs' && menuOpen.idx === i && (
                               <div className="card position-absolute" style={{ right: 8, top: 28, zIndex: 10 }}>
                                 <div className="card-body p-2">
-                                  <button className="btn btn-sm btn-link d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'photos', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
-                                  <button className="btn btn-sm btn-link d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
-                                  <button className="btn btn-sm btn-link d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
+                                  <button className="btn btn-sm d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'docs', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
+                                  <button className="btn btn-sm d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
+                                  <button className="btn btn-sm d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
                                 </div>
                               </div>
                             )}
@@ -471,62 +609,8 @@ const MediathequeTab = ({ event }) => {
                   </div>
                 )
               })}
-            </PhotoProvider>
+            </div>
           </div>
-        </div>
-
-        <div>
-          <h6 className="fw-semibold">Documents</h6>
-          <div className="row">
-            {docFiles.length === 0 && <div className="text-muted ms-2">Aucun document.</div>}
-            {docFiles.map((o, i) => {
-              return (
-                <div key={`${o.id || o.file?.name}-${i}`} className="col-6 col-md-3 mb-3">
-                  <div className="card h-100">
-                    <div className="card-body d-flex flex-column position-relative">
-                      <div style={{ cursor: 'pointer' }} onClick={() => {
-                        let link = o.url || (o.file && o.file.url) || ''
-                        let objectUrl = null
-                        if (!link) {
-                          if (o.id) link = `/multimedia/mediafiles/${o.id}/download`
-                          else if (o.file && o.file instanceof File) { objectUrl = URL.createObjectURL(o.file); link = objectUrl }
-                        }
-                        if (!link) return
-                        window.open(link, '_blank')
-                        if (objectUrl) setTimeout(() => { try { URL.revokeObjectURL(objectUrl) } catch (e) {} }, 5000)
-                      }}>
-                        <div style={{ width: '100%', height: 120, background: '#f8f9fa', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                          <FontAwesomeIcon icon={faFileAlt} style={{ fontSize: 28 }} />
-                        </div>
-                      </div>
-
-                      <div className="d-flex align-items-center mb-2">
-                        <FontAwesomeIcon icon={faFileAlt} className="me-2" />
-                        <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.title || o.file_name || o.file?.name}</div>
-                        <div style={{ marginLeft: 'auto' }}>
-                          <button className="btn btn-sm btn-link text-muted p-0" onClick={() => setMenuOpen(menuOpen.zone === 'docs' && menuOpen.idx === i ? { zone: null, idx: null } : { zone: 'docs', idx: i })}><FontAwesomeIcon icon={faEllipsisV} /></button>
-                          {menuOpen.zone === 'docs' && menuOpen.idx === i && (
-                            <div className="card position-absolute" style={{ right: 8, top: 28, zIndex: 10 }}>
-                              <div className="card-body p-2">
-                                <button className="btn btn-sm btn-link d-block" onClick={() => { setConfirmDelete({ open: true, zone: 'docs', idx: i }); setMenuOpen({ zone: null, idx: null }) }}>Supprimer</button>
-                                <button className="btn btn-sm btn-link d-block" onClick={() => { downloadFile(o); setMenuOpen({ zone: null, idx: null }) }}>Télécharger</button>
-                                <button className="btn btn-sm btn-link d-block" onClick={async () => { if (o.id) { try { const res = await axios.get(`/multimedia/${o.id}/share`); setShareModal({ open: true, link: res.data.url }); } catch (e) { alert('Erreur'); } } else { const link = getFileLink(o); setShareModal({ open: true, link }); } setMenuOpen({ zone: null, idx: null }) }}>Partager</button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-auto d-flex justify-content-between align-items-center">
-                        <small className="text-muted">{bytesToSize(o.file_size || o.file?.size)}</small>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
         </>)}
       </div>
 
@@ -552,30 +636,18 @@ const MediathequeTab = ({ event }) => {
                     >
                       <input ref={el => inRef.current.photos = el} type="file" accept=".jpg,.jpeg,.png,.webp" multiple style={{ display: 'none' }} onChange={e => handleInput('photos', e)} />
                       <div className="row">
-                        {tempPhotoFiles.map((o, i) => (
-                          <div key={o.uid || `${o.file.name}-temp-${i}`} className="col-12 my-2">
-                            <div className="card h-100">
-                              <div className="card-body p-2 d-flex align-items-start">
-                                {tempPhotoPreviews[i] ? (
-                                  <img src={tempPhotoPreviews[i]} alt={o.file.name} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 6, marginRight: 8 }} />
-                                ) : (
-                                  <FontAwesomeIcon icon={faImage} className="me-2" />
-                                )}
-                                <div style={{ flex: 1 }}>
-                                  <div className="text-truncate" style={{ maxWidth: 160 }}>{o.file.name}</div>
-                                  <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={o.title} onChange={e => {
-                                    const v = e.target.value
-                                    setTempPhotoFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title: v } : p))
-                                  }} />
-                                </div>
-                                <div className="ms-2 text-end">
-                                  <small className="text-muted d-block">{bytesToSize(o.file.size)}</small>
-                                  <button className="btn btn-sm btn-link text-danger p-0" onClick={() => removeFile('photos', o.uid)}><FontAwesomeIcon icon={faTimes} /></button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                        {tempPhotoFiles.map((o) => {
+                          const previewIdx = getPreviewIndexByUid(o.uid)
+                          return (
+                            <TempPhotoItem
+                              key={o.uid}
+                              photo={o}
+                              preview={previewIdx !== -1 ? tempPhotoPreviews[previewIdx] : null}
+                              onTitleChange={(title) => setTempPhotoFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title } : p))}
+                              onRemove={() => removeFile('photos', o.uid)}
+                            />
+                          )
+                        })}
                       </div>
                     </DropZone>
                   </div>
@@ -591,27 +663,13 @@ const MediathequeTab = ({ event }) => {
                     >
                       <input ref={el => inRef.current.videos = el} type="file" accept=".mp4,.webm,.mov,.mkv" multiple style={{ display: 'none' }} onChange={e => handleInput('videos', e)} />
                       <div className="row">
-                        {tempVideoFiles.map((o, i) => (
-                          <div key={o.uid || `${o.file.name}-temp-${i}`} className="col-12 my-2">
-                            <div className="card h-100">
-                              <div className="card-body p-2">
-                                <div className="d-flex align-items-start">
-                                  <FontAwesomeIcon icon={faFile} className="me-2" />
-                                  <div style={{ flex: 1 }}>
-                                    <div className="text-truncate" style={{ maxWidth: 180 }}>{o.file.name}</div>
-                                    <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={o.title} onChange={e => {
-                                      const v = e.target.value
-                                      setTempVideoFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title: v } : p))
-                                    }} />
-                                  </div>
-                                  <div className="ms-2 text-end">
-                                    <small className="text-muted d-block">{bytesToSize(o.file.size)}</small>
-                                    <button className="btn btn-sm btn-link text-danger p-0" onClick={() => removeFile('videos', o.uid)}><FontAwesomeIcon icon={faTimes} /></button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        {tempVideoFiles.map((o) => (
+                          <TempVideoItem
+                            key={o.uid}
+                            video={o}
+                            onTitleChange={(title) => setTempVideoFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title } : p))}
+                            onRemove={() => removeFile('videos', o.uid)}
+                          />
                         ))}
                       </div>
                     </DropZone>
@@ -630,27 +688,13 @@ const MediathequeTab = ({ event }) => {
                     >
                       <input ref={el => inRef.current.audios = el} type="file" accept=".mp3,.wav,.m4a,.aac" multiple style={{ display: 'none' }} onChange={e => handleInput('audios', e)} />
                       <div className="row">
-                        {tempAudioFiles.map((o, i) => (
-                          <div key={o.uid || `${o.file.name}-temp-${i}`} className="col-12 my-2">
-                            <div className="card h-100">
-                              <div className="card-body p-2">
-                                <div className="d-flex align-items-start">
-                                  <FontAwesomeIcon icon={faFile} className="me-2" />
-                                  <div style={{ flex: 1 }}>
-                                    <div className="text-truncate" style={{ maxWidth: 180 }}>{o.file.name}</div>
-                                    <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={o.title} onChange={e => {
-                                      const v = e.target.value
-                                      setTempAudioFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title: v } : p))
-                                    }} />
-                                  </div>
-                                  <div className="ms-2 text-end">
-                                    <small className="text-muted d-block">{bytesToSize(o.file.size)}</small>
-                                    <button className="btn btn-sm btn-link text-danger p-0" onClick={() => removeFile('audios', o.uid)}><FontAwesomeIcon icon={faTimes} /></button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        {tempAudioFiles.map((o) => (
+                          <TempAudioItem
+                            key={o.uid}
+                            audio={o}
+                            onTitleChange={(title) => setTempAudioFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title } : p))}
+                            onRemove={() => removeFile('audios', o.uid)}
+                          />
                         ))}
                       </div>
                     </DropZone>
@@ -667,25 +711,13 @@ const MediathequeTab = ({ event }) => {
                     >
                       <input ref={el => inRef.current.docs = el} type="file" accept=".pdf,.docx" multiple style={{ display: 'none' }} onChange={e => handleInput('docs', e)} />
                       <div className="row">
-                        {tempDocFiles.map((o, i) => (
-                          <div key={o.uid || `${o.file.name}-temp-${i}`} className="col-12 mb-3">
-                            <div className="card h-100">
-                              <div className="card-body p-2 d-flex align-items-start">
-                                <FontAwesomeIcon icon={faFileAlt} className="me-2" />
-                                <div style={{ flex: 1 }}>
-                                  <div className="text-truncate" style={{ maxWidth: 160 }}>{o.file.name}</div>
-                                  <input className="form-control form-control-sm mt-1" placeholder="Titre / description" value={o.title} onChange={e => {
-                                    const v = e.target.value
-                                    setTempDocFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title: v } : p))
-                                  }} />
-                                </div>
-                                <div className="ms-2 text-end">
-                                  <small className="text-muted d-block">{bytesToSize(o.file.size)}</small>
-                                  <button className="btn btn-sm btn-link text-danger p-0" onClick={() => removeFile('docs', o.uid)}><FontAwesomeIcon icon={faTimes} /></button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        {tempDocFiles.map((o) => (
+                          <TempDocItem
+                            key={o.uid}
+                            doc={o}
+                            onTitleChange={(title) => setTempDocFiles(prev => prev.map(p => p.uid === o.uid ? { ...p, title } : p))}
+                            onRemove={() => removeFile('docs', o.uid)}
+                          />
                         ))}
                       </div>
                     </DropZone>
@@ -752,7 +784,7 @@ const MediathequeTab = ({ event }) => {
                 <h5 className="modal-title">{videoPlayer.title || 'Lecture vidéo'}</h5>
                 <button type="button" className="btn-close" aria-label="Close" onClick={() => {
                   // revoke any object URL created
-                  if (videoPlayer.objectUrl) try { URL.revokeObjectURL(videoPlayer.objectUrl) } catch (e) {}
+                  if (videoPlayer.objectUrl) try { URL.revokeObjectURL(videoPlayer.objectUrl) } catch (e) { }
                   setVideoPlayer({ open: false, src: '', title: '', objectUrl: null })
                 }} />
               </div>
@@ -763,7 +795,7 @@ const MediathequeTab = ({ event }) => {
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => {
-                  if (videoPlayer.objectUrl) try { URL.revokeObjectURL(videoPlayer.objectUrl) } catch (e) {}
+                  if (videoPlayer.objectUrl) try { URL.revokeObjectURL(videoPlayer.objectUrl) } catch (e) { }
                   setVideoPlayer({ open: false, src: '', title: '', objectUrl: null })
                 }}>Fermer</button>
               </div>
