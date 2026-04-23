@@ -7,12 +7,6 @@ import { toast } from 'react-toastify'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { ContentPermsWrapper } from '../../utils/permissions/permwrapper'
 
-const SERVICE_TYPES = [
-  'Culte dominical',
-  'Culte de semaine',
-  'Veillée de prière',
-  'Culte spécial',
-]
 
 const withinThreeDays = (eventDate) => {
   if (!eventDate) return false
@@ -48,7 +42,6 @@ const RapportsTab = ({ event = {}, eventId, onTabChange = () => { } }) => {
     predicateur: '',
     theme: '',
     reference: '',
-    type: SERVICE_TYPES[0],
     resume: '',
     activites: '',
   }))
@@ -83,7 +76,7 @@ const RapportsTab = ({ event = {}, eventId, onTabChange = () => { } }) => {
 
   const openAddModal = () => {
     setModalMode('add')
-    setForm({ predicateur: '', theme: '', reference: '', type: SERVICE_TYPES[0], resume: '', activites: '' })
+    setForm({ predicateur: '', theme: '', reference: '',resume: '', activites: '' })
     setModalOpen(true)
   }
 
@@ -94,7 +87,6 @@ const RapportsTab = ({ event = {}, eventId, onTabChange = () => { } }) => {
       predicateur: report.preacher || '',
       theme: report.sermon_theme || '',
       reference: report.bible_reference || '',
-      type: SERVICE_TYPES[0],
       resume: report.sermon_summary || '',
       activites: report.after_service_activities || '',
     })

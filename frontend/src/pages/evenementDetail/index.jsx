@@ -90,7 +90,16 @@ const AttendancePage = () => {
         fetchEvent()
     }, [eventId, navigate])
 
-    if (loading) return <div className="container mt-5"><LoadingData /></div>
+    if (loading) return (
+        <div className="container mt-5 text-center">
+            <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                <div className="spinner-border text-primary" role="status" style={{ width: '4rem', height: '4rem' }}>
+                    <span className="visually-hidden">Chargement...</span>
+                </div>
+                <div className="mt-3">Chargement de l'événement…</div>
+            </div>
+        </div>
+    )
 
     const mode = event ? (() => {
         const today = new Date(); today.setHours(0,0,0,0); const d = new Date(event.event_date); d.setHours(0,0,0,0);

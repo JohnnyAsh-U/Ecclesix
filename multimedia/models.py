@@ -46,13 +46,17 @@ class MediaFile(models.Model):
                 current_schema = connection.schema_name
                 with schema_context('public'):
                     with transaction.atomic():
-                        quota = TenantStorageQuota.objects.select_for_update().get(
-                            tenant__schema_name=current_schema
-                        )
-                        if quota.used_bytes + delta > quota.quota_bytes:
-                            raise ValidationError("Quota exceeded")
-                        quota.used_bytes = F('used_bytes') + delta
-                        quota.save()
+                        try:
+                            quota = TenantStorageQuota.objects.select_for_update().get(
+                                tenant__schema_name=current_schema
+                            )
+                            if quota.used_bytes + delta > quota.quota_bytes:
+                                raise ValidationError("Quota exceeded")
+                            quota.used_bytes = F('used_bytes') + delta
+                            quota.save()
+                        except TenantStorageQuota.DoesNotExist:
+                            # Quota not configured for this tenant; allow save to proceed
+                            pass
 
             # store file_size on the model
             self.file_size = file_size

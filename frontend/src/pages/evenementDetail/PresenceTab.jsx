@@ -112,7 +112,15 @@ const PresenceTab = ({ eventId: propEventId, event: propEvent, canMark }) => {
   const presentCount = presentMembersLocal.length
   const absentCount = totalMembers - presentCount
 
-  if (loading) return <div className="container mt-5"><LoadingData /></div>
+  if (loading) return (
+    <div className="container mt-5 text-center">
+      <div style={{ padding: '48px 0' }}>
+        <div className="spinner-border text-secondary" role="status" style={{ width: '2rem', height: '2rem' }}>
+          <span className="visually-hidden">Chargement des présences...</span>
+        </div>
+      </div>
+    </div>
+  )
 
   const modeBadge = {
     past: <span className="badge bg-secondary ms-2">Passé</span>,

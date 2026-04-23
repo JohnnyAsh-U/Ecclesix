@@ -4,6 +4,7 @@ import Loading from './components/Loading/loading'
 import axios from './utils/config/axiosConfig'
 import AppContext from './hooks/AppContext'
 import CheckAuth from './utils/auth/checkAuth'
+import 'react-photo-view/dist/react-photo-view.css';
 
 const Login = React.lazy(() => import('./pages/auth/Login'))
 const Register = React.lazy(() => import('./pages/auth/Register'))

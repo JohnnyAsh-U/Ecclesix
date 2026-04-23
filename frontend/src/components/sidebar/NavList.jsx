@@ -19,37 +19,37 @@ export const NavList = () => {
             color: '#4680ff',
             perms: [],
             items: [
-                // {
-                //     name: 'Overview',
-                //     to: '/dashboard/overview'
-                // },
+                {
+                    name: 'Overview',
+                    to: '/dashboard/overview'
+                },
                 {
                     name: 'Membres',
                     to: '/dashboard/membres'
                 },
-                // {
-                //     name: 'Members',
-                //     to: '/dashboard/members'
-                // }, {
-                //     name: 'Growth',
-                //     to: '/dashboard/growth'
-                // },
-                // {
-                //     name: 'Departments',
-                //     to: '/dashboard/departments'
-                // },
-                // {
-                //     name: 'Attendance',
-                //     to: '/dashboard/attendance'
-                // },
-                // {
-                //     name: 'Branches',
-                //     to: '/dashboard/branches'
-                // },
-                // {
-                //     name: 'Insights',
-                //     to: '/dashboard/insights'
-                // },
+                {
+                    name: 'Members',
+                    to: '/dashboard/members'
+                }, {
+                    name: 'Growth',
+                    to: '/dashboard/growth'
+                },
+                {
+                    name: 'Departments',
+                    to: '/dashboard/departments'
+                },
+                {
+                    name: 'Attendance',
+                    to: '/dashboard/attendance'
+                },
+                {
+                    name: 'Branches',
+                    to: '/dashboard/branches'
+                },
+                {
+                    name: 'Insights',
+                    to: '/dashboard/insights'
+                },
             ]
         },
         {
