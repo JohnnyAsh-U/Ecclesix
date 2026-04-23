@@ -38,10 +38,15 @@ const Login = () => {
             }
             setLoading(false)
         } catch (err) {
-            resetForm()
-            if (err.response) {
-                setErr(err.response.data.err)
+            
+            if(err.response && err.response.status === 429) {
+                setErr('Trop de tentatives. Veuillez réessayer plus tard.')
+            } else if (err.response && err.response.data && err.response.data.detail) {
+                setErr(err.response.data.detail)
+            } else {
+                setErr('Une erreur est survenue. Veuillez réessayer.')
             }
+            resetForm()
             setLoading(false)
         }
     }

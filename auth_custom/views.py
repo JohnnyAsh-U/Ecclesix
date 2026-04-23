@@ -1,6 +1,8 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.core.cache import cache
+from .throttles import LoginThrottle, register_failed_login, clear_failed_login, PasswordResetThrottle
 from members.models import Member
 from django.utils import timezone
 from django.contrib.auth import logout
@@ -68,6 +70,7 @@ class Register(APIView):
 class Login(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [LoginThrottle]
 
     def post(self, request, format=None):
         values = request.data.get("values", {})
@@ -75,6 +78,7 @@ class Login(APIView):
         password = values.get("password", "")
 
         if not email or not password:
+            register_failed_login(request, email)
             return Response(
                 {"status": False, "err": "Remplissez les champs"},
                 status.HTTP_400_BAD_REQUEST,
@@ -86,6 +90,7 @@ class Login(APIView):
 
         # to make sure if the password is default none then the user has to first register
         if not admin or admin.password == "":
+            register_failed_login(request, email)
             return Response(
                 {"status": False, "err": "Ce compte n'existe pas"},
                 status.HTTP_400_BAD_REQUEST,
@@ -93,6 +98,7 @@ class Login(APIView):
 
         admin = AuthBackend.authenticate(request, email=email, password=password)
         if not admin:
+            register_failed_login(request, email)
             return Response(
                 {"status": False, "err": "Password ou Username Incorrecte "},
                 status.HTTP_400_BAD_REQUEST,
@@ -187,6 +193,8 @@ class Login(APIView):
 
             auth_logger(admin=user, resource="Connexion", ip=ip)
 
+            # successful login -> clear any failed-login state
+            clear_failed_login(request, email)
             response = Response({"next": "Dashboard", "token": access})
             response.set_cookie(
                 "refreshToken",
@@ -299,6 +307,7 @@ class MobileLogin(APIView):
 class Reinitialization(APIView):
     authentication_classes = []
     permission_classes = []
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request, format=None):
         email = request.data.get("values", {}).get("email", None)

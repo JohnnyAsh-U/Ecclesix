@@ -135,7 +135,63 @@ class AllMediaFilesView(ListCreateAPIView):
     perms = {
         "OPTIONS": ["superadmin"],
         "GET": ["voir_mediafile", "voirs_touts_mediafiles"],
+        "POST": ["ajouter_mediafile"],
     }
+
+    def create(self, request, *args, **kwargs):
+        # permission: require ajouter_mediafile or superuser
+        user = request.user
+        if not user.is_superuser and not getattr(user, 'has_perm_custom', lambda p: False)('ajouter_mediafile'):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        files = request.FILES.getlist('file')
+        if not files:
+            return Response({'detail': 'No file(s) provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        title = request.POST.get('title', '')
+
+        # determine church: prefer provided church (only superusers), otherwise user's church
+        church_id = None
+        provided_church = request.POST.get('church')
+        if provided_church:
+            try:
+                cid = int(provided_church)
+            except Exception:
+                cid = None
+            if cid is not None:
+                if not user.is_superuser:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+                church_id = cid
+
+        if church_id is None:
+            church_id = getattr(user, 'church_id', None)
+
+        member = _get_member_for_user(user)
+
+        created = []
+        for f in files:
+            # infer media type from content_type
+            ctype = getattr(f, 'content_type', '') or ''
+            if ctype.startswith('image/'):
+                mtype = 'image'
+            elif ctype.startswith('video/'):
+                mtype = 'video'
+            elif ctype.startswith('audio/'):
+                mtype = 'audio'
+            else:
+                mtype = 'document'
+
+            mf = MediaFile(
+                church_id=church_id,
+                media_type=mtype,
+                file=f,
+                title=title,
+                uploaded_by=member
+            )
+            mf.save()
+            created.append(MediaFileSerializer(mf, context={'request': request}).data)
+
+        return Response({'created': created}, status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
         qs = MediaFile.objects.select_related('event', 'church').all()

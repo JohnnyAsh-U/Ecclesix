@@ -3,7 +3,6 @@ import { FormSelect } from '../../components/Inputbox/form-select'
 import SecondChart from '../../components/charts/secondchart'
 
 const Attendance = ({ years, year, setYear, data }) => {
-    console.log(data)
     return (
         <div className="card mb-3">
             <div className="card-header">

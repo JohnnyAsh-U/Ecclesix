@@ -24,12 +24,6 @@ const sizeToBytes = (s = '') => {
   return n
 }
 
-const typeColor = {
-  video: '#ff6b6b',
-  audio: '#4dabf7',
-  photo: '#ffd43b',
-  doc: '#6c757d'
-}
 
 export default function Mediatheque() {
   const { admin, permissions, eglises } = AppGlobalContext()
@@ -74,6 +68,7 @@ export default function Mediatheque() {
 
   const [videoPlayer, setVideoPlayer] = useState({ open: false, src: '', title: '', objectUrl: null })
   const [confirmDelete, setConfirmDelete] = useState({ open: false, item: null })
+  const [addModal, setAddModal] = useState({ open: false, file: null, title: '', uploading: false })
 
   const onPreview = (item) => {
     if (item.media_type === 'video') {
@@ -99,7 +94,6 @@ export default function Mediatheque() {
    try {
          // Local file: use object URL
          const { data } = await axios.get(`/multimedia/${item.id}/download`, { responseType: 'blob' })
-         console.log('Download response:', data)
          const link = URL.createObjectURL(data)
          const a = document.createElement('a')
          a.href = link
@@ -161,6 +155,34 @@ export default function Mediatheque() {
     }
   }
 
+  const handleFileChange = (e) => {
+    const files = e.target.files ? Array.from(e.target.files) : []
+    setAddModal(prev => ({ ...prev, file: files }))
+  }
+
+  const handleAddSubmit = async (e) => {
+    e.preventDefault()
+    if (!addModal.file || addModal.file.length === 0) return alert('Veuillez sélectionner au moins un fichier.')
+    try {
+      setAddModal(prev => ({ ...prev, uploading: true }))
+      const fd = new FormData()
+      // attach multiple files using the same 'file' key
+      addModal.file.forEach(f => fd.append('file', f))
+      if (addModal.title) fd.append('title', addModal.title)
+      // do not send a global media_type; backend will infer per-file
+      if (isSuper && selectedChurch) fd.append('church', selectedChurch)
+
+      await axios.post('/multimedia/all', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      toast.success('Fichier ajouté')
+      setAddModal({ open: false, file: null, title: '', uploading: false })
+      fetchData()
+    } catch (err) {
+      console.error(err)
+      alert('Erreur lors de l\'upload du fichier')
+      setAddModal(prev => ({ ...prev, uploading: false }))
+    }
+  }
+
   // Fetch from API when filters change
   const fetchData = async () => {
     setLoading(true)
@@ -202,13 +224,10 @@ export default function Mediatheque() {
     <div >
       <BreadCrumb icon={<FontAwesomeIcon icon={faFile} />} title={"Médiathèque"} >
         <>
-          <span className="badge bg-light text-dark">Stockage : 4.2 / 20 Go</span>
-          <ContentPermsWrapper requiredPerms={['ajouter_membre']}>
-            <button className="btn btn-primary btn-round btn-sm"><FontAwesomeIcon icon={faPlus} />&nbsp; Ajouter un fichier</button>
-
+          <ContentPermsWrapper requiredPerms={['ajouter_mediafile']}>
+            <button className="btn btn-primary btn-round btn-sm" onClick={() => setAddModal({ open: true, file: null, title: '', uploading: false })}><FontAwesomeIcon icon={faPlus} />&nbsp; Ajouter un fichier</button>
           </ContentPermsWrapper>
         </>
-
       </BreadCrumb>
 
 
@@ -258,6 +277,45 @@ export default function Mediatheque() {
                     <button className="btn btn-secondary" onClick={() => setShareModal({ open: false, link: '' })}>Fermer</button>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+          {addModal.open && (
+            <div className="modal d-block" tabIndex="-1" role="dialog" style={{ background: 'rgba(0,0,0,0.5)' }}>
+              <div className="modal-dialog" role="document">
+                <form className="modal-content" onSubmit={handleAddSubmit}>
+                  <div className="modal-header">
+                    <h5 className="modal-title">Ajouter un fichier</h5>
+                    <button type="button" className="btn-close" aria-label="Close" onClick={() => setAddModal({ open: false, file: null, title: '', uploading: false })} />
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-2">
+                      <label className="form-label">Titre (optionnel)</label>
+                      <input className="form-control" value={addModal.title} onChange={e => setAddModal(prev => ({ ...prev, title: e.target.value }))} />
+                    </div>
+                    {isSuper && (
+                      <div className="mb-2">
+                        <label className="form-label">Église</label>
+                        <FormSelect value={selectedChurch} onChange={e => setSelectedChurch(e.target.value)} name="eglise_upload">
+                          <option value="">Sélectionner une église</option>
+                          {eglises.map(c => <option key={c.id} value={c.id}>{c.church_name}</option>)}
+                        </FormSelect>
+                      </div>
+                    )}
+
+                    <div className="mb-2">
+                      <label className="form-label">Fichier</label>
+                      <input type="file" className="form-control" onChange={handleFileChange} accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple />
+                      {addModal.file && addModal.file.length > 0 && (
+                        <div className="small text-muted mt-1">Sélectionné: {addModal.file.length} fichier(s){addModal.file.length <= 5 ? (': ' + addModal.file.map(f => f.name).join(', ')) : ''}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setAddModal({ open: false, file: null, title: '', uploading: false })}>Annuler</button>
+                    <button type="submit" className="btn btn-primary" disabled={addModal.uploading}>{addModal.uploading ? 'Téléversement...' : 'Ajouter'}</button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
@@ -467,19 +525,19 @@ export default function Mediatheque() {
           <div className="small text-muted">Affichage {rangeStart}-{rangeEnd} sur {totalCount || filtered.length}</div>
 
           <div className="d-flex align-items-center gap-2">
-            <div className="input-group input-group-sm me-2">
+            {/* <div className="input-group input-group-sm me-2">
               <label className="input-group-text">Par page</label>
               <select className="form-select form-select-sm" value={pageSize} onChange={e => { setPageSize(parseInt(e.target.value, 10)); setPage(1); }}>
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
-            </div>
+            </div> */}
 
             <nav aria-label="pagination">
               <ul className="pagination pagination-sm mb-0 d-flex align-items-center gap-2 flex-nowrap">
                 <li className={`page-item ${page <= 1 ? 'disabled' : ''}`}><button className="page-link" onClick={() => goToPage(page - 1)}>Préc</button></li>
-                <li className="page-item disabled"><span className="page-link">{page} / {totalPages}</span></li>
+                <li className="page-item disabled"><span className="page-link" style={{ whiteSpace: 'nowrap' }}>{page} / {totalPages}</span></li>
                 <li className={`page-item ${page >= totalPages ? 'disabled' : ''}`}><button className="page-link" onClick={() => goToPage(page + 1)}>Suiv</button></li>
               </ul>
             </nav>

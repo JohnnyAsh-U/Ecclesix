@@ -91,7 +91,6 @@ function SecondChart({ chartData }) {
 
 
     chartData?.forEach((e, index) => {
-      console.log(e.event, data)
       let series2 = chart.series.push(
         am5xy.SmoothedXLineSeries.new(root, {
           name: e.event,

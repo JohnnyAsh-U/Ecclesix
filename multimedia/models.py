@@ -21,7 +21,7 @@ class MediaFile(models.Model):
         IMAGE = 'image', 'Image'
         DOCUMENT = 'document', 'Document'
 
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='media')
+    event = models.ForeignKey(Event, on_delete=models.SET_NULL, null=True, related_name='media')
     media_type = models.CharField(max_length=20, choices=MediaType.choices)
     church = models.ForeignKey(Church, on_delete=models.SET_NULL, null=True, related_name='media_files')
     file = models.FileField(storage=TenantMediaStorage())

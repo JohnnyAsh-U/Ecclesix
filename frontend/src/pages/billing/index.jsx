@@ -26,8 +26,6 @@ const Abonnement = () => {
   const [logoFile, setLogoFile] = useState(null)
   const [uploading, setUploading] = useState(false)
 
-  console.log('Billing data:', data) // Debug log to inspect the billing data structure
-
   const billing = data || {}
   const plan = billing.plan
 

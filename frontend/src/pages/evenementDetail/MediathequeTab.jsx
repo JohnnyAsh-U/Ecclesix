@@ -307,7 +307,6 @@ const MediathequeTab = ({ event }) => {
     try {
       // Local file: use object URL
       const { data } = await axios.get(`/multimedia/${o.id}/download`, { responseType: 'blob' })
-      console.log('Download response:', data)
       const link = URL.createObjectURL(data)
       const a = document.createElement('a')
       a.href = link
@@ -348,7 +347,7 @@ const MediathequeTab = ({ event }) => {
         tempDocFiles.forEach(o => metas.push({ zone: 'doc', name: o.file.name, title: o.title }))
         fd.append('metadata', JSON.stringify(metas))
 
-        const url = event && event.id ? `/multimedia/events/${event.id}` : '/multimedia/upload'
+        const url = `/multimedia/events/${event.id}`
         const res = await axios.post(url, fd)
 
         // Merge server response (with id and url) into main lists
