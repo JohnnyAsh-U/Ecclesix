@@ -9,6 +9,7 @@ from rest_framework import status
 from . import services
 from admin_custom.services import ViewLogger
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from django.core.cache import cache
 
 
 class CityListCreateView(ListCreateAPIView):
@@ -229,9 +230,25 @@ class ChurchRUDView(RetrieveUpdateDestroyAPIView):
 @authentication_classes([])
 @permission_classes([])
 def get_church_logo_from_domain(request):
-    # get tenant from request
     tenant = getattr(request, "tenant", None)
-    if tenant and tenant.custom_logo and tenant.logo:
+    if not tenant:
+        return Response({"logo_url": None}, status=status.HTTP_404_NOT_FOUND)
+
+    # cache key per-tenant (use domain or pk)
+    key_id = getattr(tenant, 'domain', None) or getattr(tenant, 'pk', None)
+    cache_key = f'church:logo:{key_id}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        status_code = status.HTTP_200_OK if cached.get('logo_url') else status.HTTP_404_NOT_FOUND
+        return Response(cached, status=status_code)
+
+    if tenant.custom_logo and tenant.logo:
         build_url = request.build_absolute_uri(tenant.logo.url)
-        return Response({"logo_url": build_url}, status=status.HTTP_200_OK)
-    return Response({"logo_url": None}, status=status.HTTP_404_NOT_FOUND)
+        payload = {"logo_url": build_url}
+    else:
+        payload = {"logo_url": None}
+
+    # cache for 45 minutes
+    cache.set(cache_key, payload, timeout=45 * 60)
+
+    return Response(payload, status=status.HTTP_200_OK if payload.get('logo_url') else status.HTTP_404_NOT_FOUND)

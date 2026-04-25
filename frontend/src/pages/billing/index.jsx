@@ -76,9 +76,9 @@ const Abonnement = () => {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                 <div>
-                  <h4 className="mb-1">Plan {plan.code}</h4>
-                  <p className="text-muted mb-2">{plan.name}</p>
-                  <h2 className="mb-0">{Number(plan.price).toLocaleString('fr-FR')} {plan.currency}<span className="fs-6 text-muted"> / Mois</span></h2>
+                  <h4 className="mb-1">Plan {plan?.code}</h4>
+                  <p className="text-muted mb-2">{plan?.name}</p>
+                  <h2 className="mb-0">{Number(plan?.price).toLocaleString('fr-FR')} {plan?.currency}<span className="fs-6 text-muted"> / Mois</span></h2>
                 </div>
                 <span className={`badge ${tenant.is_active ? 'bg-success' : 'bg-danger'}`}>{tenant.is_active ? 'Actif' : 'Inactif'}</span>
               </div>

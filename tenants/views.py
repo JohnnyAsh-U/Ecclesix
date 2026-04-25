@@ -13,6 +13,12 @@ from .serializers import (
     TenantLogoSerializer,
     TenantPaymentHistorySerializer,
 )
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
+from rest_framework.permissions import IsAuthenticated
+from django.db import models
+from django.core.exceptions import PermissionDenied
+from .models import PublicAnnouncement
+from .serializers import PublicAnnouncementSerializer
 
 
 
@@ -135,3 +141,28 @@ class TenantBrandingView(TenantLookupMixin, APIView):
         tenant.save(update_fields=["logo", "custom_logo", "updated_at"])
         serializer = TenantLogoSerializer(tenant, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+
+class PublicAnnouncementListCreateView(ListAPIView):
+    serializer_class = PublicAnnouncementSerializer
+    perms = {"OPTIONS": ["superadmin"], "GET": [], "POST": ["superadmin"]}
+    
+    def get_queryset(self):
+        queryset = PublicAnnouncement.objects.filter(
+            status='published'
+        ).exclude(
+            expiry_date__lt=timezone.now(),
+            expiry_date__isnull=False
+        )
+        
+        # Regular users see 'all' or announcements targeting their tenant
+        tenant = getattr(self.request, 'tenant', None)
+        if tenant:
+            return queryset.filter(
+                models.Q(visibility='all') | models.Q(target_tenants=tenant)
+            ).distinct().order_by('-published_at')
+        
+        return queryset.filter(visibility='all').order_by('-published_at')

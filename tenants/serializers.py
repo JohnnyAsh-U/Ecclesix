@@ -1,6 +1,7 @@
 from rest_framework import serializers
+from django.db import models
 
-from .models import BillingPlan, ProviderInformation, Tenant, TenantPaymentHistory
+from .models import BillingPlan, ProviderInformation, Tenant, TenantPaymentHistory, PublicAnnouncement
 
 
 class BillingPlanSerializer(serializers.ModelSerializer):
@@ -130,3 +131,23 @@ class TenantLogoSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.logo.url)
         return obj.logo.url
+
+
+class PublicAnnouncementSerializer(serializers.ModelSerializer):
+    target_tenants_detail = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PublicAnnouncement
+        fields = [
+            'id', 'title', 'content', 'status', 'visibility',
+            'target_tenants', 'target_tenants_detail',
+             'expiry_date',
+            'created_at', 'updated_at', 'published_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'published_at']
+
+    def get_target_tenants_detail(self, obj):
+        if obj.visibility == 'specific':
+            return [{'id': t.id, 'name': t.church_name} for t in obj.target_tenants.all()]
+        return []
+

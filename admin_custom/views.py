@@ -363,19 +363,25 @@ class AdminPermissions(APIView):
 
     def get(self, request, format=None):
         user: Member = request.user
-        cache_key = f"admin_permissions:{user.id}:{int(user.is_superuser)}"
-        cached_payload = cache.get(cache_key)
+        tenant = getattr(request, "tenant", None)
 
-        if cached_payload is not None:
-            return Response(cached_payload)
+        user_cache_key = f"admin_permissions:user:{user.id}:{int(user.is_superuser)}"
+        tenant_cache_key = f"admin_permissions:churches:tenant:{tenant.id if tenant else 'none'}"
 
-        serialized_church = SimpleChurchSerializer(Church.objects.all(), many=True)
-        perms = sorted(list(user.get_all_permissions())) if user.get_all_permissions() else []
-        permissions = {"superAdmin": user.is_superuser, "perms": perms}
-        payload = {"permissions": permissions, "churches": serialized_church.data}
-        
+        permissions = cache.get(user_cache_key)
+        churches = cache.get(tenant_cache_key)
 
-        cache.set(cache_key, payload, timeout=300)  # Cache for 5 minutes
+        if permissions is None:
+            perms = sorted(list(user.get_all_permissions())) if user.get_all_permissions() else []
+            permissions = {"superAdmin": user.is_superuser, "perms": perms}
+            cache.set(user_cache_key, permissions, timeout=300)  # 5 minutes
+
+        if churches is None:
+            serialized_church = SimpleChurchSerializer(Church.objects.all(), many=True)
+            churches = serialized_church.data
+            cache.set(tenant_cache_key, churches, timeout=3600)  # 1 hour
+
+        payload = {"permissions": permissions, "churches": churches}
         return Response(payload)
 
 

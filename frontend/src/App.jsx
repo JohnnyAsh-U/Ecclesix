@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import Loading from './components/Loading/loading'
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary'
 import axios from './utils/config/axiosConfig'
 import AppContext from './hooks/AppContext'
 import CheckAuth from './utils/auth/checkAuth'
@@ -25,14 +26,16 @@ function App() {
   return (
     <AppContext>
       <Suspense fallback={<Loading />}>
-        <Routes>
+        <ErrorBoundary>
+          <Routes>
           <Route exact path='/connexion' name="Login" element={<Login />} />
           <Route exact path='/inscription' name="Register" element={<Register />} />
           <Route exact path='/reinitialisation' name="Reset" element={<Reset />} />
           <Route exact path='/reset' name="Password" element={<ResetPassword />} />
           <Route exact path='/404' name="Error" element={<Page404 />} />
           <Route path="*" name="Home" element={<CheckAuth><Layout /></CheckAuth>} />
-        </Routes>
+          </Routes>
+        </ErrorBoundary>
       </Suspense>
     </AppContext>
   )
