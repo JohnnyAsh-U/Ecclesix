@@ -1,4 +1,7 @@
 import os
+import subprocess
+import io
+from datetime import datetime
 
 from rest_framework.views import APIView
 from django.contrib.auth.models import Permission
@@ -10,6 +13,7 @@ from rest_framework.generics import (
     DestroyAPIView,
 )
 from rest_framework.response import Response
+from django.http import FileResponse, HttpResponse
 from .serializers import AdminMemberSerializer, SimpleChurchSerializer
 from django.conf import settings as django_settings
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -33,6 +37,7 @@ from .constant import (
     EMAIL_SMTP_PROTOCOL_KEY,
     EMAIL_SMTP_USERNAME_KEY,
 )
+from django.db import connection
 
 
 class LogView(ListAPIView):
@@ -367,16 +372,18 @@ class AdminPermissions(APIView):
 
         user_cache_key = f"admin_permissions:user:{user.id}:{int(user.is_superuser)}"
         tenant_cache_key = f"admin_permissions:churches:tenant:{tenant.id if tenant else 'none'}"
+        
 
         permissions = cache.get(user_cache_key)
         churches = cache.get(tenant_cache_key)
+        
 
-        if permissions is None:
+        if not permissions or len(permissions) == 0:
             perms = sorted(list(user.get_all_permissions())) if user.get_all_permissions() else []
             permissions = {"superAdmin": user.is_superuser, "perms": perms}
             cache.set(user_cache_key, permissions, timeout=300)  # 5 minutes
 
-        if churches is None:
+        if not churches or len(churches) == 0:
             serialized_church = SimpleChurchSerializer(Church.objects.all(), many=True)
             churches = serialized_church.data
             cache.set(tenant_cache_key, churches, timeout=3600)  # 1 hour
@@ -480,3 +487,194 @@ def AddPermissionToRole(request, pk, *args, **kwargs):
     }
     Log.objects.create(admin=admin, log_type="UPDATE", detail=detail)
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+@permission_classes([])
+def DatabaseBackupView(request, *args, **kwargs):
+    """Generate and download database schema and data backup as SQL file"""
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Get the tenant schema name
+    schema_name = getattr(getattr(request, "tenant", None), "schema_name", None)
+    if not schema_name or schema_name == "public":
+        return Response(
+            {"detail": "Tenant church context is required for this action."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    try:
+        # Get database configuration
+        db_config = django_settings.DATABASES['default']
+        db_name = db_config['NAME']
+        db_user = db_config['USER']
+        db_password = db_config['PASSWORD']
+        db_host = db_config['HOST']
+        db_port = db_config['PORT'] or '5432'
+        
+        # Prepare environment for pg_dump
+        env = os.environ.copy()
+        env['PGPASSWORD'] = db_password
+        
+        # Run pg_dump to get only data (INSERT statements, no schema)
+        cmd = [
+            'pg_dump',
+            '-h', db_host,
+            '-p', str(db_port),
+            '-U', db_user,
+            '-n', schema_name,
+            '--data-only',  # Only data, no schema/tables
+            '--no-owner',
+            '--no-privileges',
+            db_name,
+        ]
+        
+        result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            return Response(
+                {"detail": f"Backup failed: {result.stderr}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        # Log the backup action
+        Log.objects.create(
+            admin=request.user,
+            log_type="UPDATE",
+            detail={
+                "resource": "Database",
+                "action": "BACKUP",
+                "schema": schema_name,
+                "type": "data-only",
+                "timestamp": datetime.now().isoformat(),
+            },
+        )
+        
+        # Create response with SQL data file
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"database_data_{timestamp}.sql"
+        
+        response = HttpResponse(result.stdout, content_type='application/sql')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+        
+    except Exception as e:
+        return Response(
+            {"detail": f"Error creating backup: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@api_view(["POST"])
+@permission_classes([])
+def DatabaseRestoreView(request, *args, **kwargs):
+    """Restore database schema from uploaded backup file (tenant-specific)"""
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Get the tenant schema name
+    schema_name = getattr(getattr(request, "tenant", None), "schema_name", None)
+    if not schema_name or schema_name == "public":
+        return Response(
+            {"detail": "Tenant church context is required for this action."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    try:
+        # Get uploaded file
+        if 'file' not in request.FILES:
+            return Response(
+                {"detail": "No backup file provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        backup_file = request.FILES['file']
+        
+        # Read file content as binary
+        if backup_file.size > 500 * 1024 * 1024:  # 500MB limit for binary
+            return Response(
+                {"detail": "File size exceeds 500MB limit"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        backup_content = backup_file.read()
+        
+        # Check if it's a text SQL file
+        try:
+            sql_content = backup_content.decode('utf-8')
+        except UnicodeDecodeError:
+            return Response(
+                {"detail": "Invalid SQL file encoding. Please use UTF-8."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Get database configuration
+        db_config = django_settings.DATABASES['default']
+        db_name = db_config['NAME']
+        db_user = db_config['USER']
+        db_password = db_config['PASSWORD']
+        db_host = db_config['HOST']
+        db_port = db_config['PORT'] or '5432'
+        
+        # Prepare environment for psql
+        env = os.environ.copy()
+        env['PGPASSWORD'] = db_password
+        
+        # Run psql to restore data into the schema
+        cmd = [
+            'psql',
+            '-h', db_host,
+            '-p', str(db_port),
+            '-U', db_user,
+            '-d', db_name,
+        ]
+        
+        result = subprocess.run(
+            cmd,
+            input=sql_content,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        
+        if result.returncode != 0:
+            return Response(
+                {"detail": f"Restore failed: {result.stderr}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+            
+        if result.returncode == 0:
+        # RESET SEQUENCES: This tells Postgres to look at the highest ID 
+        # in every table and set the "next" ID to that + 1.
+            with connection.cursor() as cursor:
+                cursor.execute(f"""
+                    SELECT setval(pg_get_serial_sequence('"{schema_name}"."admin_custom_log"', 'id'), 
+                    MAX(id)) FROM "{schema_name}"."admin_custom_log";
+                """)
+        
+            # Log the restore action
+            Log.objects.create(
+                admin=request.user,
+                log_type="UPDATE",
+                detail={
+                    "resource": "Database",
+                    "action": "RESTORE",
+                    "filename": backup_file.name,
+                    "schema": schema_name,
+                    "type": "data-only",
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
+        
+        return Response(
+            {"detail": f"Data restored successfully to schema '{schema_name}'"},
+            status=status.HTTP_200_OK,
+        )
+        
+    except Exception as e:
+        print(e)
+        return Response(
+            {"detail": f"Error restoring database: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

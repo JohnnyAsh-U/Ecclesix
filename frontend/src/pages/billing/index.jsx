@@ -87,6 +87,23 @@ const Abonnement = () => {
 
               <div className="row">
                 <div className="col-md-6">
+                  <div className="mb-3">
+                    <p className="text-muted mb-1">Limite d'églises</p>
+                    <h5 className="mb-0">{plan?.max_churches || '-'} église(s)</h5>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="mb-3">
+                    <p className="text-muted mb-1">Limite de membres</p>
+                    <h5 className="mb-0">{plan?.max_members || '-'} membre(s)</h5>
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              <div className="row">
+                <div className="col-md-6">
                   <p><strong>Responsable :</strong> {admin?.username || 'Super Admin'}</p>
                   <p><strong>Eglise :</strong> {tenant.church_name || '-'}</p>
                 </div>

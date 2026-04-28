@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import BreadCrumb from '../../components/breadcrumbs/breadcrumb'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCalendar, faCartArrowDown, faChurch, faCity, faEnvelope, faGear, faMobileAlt, faMoneyBillTransfer, faMoneyBillTrendUp, faUserGear } from '@fortawesome/free-solid-svg-icons'
+import { faCalendar, faCartArrowDown, faChurch, faCity, faEnvelope, faGear, faMobileAlt, faMoneyBillTransfer, faMoneyBillTrendUp, faUserGear, faDatabase } from '@fortawesome/free-solid-svg-icons'
 import TypeVille from './type_ville'
 import Comptes from './comptes'
 import './style.css'
@@ -12,6 +12,7 @@ import RolesPerms from './roles_et_perms'
 import Eglise from './eglise'
 import Devices from './devices'
 import EmailConfig from './email_config'
+import DatabaseBackup from './database_backup'
 
 const Parametres = () => {
     const [settings, setSettings] = useState(5)
@@ -69,6 +70,11 @@ const Parametres = () => {
                                 className={`list-group-item list-group-item-action py-3 ${settings == 9 ? 'active' : ''}`}
                                 onClick={() => setSettings(9)}>
                                 <FontAwesomeIcon icon={faEnvelope} /> Configuration Email</li>
+                            <li
+                                style={{ cursor: 'pointer' }}
+                                className={`list-group-item list-group-item-action py-3 ${settings == 10 ? 'active' : ''}`}
+                                onClick={() => setSettings(10)}>
+                                <FontAwesomeIcon icon={faDatabase} /> Sauvegarde Base de Données</li>
                         </ul>
                     </div>
 
@@ -84,6 +90,7 @@ const Parametres = () => {
                     {settings === 7 && <Eglise />}
                     {settings === 8 && <Devices />}
                     {settings === 9 && <EmailConfig />}
+                    {settings === 10 && <DatabaseBackup />}
 
                 </div>
             </div >

@@ -17,6 +17,8 @@ class BillingPlan(models.Model):
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     currency = models.CharField(max_length=10, default="FCFA")
+    max_churches = models.IntegerField(default=1, help_text="Maximum number of churches allowed")
+    max_members = models.IntegerField(default=100, help_text="Maximum number of members allowed")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

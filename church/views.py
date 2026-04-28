@@ -10,6 +10,7 @@ from . import services
 from admin_custom.services import ViewLogger
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from django.core.cache import cache
+from tenants.models import Tenant
 
 
 class CityListCreateView(ListCreateAPIView):
@@ -147,6 +148,31 @@ class ChurchListCreateView(ListCreateAPIView):
     queryset = Church.objects.all()
     
     def create(self, request, *args, **kwargs):
+        # Get the current tenant
+        tenant = getattr(request, "tenant", None)
+        if not tenant:
+            return Response(
+                {"detail": "Tenant context is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Check if tenant has a billing plan
+        if not tenant.plan:
+            return Response(
+                {"detail": "No billing plan associated with this tenant"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Check church limit
+        current_churches = Church.objects.count()
+        if current_churches >= tenant.plan.max_churches:
+            return Response(
+                {
+                    "detail": f"Church limit reached. Your plan allows a maximum of {tenant.plan.max_churches} church(es). Current: {current_churches}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

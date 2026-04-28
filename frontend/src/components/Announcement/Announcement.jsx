@@ -1,25 +1,15 @@
-import axios from 'axios'
 import React, { useState, useEffect } from 'react'
-import Marquee from 'react-fast-marquee'
+import axios from '../../utils/config/axiosConfig'
+import { Marquee } from '@devnomic/marquee'
+import { Theme1, Theme2, Theme3 } from '../../utils/theme/color'
+
 
 export default function Announcement({ storageKey = 'app:announcement:dismissed' }) {
-  const [announcements, setAnnouncements] = useState([])
+
+  const [tenantAnnouncements, setTenantAnnouncements] = useState([])
+  const [platformAnnouncements, setPlatformAnnouncements] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [visible, setVisible] = useState(true)
-  const [dismissedIds, setDismissedIds] = useState(new Set())
-
-  useEffect(() => {
-    // Load dismissed announcements from localStorage
-    try {
-      const dismissed = localStorage.getItem(storageKey)
-      if (dismissed) {
-        setDismissedIds(new Set(JSON.parse(dismissed)))
-      }
-    } catch (e) {
-      console.error('Error loading dismissed announcements:', e)
-    }
-  }, [storageKey])
 
   useEffect(() => {
     fetchAnnouncements()
@@ -29,78 +19,61 @@ export default function Announcement({ storageKey = 'app:announcement:dismissed'
     try {
       setLoading(true)
       // Fetch tenant announcements
-      const response = await fetch('/api/communication/announcements/', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      const res = await axios.get('/tenant/announcements')
-      console.log("Tenant announcements response:", res.data) // Debugging line to check the response
-
-      if (response.ok) {
-        const data = await response.json()
-        setAnnouncements(Array.isArray(data) ? data : [])
-        setError(null)
-      } else if (response.status !== 401) {
-        setError('Failed to load announcements')
-      }
+      const tenantRes = await axios.get('/communication/announcements/ongoing')
+      setTenantAnnouncements(Array.isArray(tenantRes.data) ? tenantRes.data : [])
+      
+      // Fetch platform announcements
+      const platformRes = await axios.get('/tenant/announcements')
+      setPlatformAnnouncements(Array.isArray(platformRes.data) ? platformRes.data : [])
+      setError(null)
     } catch (err) {
       console.error('Error fetching announcements:', err)
-      setError(null) // Don't show error to user
+      setError(null)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDismiss = (announcementId) => {
-    const newDismissed = new Set(dismissedIds)
-    newDismissed.add(announcementId)
-    setDismissedIds(newDismissed)
-    
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(Array.from(newDismissed)))
-    } catch (e) {
-      console.error('Error saving dismissed announcements:', e)
-    }
-  }
-
-  // Filter out dismissed announcements
-  const visibleAnnouncements = announcements.filter(
-    ann => !dismissedIds.has(ann.id) && ann.status === 'published'
-  )
-
-  if (!visible || visibleAnnouncements.length === 0 || loading) {
+  if (loading || (tenantAnnouncements.length === 0 && platformAnnouncements.length === 0)) {
     return null
   }
 
-  const currentAnnouncement = visibleAnnouncements[0]
+  const tenantItems = tenantAnnouncements.map(ann => ({ text: `${ann.title}: ${ann.content}`, type: 'tenant' })).filter(item => item.text)
+  const platformItems = platformAnnouncements.map(ann => ({ title: ann.title, content: ann.content, type: 'platform' })).filter(item => item.title || item.content)
+  
+  const allItems = [...platformItems, ...tenantItems]
 
   return (
-    <div className="alert alert-info" role="region" aria-label="Annonce">
-      <div className="alert-icon">
-        <i className="ti-announcement" />
-      </div>
-      <div className="container d-flex justify-content-between align-items-center">
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <Marquee gradient={false} speed={50} pauseOnHover={true}>
-            <p className="mb-0 me-5">
-              <strong>{currentAnnouncement.title}</strong> — {currentAnnouncement.content}
-            </p>
-          </Marquee>
-        </div>
-        <button
-          aria-label="Fermer annonce"
-          className="btn-close ms-3"
-          onClick={() => {
-            handleDismiss(currentAnnouncement.id)
-            setVisible(false)
-          }}
+    <div className="overflow-hidden" style={{ maxWidth: '600px' }}>
+      {allItems.length > 0 && (
+        <Marquee 
+          className="gap-3" 
+          innerClassName="gap-3"
+          speed={100}
+          fade={true}
+          style={{ '--gap': '1rem', '--duration': '15s', backgroundColor: '#fff', padding: '8px 0' }}
         >
-          ×
-        </button>
-      </div>
+          {allItems.map((item, idx) => (
+            <div
+              key={idx}
+              className="d-flex align-items-center gap-2 px-3"
+              style={{ minWidth: 200, whiteSpace: 'nowrap', backgroundColor: '#f8f9fa', borderRadius: '4px', fontWeight: 'bold' }}
+            >
+              <span>{item.type === 'platform' ? '🔔' : '📢'}</span>
+              {item.type === 'platform' ? (
+                <span>
+                  <span style={{ color: Theme2 }}>{item.title}</span>
+                  <span style={{ color: Theme3 }}>: {item.content}</span>
+                </span>
+              ) : (
+                <span style={{ color: '#212529' }}>
+                  {item.text}
+                </span>
+              )}
+            </div>
+          ))}
+        </Marquee>
+      )}
     </div>
   )
 }

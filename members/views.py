@@ -186,6 +186,31 @@ class MemberListCreateView(ListCreateAPIView):
         )
 
     def create(self, request, *args, **kwargs):
+        # Get the current tenant
+        tenant = getattr(request, "tenant", None)
+        if not tenant:
+            return Response(
+                {"detail": "Tenant context is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Check if tenant has a billing plan
+        if not tenant.plan:
+            return Response(
+                {"detail": "No billing plan associated with this tenant"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Check member limit
+        current_members = Member.objects.count()
+        if current_members >= tenant.plan.max_members:
+            return Response(
+                {
+                    "detail": f"Member limit reached. Your plan allows a maximum of {tenant.plan.max_members} member(s). Current: {current_members}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
         data = request.data
         data["birthdate"] = None if not data["birthdate"] else data["birthdate"]
         data["email"] = None if not data["email"] else data["email"]

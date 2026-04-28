@@ -37,6 +37,13 @@ class CommunicationSendSerializer(serializers.Serializer):
         attrs["subject"] = subject
         attrs["message"] = message
         return attrs
+    
+    
+class OngoingAnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TenantAnnouncement
+        fields = ['id', 'title', 'content', 'published_at']
+        
 
 
 class TenantAnnouncementSerializer(serializers.ModelSerializer):
@@ -55,7 +62,7 @@ class TenantAnnouncementSerializer(serializers.ModelSerializer):
 
     def get_target_churches_detail(self, obj):
         if obj.visibility == 'specific':
-            return [{'id': c.id, 'name': c.name} for c in obj.target_churches.all()]
+            return [{'id': c.id, 'church_name': c.church_name} for c in obj.target_churches.all()]
         return []
 
     def create(self, validated_data):

@@ -4,7 +4,6 @@ import { LoadingPage } from '../Loading/loading';
 import { routes } from './pageRoutes';
 import { ToastContainer } from 'react-toastify';
 import { PagePermsWrapper } from '../../utils/permissions/permwrapper';
-import Announcement from '../Announcement/Announcement'
 
 
 export const Content = () => {
@@ -14,7 +13,6 @@ export const Content = () => {
       <div className="main-body">
         <div className="page-wrapper pb-3 ">
           <div className='page-body'>
-            <Announcement message={"Maintenance prévue samedi 10h–12h. L'application pourrait être indisponible."} linkHref={'/support/announcements'} linkText={'Détails'} />
             <Suspense fallback={<LoadingPage />}>
               <Routes>
                 {routes.map((route, idx) => {

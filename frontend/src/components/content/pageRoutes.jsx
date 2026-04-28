@@ -21,6 +21,8 @@ const Parametres = React.lazy(()=>import('../../pages/parametres'))
 const Abonnement = React.lazy(() => import('../../pages/billing'))
 const Support = React.lazy(() => import('../../pages/support'))
 const Communication = React.lazy(() => import('../../pages/communication'))
+const CommunicationSend = React.lazy(() => import('../../pages/communication'))
+const CommunicationAnnouncements = React.lazy(() => import('../../pages/communication/announcements'))
 const Rapports = React.lazy(()=>import('../../pages/finance/rapports'))
 const Transactions = React.lazy(()=>import('../../pages/finance/transactions'))
 const Budgets = React.lazy(()=>import('../../pages/finance/budgets'))
@@ -46,6 +48,18 @@ export const routes = [
     path: '/communication',
     name: 'Communication',
     element: Communication,
+    PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
+  },
+  {
+    path: '/communication/send',
+    name: 'Email/SMS',
+    element: CommunicationSend,
+    PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
+  },
+  {
+    path: '/communication/announcements',
+    name: 'Annonces',
+    element: CommunicationAnnouncements,
     PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
   },
 

@@ -68,7 +68,19 @@ export const NavList = () => {
             to: '/communication',
             color: '#5fbeaa',
             icon: <i className="icofont icofont-envelope-open"></i>,
-            perms: ['envoyer_communication', 'envoyer_toutes_communications']
+            perms: ['envoyer_communication', 'envoyer_toutes_communications'],
+            items: [
+                {
+                    name: 'Email/SMS',
+                    to: '/communication/send',
+                    perms: ['envoyer_communication', 'envoyer_toutes_communications']
+                },
+                {
+                    name: 'Annonces',
+                    to: '/communication/announcements',
+                    perms: ['envoyer_communication', 'envoyer_toutes_communications']
+                }
+            ]
         },
         {
             name: 'Departements',
