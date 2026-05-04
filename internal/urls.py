@@ -9,6 +9,10 @@ urlpatterns = [
     path('/stats/requests/tenants-hourly', views_infra_stats.RequestsPerTenantHourView.as_view(), name='internal-stats-requests-tenants-hourly'),
     path('/stats/requests/tenants-daily', views_infra_stats.RequestsPerTenantDayView.as_view(), name='internal-stats-requests-tenants-daily'),
     path('/stats/requests/summary', views_infra_stats.RequestsSummaryView.as_view(), name='internal-stats-requests-summary'),
+    path('/stats/cpu', views_infra_stats.CPUUsageView.as_view(), name='internal-stats-cpu'),
+    path('/stats/memory', views_infra_stats.MemoryUsageView.as_view(), name='internal-stats-memory'),
+    path('/stats/disk', views_infra_stats.DiskUsageView.as_view(), name='internal-stats-disk'),
+    path('/stats/api-latency', views_infra_stats.APILatencyView.as_view(), name='internal-stats-api-latency'),
     
     # Tenants Migrations
     path('/tenants/migrations', views_migration.all_tenants_migration_summary),

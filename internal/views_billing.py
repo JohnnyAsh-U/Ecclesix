@@ -43,6 +43,8 @@ class TenantBillingRecentView(APIView):
 
 
 class BillingFilterView(APIView):
+    permission_classes = []
+    authentication_classes = []
     """GET: Filter billings by month and year"""
     def get(self, request):
         """
@@ -96,6 +98,8 @@ class BillingFilterView(APIView):
 
 
 class BillingCreateView(APIView):
+    permission_classes = []
+    authentication_classes = []
     """POST: Add a billing for a tenant"""
     def post(self, request):
         """
@@ -212,6 +216,8 @@ class BillingCreateView(APIView):
 
 
 class BillingCancelView(APIView):
+    permission_classes = []
+    authentication_classes = []
     """POST: Cancel a tenant payment"""
     def post(self, request, payment_id):
         """Cancel/refund a payment by changing status to 'refunded'"""
