@@ -117,7 +117,7 @@ def RequestLoggingMiddleware(get_response):
 def InternalAPIMiddleware(get_response):
     def is_internal_path(path: str) -> bool:
         p = str(path)
-        return p.startswith("/internal/") or p.startswith("/api/internal/")
+        return p.startswith("/internal/") or p.startswith("/api/v1/internal/")
 
     async def async_middleware(request):
         if is_internal_path(request.path):

@@ -68,6 +68,7 @@ class TenantBillingSerializer(serializers.ModelSerializer):
     tenant_id = serializers.IntegerField(source="id", read_only=True)
     plan = BillingPlanSerializer(read_only=True)
     payment_history = TenantPaymentHistorySerializer(many=True, read_only=True)
+    domain = serializers.SerializerMethodField()
     logo_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -76,12 +77,10 @@ class TenantBillingSerializer(serializers.ModelSerializer):
             "tenant_id",
             "name",
             "church_name",
-            "domain",
             "billing_cycle",
             "is_active",
-            "custom_domain",
-            "custom_domain_verified",
             "custom_logo",
+            "domain",
             "logo",
             "logo_url",
             "plan",
@@ -93,11 +92,8 @@ class TenantBillingSerializer(serializers.ModelSerializer):
             "tenant_id",
             "name",
             "church_name",
-            "domain",
             "billing_cycle",
             "is_active",
-            "custom_domain",
-            "custom_domain_verified",
             "custom_logo",
             "logo_url",
             "plan",
@@ -113,6 +109,10 @@ class TenantBillingSerializer(serializers.ModelSerializer):
         if request:
             return request.build_absolute_uri(obj.logo.url)
         return obj.logo.url
+    
+    def get_domain(self, obj):
+        tenant_domain = obj.domains.filter(is_active=True).first()
+        return tenant_domain.domain if tenant_domain else None
 
 
 class TenantLogoSerializer(serializers.ModelSerializer):

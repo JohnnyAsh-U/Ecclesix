@@ -77,6 +77,7 @@ def all_tenants_migration_summary(request):
     tenants = TenantModel.objects.exclude(schema_name='public').values('schema_name', 'name')
 
     summary = []
+    
     with connection.cursor() as cursor:
         for tenant in tenants:
             schema = tenant['schema_name']
