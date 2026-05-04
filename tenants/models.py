@@ -40,16 +40,15 @@ class Tenant(TenantMixin):
     
     name = models.SlugField(max_length=80, unique=True)
     church_name = models.CharField(max_length=150)
-    domain = models.CharField(max_length=255, unique=True, validators=[domain_validator])
     email = models.EmailField(max_length=255, blank=True, default="")
     phone = models.CharField(max_length=20, blank=True, default="")
     plan = models.ForeignKey("BillingPlan", null=True, blank=True, on_delete=models.SET_NULL, related_name="tenants")
     logo = models.ImageField(upload_to="tenant_logos/", null=True, blank=True)
-    custom_domain = models.BooleanField(default=False)
-    custom_domain_verified = models.BooleanField(default=False)
     custom_logo = models.BooleanField(default=False)
     billing_cycle = models.CharField(max_length=20, choices=BILLING_CYCLE_CHOICES, default="monthly")
     is_active = models.BooleanField(default=True)
+    church_count = models.IntegerField(default=0)
+    member_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -60,7 +59,6 @@ class Tenant(TenantMixin):
         ordering = ["church_name"]
         default_permissions = ()
         indexes = [
-            models.Index(fields=["domain", "is_active"]),
             models.Index(fields=["name", "is_active"]),
             models.Index(fields=["schema_name"]),
         ]
@@ -71,7 +69,6 @@ class Tenant(TenantMixin):
     def save(self, *args, **kwargs):
         base_name = self.name or self.church_name
         self.name = slugify(base_name)
-        self.domain = self.domain.strip().lower().rstrip(".")
         if not self.schema_name:
             self.schema_name = self.name.replace("-", "_")
         super().save(*args, **kwargs)

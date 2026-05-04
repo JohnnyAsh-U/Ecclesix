@@ -11,8 +11,8 @@ class TenantDomainInline(admin.TabularInline):
 
 @admin.register(Tenant)
 class TenantAdmin(TenantAdminMixin, admin.ModelAdmin):
-    list_display = ("church_name", "name", "schema_name", "domain", "plan", "is_active", "created_at")
-    search_fields = ("church_name", "name", "schema_name", "domain")
+    list_display = ("church_name", "name", "schema_name", "plan", "is_active", "created_at")
+    search_fields = ("church_name", "name", "schema_name")
     list_filter = ("is_active", "created_at", "plan")
     inlines = [TenantDomainInline]
 

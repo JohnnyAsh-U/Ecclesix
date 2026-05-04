@@ -66,6 +66,7 @@ TENANT_APPS = [
     "device",
     "storages",
     "multimedia",
+    "internal"
 ]
 
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
@@ -122,6 +123,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "backend.middleware.InternalAPIMiddleware",
     "backend.middleware.RequestLoggingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -140,6 +142,14 @@ PROMETHEUS_TENANT_LABEL_ALLOWLIST = [
     for item in os.getenv("PROMETHEUS_TENANT_LABEL_ALLOWLIST", "").split(",")
     if item.strip()
 ]
+
+# Secret for internal API requests (used by `backend.middleware.InternalAPIMiddleware`)
+# Set this in your environment as `INTERNAL_API_SECRET`.
+INTERNAL_API_SECRET = os.getenv("INTERNAL_API_SECRET", "")
+
+# Prometheus URL for metrics queries (used by `internal.views_infra_stats`)
+# Set this in your environment as `PROMETHEUS_URL` (defaults to http://localhost:9090)
+PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
 
 REDIS_URL = os.getenv("REDIS_URL")
 if REDIS_URL:

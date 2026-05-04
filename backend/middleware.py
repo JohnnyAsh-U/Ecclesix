@@ -1,6 +1,7 @@
 import logging
 import time
 from types import SimpleNamespace
+import hmac
 
 # from asgiref.sync import iscoroutinefunction
 from inspect import iscoroutinefunction
@@ -9,6 +10,7 @@ from django.db import connection
 from django.utils.decorators import sync_and_async_middleware
 from django_tenants.middleware.main import TenantMainMiddleware
 from django_tenants.utils import get_public_schema_name
+from django.http import JsonResponse
 
 from .db_instrumentation import instrument_database_connections
 from .logging_utils import clear_request_context, set_request_context
@@ -18,6 +20,23 @@ request_logger = logging.getLogger("backend.request")
 
 
 class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
+    
+    def get_tenant(self, domain_model, hostname):
+        """Override get_tenant to check if tenant and domain are active."""
+        domain = domain_model.objects.select_related('tenant').get(domain=hostname)
+        tenant = domain.tenant
+        
+        # Check if tenant is active
+        if not tenant.is_active:
+            raise self.TENANT_NOT_FOUND_EXCEPTION(f'Tenant "{hostname}" is inactive')
+        
+        # Check if domain is active
+        if not domain.is_active:
+            raise self.TENANT_NOT_FOUND_EXCEPTION(f'Domain "{hostname}" is inactive')
+        
+        return tenant
+    
+    
     def process_request(self, request):
         metrics_path = getattr(settings, "PROMETHEUS_METRICS_PATH", "/metrics")
         if request.path.rstrip("/") == metrics_path.rstrip("/"):
@@ -25,6 +44,7 @@ class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
             request.tenant = SimpleNamespace(schema_name=get_public_schema_name())
             self.setup_url_routing(request, force_public=True)
             return None
+        
         return super().process_request(request)
 
 
@@ -87,6 +107,33 @@ def RequestLoggingMiddleware(get_response):
                 extra={"status_code": status_code, "duration_ms": duration_ms},
             )
             clear_request_context(token)
+
+    if iscoroutinefunction(get_response):
+        return async_middleware
+    return sync_middleware
+
+
+@sync_and_async_middleware
+def InternalAPIMiddleware(get_response):
+    def is_internal_path(path: str) -> bool:
+        p = str(path)
+        return p.startswith("/internal/") or p.startswith("/api/internal/")
+
+    async def async_middleware(request):
+        if is_internal_path(request.path):
+            token = request.headers.get("X-Internal-Token", "")
+            expected = getattr(settings, "INTERNAL_API_SECRET", "")
+            if not hmac.compare_digest(token, expected):
+                return JsonResponse({"detail": "Forbidden"}, status=403)
+        return await get_response(request)
+
+    def sync_middleware(request):
+        if is_internal_path(request.path):
+            token = request.headers.get("X-Internal-Token", "")
+            expected = getattr(settings, "INTERNAL_API_SECRET", "")
+            if not hmac.compare_digest(token, expected):
+                return JsonResponse({"detail": "Forbidden"}, status=403)
+        return get_response(request)
 
     if iscoroutinefunction(get_response):
         return async_middleware
