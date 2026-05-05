@@ -6,10 +6,10 @@ from datetime import timedelta
 import secrets
 import string
 
+from .permission import IsInternalAdmin, IsInternalAdminOrMod
 from tenants.models import Tenant, TenantPaymentHistory, TenantStorageQuota, TenantDomain, BillingPlan
 from members.models import Member
 from django_tenants.utils import schema_context
-from django.core.management import call_command
 from django.db import connection
 
 from .serializers import TenantCreateSerializer
@@ -17,6 +17,10 @@ from .services import send_welcome_email
 
 
 class TenantListCreateView(APIView):
+    authentication_classes = []  # Add authentication classes as needed
+    permission_classes = [IsInternalAdminOrMod]  # Add permission classes as needed
+    
+    
     """GET: List all tenants; POST: Create a new tenant"""
     def get(self, request):
         tenants = Tenant.objects.select_related('plan').all()
@@ -39,7 +43,7 @@ class TenantListCreateView(APIView):
                 {
                     'id': t.id,
                     'church_name': t.church_name,
-                    'domains': domains or [t.domain],
+                    'domains': domains or [],
                     'plan': t.plan.code if t.plan else None,
                     'is_active': t.is_active,
                     'church_count': t.church_count,
@@ -63,14 +67,16 @@ class TenantListCreateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
+        name = data.get('name', 'name')
         church_name = data.get('church_name')
-        domain = data.get('domain')
+        domain_str = data.get('domain')
         superadmin_email = data.get('superadmin_email')
         schema_name = data.get('schema_name', '')
         plan_code = data.get('plan_code', '')
         billing_cycle = data.get('billing_cycle', 'monthly')
         email = data.get('email', '')
         phone = data.get('phone', '')
+        
 
         try:
             # Get plan if provided
@@ -87,9 +93,8 @@ class TenantListCreateView(APIView):
 
             # Create Tenant instance (this will auto-create the schema with auto_create_schema=True)
             tenant = Tenant(
-                name=schema_name,
+                name=name,
                 church_name=church_name,
-                domain=domain,
                 email=email,
                 phone=phone,
                 plan=plan,
@@ -97,9 +102,21 @@ class TenantListCreateView(APIView):
                 logo=None,
                 custom_logo=False,
                 schema_name=schema_name,
-                auto_create_schema=True,
             )
             tenant.save()
+                        
+            domain = TenantDomain()
+            domain.domain = domain_str
+            domain.tenant = tenant
+            domain.is_primary = True
+            domain.save()
+            
+            
+            # Create the StorageQuota for the tenant
+            quota = TenantStorageQuota()
+            quota.tenant = tenant
+            quota.used_bytes = 0
+            quota.save()
 
             # Run migrations for the new tenant schema
             with schema_context(schema_name):
@@ -124,12 +141,12 @@ class TenantListCreateView(APIView):
                     )
 
             # Send welcome email (outside schema context, using public schema)
-            email_sent = send_welcome_email(superadmin_email, church_name, password, domain)
+            email_sent = send_welcome_email(superadmin_email, church_name, password, domain_str)
 
             response_data = {
                 'id': tenant.id,
                 'church_name': tenant.church_name,
-                'domain': tenant.domain,
+                'domains': [domain_str],
                 'schema_name': tenant.schema_name,
                 'plan': plan.code if plan else None,
                 'is_active': tenant.is_active,
@@ -148,6 +165,8 @@ class TenantListCreateView(APIView):
 
 
 class TenantDetailView(APIView):
+    authentication_classes = []
+    permission_classes = [IsInternalAdminOrMod]
     def get(self, request, tenant_id):
         tenant = Tenant.objects.select_related('plan').filter(id=tenant_id).first()
         if not tenant:
@@ -192,6 +211,8 @@ class TenantDetailView(APIView):
 
 
 class TenantActivateView(APIView):
+    authentication_classes = []
+    permission_classes = []
     def post(self, request, tenant_id):
         tenant = Tenant.objects.filter(id=tenant_id).first()
         if not tenant:
@@ -202,6 +223,8 @@ class TenantActivateView(APIView):
 
 
 class TenantDeactivateView(APIView):
+    authentication_classes = []
+    permission_classes  = []
     def post(self, request, tenant_id):
         tenant = Tenant.objects.filter(id=tenant_id).first()
         if not tenant:
@@ -212,6 +235,10 @@ class TenantDeactivateView(APIView):
 
 
 class TenantDomainsView(APIView):
+    authentication_classes = []
+    permission_classes = [IsInternalAdminOrMod]
+    
+    
     """GET: List domains; POST: Add domain; DELETE: Remove domain"""
     def get(self, request, tenant_id):
         """List all domains for a tenant"""

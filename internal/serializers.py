@@ -2,7 +2,7 @@ from rest_framework import serializers
 from tenants.models import Tenant, BillingPlan
 
 
-class TenantCreateSerializer(serializers.Serializer):
+class TenantCreateSerializer(serializers.ModelSerializer):
     church_name = serializers.CharField(max_length=150, required=True)
     schema_name = serializers.CharField(max_length=80, required=False, allow_blank=True)
     domain = serializers.CharField(max_length=255, required=True)
@@ -15,17 +15,12 @@ class TenantCreateSerializer(serializers.Serializer):
     )
     email = serializers.EmailField(required=False, allow_blank=True)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    
+    class Meta:
+        model = Tenant
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
 
-    def validate_domain(self, value):
-        if Tenant.objects.filter(domain=value.strip().lower()).exists():
-            raise serializers.ValidationError("Le domaine existe déjà.")
-        return value.strip().lower()
-
-    def validate_superadmin_email(self, value):
-        from members.models import Member
-        if Member.objects.filter(email=value).exists():
-            raise serializers.ValidationError("L'email est déjà utilisé.")
-        return value
 
     def validate_plan_code(self, value):
         if value:

@@ -673,7 +673,6 @@ def DatabaseRestoreView(request, *args, **kwargs):
         )
         
     except Exception as e:
-        print(e)
         return Response(
             {"detail": f"Error restoring database: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,

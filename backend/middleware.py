@@ -11,6 +11,7 @@ from django.utils.decorators import sync_and_async_middleware
 from django_tenants.middleware.main import TenantMainMiddleware
 from django_tenants.utils import get_public_schema_name
 from django.http import JsonResponse
+from requests import request
 
 from .db_instrumentation import instrument_database_connections
 from .logging_utils import clear_request_context, set_request_context
@@ -39,7 +40,13 @@ class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
     
     def process_request(self, request):
         metrics_path = getattr(settings, "PROMETHEUS_METRICS_PATH", "/metrics")
-        if request.path.rstrip("/") == metrics_path.rstrip("/"):
+        internal_api_prefix = "/api/v1/internal"
+        path = request.path or ""
+        
+        if (request.path.rstrip("/") == metrics_path.rstrip("/")
+            or path.rstrip("/") == internal_api_prefix
+            or path.startswith(internal_api_prefix + "/")
+        ):
             connection.set_schema_to_public()
             request.tenant = SimpleNamespace(schema_name=get_public_schema_name())
             self.setup_url_routing(request, force_public=True)
@@ -122,16 +129,18 @@ def InternalAPIMiddleware(get_response):
     async def async_middleware(request):
         if is_internal_path(request.path):
             token = request.headers.get("X-Internal-Token", "")
-            expected = getattr(settings, "INTERNAL_API_SECRET", "")
-            if not hmac.compare_digest(token, expected):
+            expected_admin = getattr(settings, "INTERNAL_API_SECRET_ADMIN", "")
+            expected_mod = getattr(settings, "INTERNAL_API_SECRET_MOD", "")
+            if not (hmac.compare_digest(token, expected_admin) or hmac.compare_digest(token, expected_mod)):
                 return JsonResponse({"detail": "Forbidden"}, status=403)
         return await get_response(request)
 
     def sync_middleware(request):
         if is_internal_path(request.path):
             token = request.headers.get("X-Internal-Token", "")
-            expected = getattr(settings, "INTERNAL_API_SECRET", "")
-            if not hmac.compare_digest(token, expected):
+            expected_admin = getattr(settings, "INTERNAL_API_SECRET_ADMIN", "")
+            expected_mod = getattr(settings, "INTERNAL_API_SECRET_MOD", "")
+            if not (hmac.compare_digest(token, expected_admin) or hmac.compare_digest(token, expected_mod)):
                 return JsonResponse({"detail": "Forbidden"}, status=403)
         return get_response(request)
 
