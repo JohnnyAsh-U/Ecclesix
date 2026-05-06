@@ -1,12 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from .permission import IsInternalAdminOrMod
 from tenants.models import BillingPlan
 
 
 class BillingPlanListCreateView(APIView):
-    permission_classes = []
+    permission_classes = [IsInternalAdminOrMod]
     authentication_classes = []
     """GET: List all billing plans; POST: Create a new billing plan"""
     def get(self, request):
@@ -98,6 +98,9 @@ class BillingPlanListCreateView(APIView):
 
 
 class BillingPlanDetailView(APIView):
+    permission_classes = [IsInternalAdminOrMod]
+    authentication_classes = []
+    
     """GET: Get a billing plan; PUT/PATCH: Update a billing plan; DELETE: Delete a billing plan"""
     def get(self, request, plan_id):
         """Get a specific billing plan"""
@@ -189,88 +192,6 @@ class BillingPlanDetailView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    def patch(self, request, plan_id):
-        """Partially update a billing plan"""
-        plan = BillingPlan.objects.filter(id=plan_id).first()
-        if not plan:
-            return Response(
-                {'detail': 'Plan non trouvé'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Update only provided fields
-        if 'code' in request.data:
-            code = request.data.get('code').strip().lower()
-            if code != plan.code and BillingPlan.objects.filter(code=code).exists():
-                return Response(
-                    {'detail': f'Un plan avec le code "{code}" existe déjà'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            plan.code = code
-
-        if 'name' in request.data:
-            plan.name = request.data.get('name').strip()
-
-        if 'price' in request.data:
-            try:
-                price = float(request.data.get('price'))
-                if price < 0:
-                    raise ValueError('price doit être >= 0')
-                plan.price = price
-            except ValueError as e:
-                return Response(
-                    {'detail': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if 'currency' in request.data:
-            plan.currency = request.data.get('currency').strip()
-
-        if 'max_churches' in request.data:
-            try:
-                max_churches = int(request.data.get('max_churches'))
-                if max_churches < 1:
-                    raise ValueError('max_churches doit être >= 1')
-                plan.max_churches = max_churches
-            except ValueError as e:
-                return Response(
-                    {'detail': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if 'max_members' in request.data:
-            try:
-                max_members = int(request.data.get('max_members'))
-                if max_members < 1:
-                    raise ValueError('max_members doit être >= 1')
-                plan.max_members = max_members
-            except ValueError as e:
-                return Response(
-                    {'detail': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        try:
-            plan.save()
-
-            return Response(
-                {
-                    'id': plan.id,
-                    'code': plan.code,
-                    'name': plan.name,
-                    'price': str(plan.price),
-                    'currency': plan.currency,
-                    'max_churches': plan.max_churches,
-                    'max_members': plan.max_members,
-                    'message': 'Plan de facturation mis à jour avec succès'
-                },
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            return Response(
-                {'detail': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
     def delete(self, request, plan_id):
         """Delete a billing plan"""

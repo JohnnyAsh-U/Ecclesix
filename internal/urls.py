@@ -26,6 +26,7 @@ urlpatterns = [
     path('/tenants/<int:tenant_id>/activate', views_tenant.TenantActivateView.as_view(), name='internal-tenant-activate'),
     path('/tenants/<int:tenant_id>/deactivate', views_tenant.TenantDeactivateView.as_view(), name='internal-tenant-deactivate'),
     path('/tenants/<int:tenant_id>/domains', views_tenant.TenantDomainsView.as_view(), name='internal-tenant-domains'),
+    path('/tenants/<int:tenant_id>/storage', views_tenant.TenantStorageView.as_view(), name="storage-view"),
     
     
     # Billing endpoints
