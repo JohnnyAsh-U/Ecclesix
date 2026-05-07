@@ -6,111 +6,113 @@ from django.db import connection
 from django_tenants.utils import schema_context
 
 from church.models import Church
+from tenants.models import Tenant
+from internal.permission import IsInternalAdminOrMod
 from multimedia.models import MediaFile
 
 
-class ChurchStorageListView(APIView):
-    permission_classes = []
+
+class TenantStorageListView(APIView):
+    permission_classes = [IsInternalAdminOrMod]
     authentication_classes = []
-    """GET: List all churches with their file counts and total file sizes"""
+    """GET: List tenants with aggregated storage info from each tenant schema"""
     def get(self, request):
-        """Returns list of all churches with storage information"""
         try:
-            current_schema = connection.schema_name
-            
-            churches = Church.objects.annotate(
-                files_count=Count('media_files', filter=Q(media_files__isnull=False)),
-                total_files_size=Sum('media_files__file_size', filter=Q(media_files__isnull=False))
-            ).order_by('-total_files_size')
+            tenants = Tenant.objects.exclude(schema_name='public').values('id', 'schema_name', 'name', 'church_name')
+            result = []
+            for t in tenants:
+                schema = t['schema_name']
+                try:
+                    with schema_context(schema):
+                        totals = MediaFile.objects.aggregate(
+                            total_files_count=Count('id'),
+                            total_files_size=Sum('file_size')
+                        )
+                        total_count = totals['total_files_count'] or 0
+                        total_size = totals['total_files_size'] or 0
 
-            data = []
-            for church in churches:
-                data.append({
-                    'id': church.id,
-                    'church_name': church.church_name,
-                    'address': church.address,
-                    'files_count': church.files_count or 0,
-                    'total_files_size': church.total_files_size or 0,
-                    'total_files_size_mb': round((church.total_files_size or 0) / (1024 * 1024), 2),
-                    'total_files_size_gb': round((church.total_files_size or 0) / (1024 * 1024 * 1024), 2),
-                })
+                    result.append({
+                        'tenant_id': t['id'],
+                        'schema_name': schema,
+                        'name': t['church_name'],
+                        'total_files_count': total_count,
+                        'total_files_size': total_size,
+                        'total_files_size_mb': round(total_size / (1024 * 1024), 2),
+                        'total_files_size_gb': round(total_size / (1024 * 1024 * 1024), 2),
+                    })
+                except Exception as e:
+                    result.append({
+                        'tenant_id': t['id'],
+                        'schema_name': schema,
+                        'name': t['church_name'],
+                        'error': str(e),
+                    })
 
-            return Response({
-                'tenant_schema': current_schema,
-                'churches': data,
-                'total_churches': len(data),
-            })
+            return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(
-                {'detail': f'Erreur lors de la récupération des églises: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            print(e)
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class StorageSummaryView(APIView):
-    permission_classes = []
+
+class AllTenantsStorageTotalsView(APIView):
+    permission_classes = [IsInternalAdminOrMod]
     authentication_classes = []
-    """GET: Get total file count and total storage size across all churches"""
+    """GET: Aggregate total files size, total file count, and breakdown by media type across all tenants"""
     def get(self, request):
-        """Returns total storage summary for the current tenant"""
         try:
-            current_schema = connection.schema_name
-            
-            # Get all media files and calculate totals
-            totals = MediaFile.objects.aggregate(
-                total_files_count=Count('id'),
-                total_files_size=Sum('file_size')
-            )
+            tenants = Tenant.objects.exclude(schema_name='public').values('id', 'schema_name', 'name')
 
-            total_count = totals['total_files_count'] or 0
-            total_size = totals['total_files_size'] or 0
+            total_files_count = 0
+            total_files_size = 0
+            breakdown = {}  # media_type -> {'count': int, 'size': int}
 
-            # Get breakdown by media type
-            breakdown_by_type = MediaFile.objects.values('media_type').annotate(
-                count=Count('id'),
-                size=Sum('file_size')
-            ).order_by('-size')
+            for t in tenants:
+                schema = t['schema_name']
+                try:
+                    with schema_context(schema):
+                        totals = MediaFile.objects.aggregate(
+                            total_files_count=Count('id'),
+                            total_files_size=Sum('file_size')
+                        )
 
-            type_breakdown = []
-            for item in breakdown_by_type:
-                type_breakdown.append({
-                    'media_type': item['media_type'],
-                    'count': item['count'] or 0,
-                    'size': item['size'] or 0,
-                    'size_mb': round((item['size'] or 0) / (1024 * 1024), 2),
-                })
+                        total_files_count += totals.get('total_files_count') or 0
+                        total_files_size += totals.get('total_files_size') or 0
 
-            # Get breakdown by church
-            breakdown_by_church = Church.objects.annotate(
-                files_count=Count('media_files'),
-                total_size=Sum('media_files__file_size')
-            ).filter(files_count__gt=0).order_by('-total_size').values(
-                'id', 'church_name', 'files_count', 'total_size'
-            )
+                        by_type = MediaFile.objects.values('media_type').annotate(
+                            count=Count('id'),
+                            size=Sum('file_size')
+                        )
 
-            church_breakdown = []
-            for church in breakdown_by_church:
-                church_breakdown.append({
-                    'church_id': church['id'],
-                    'church_name': church['church_name'],
-                    'files_count': church['files_count'] or 0,
-                    'total_size': church['total_size'] or 0,
-                    'total_size_mb': round((church['total_size'] or 0) / (1024 * 1024), 2),
+                        for item in by_type:
+                            mt = item.get('media_type') or 'unknown'
+                            if mt not in breakdown:
+                                breakdown[mt] = {'count': 0, 'size': 0}
+                            breakdown[mt]['count'] += item.get('count') or 0
+                            breakdown[mt]['size'] += item.get('size') or 0
+                except Exception:
+                    # Skip tenant on error but continue aggregating others
+                    continue
+
+            breakdown_list = []
+            for mt, vals in breakdown.items():
+                size = vals['size'] or 0
+                breakdown_list.append({
+                    'media_type': mt,
+                    'count': vals['count'] or 0,
+                    'size': size,
+                    'size_mb': round(size / (1024 * 1024), 2),
+                    'size_gb': round(size / (1024 * 1024 * 1024), 2),
                 })
 
             return Response({
-                'tenant_schema': current_schema,
                 'summary': {
-                    'total_files_count': total_count,
-                    'total_files_size': total_size,
-                    'total_files_size_mb': round(total_size / (1024 * 1024), 2),
-                    'total_files_size_gb': round(total_size / (1024 * 1024 * 1024), 2),
+                    'total_files_count': total_files_count,
+                    'total_files_size': total_files_size,
+                    'total_files_size_mb': round(total_files_size / (1024 * 1024), 2),
+                    'total_files_size_gb': round(total_files_size / (1024 * 1024 * 1024), 2),
                 },
-                'breakdown_by_type': type_breakdown,
-                'breakdown_by_church': church_breakdown,
+                'breakdown_by_type': breakdown_list,
             })
         except Exception as e:
-            return Response(
-                {'detail': f'Erreur lors du calcul du résumé du stockage: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

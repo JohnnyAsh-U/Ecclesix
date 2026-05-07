@@ -16,8 +16,8 @@ urlpatterns = [
     
     # Tenants Migrations
     path('/tenants/migrations', views_migration.all_tenants_migration_summary),
-    path('/tenants/<str:schema_name>/migrate', views_migration.run_tenant_migration),
-    path('/tenants/<str:schema_name>/migration-state', views_migration.tenant_migration_state),
+    path('/tenants/<int:tenant_id>/migrate', views_migration.run_tenant_migration),
+    path('/tenants/<int:tenant_id>/migration-state', views_migration.tenant_migration_state),
     
     
     # Tenant endpoints
@@ -41,6 +41,6 @@ urlpatterns = [
     path('/plans/<int:plan_id>', views_plans.BillingPlanDetailView.as_view(), name='internal-plan-detail'),
     
     # Storage endpoints
-    path('/churches/storage', views_storage.ChurchStorageListView.as_view(), name='internal-churches-storage'),
-    path('/storage/summary', views_storage.StorageSummaryView.as_view(), name='internal-storage-summary'),
+    path('/storage', views_storage.TenantStorageListView.as_view(), name='internal-tenants-storage'),
+    path('/storage/stats', views_storage.AllTenantsStorageTotalsView.as_view(), name='internal-storage-stats'),
 ]

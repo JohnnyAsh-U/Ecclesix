@@ -79,7 +79,6 @@ class IsInternalAdminOrMod(InternalAPIPermission):
     def has_permission(self, request, view) -> bool:
         """Allow requests with admin or mod role."""
         role = self.get_role_from_request(request)
-        print(role)
         
         if role not in ["admin", "mod"]:
             logger.warning(

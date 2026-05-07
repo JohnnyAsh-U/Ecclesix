@@ -6,6 +6,9 @@ from datetime import timedelta
 import secrets
 import string
 
+from church.models import Church
+from multimedia.models import MediaFile
+
 from .permission import IsInternalAdmin, IsInternalAdminOrMod
 from tenants.models import Tenant, TenantPaymentHistory, TenantStorageQuota, TenantDomain, BillingPlan
 from members.models import Member
@@ -15,6 +18,8 @@ from django.db import connection, transaction
 from .serializers import TenantCreateSerializer
 from .services import send_welcome_email
 from rest_framework import status
+from django.db.models import Count, Sum, Q
+
 
 
 
@@ -152,7 +157,6 @@ class TenantListCreateView(APIView):
             except Exception as e:
                 # Attempt to clean up tenant and related resources. Close DB connections
                 # to release any locks before deleting schema.
-                print(e)
                 try:
                     connection.close()
                 except Exception:
@@ -189,7 +193,6 @@ class TenantListCreateView(APIView):
 
         except Exception as e:
             # Final catch-all: ensure partial resources are removed for consistency.
-            print(e)
             try:
                 connection.close()
             except Exception:
@@ -374,6 +377,82 @@ class TenantDomainsView(APIView):
 class TenantStorageView(APIView):
     authentication_classes = []
     permission_classes = [IsInternalAdminOrMod]
+    
+    
+    def get(self, request, tenant_id):
+        """Returns total storage summary for the specified tenant (query param `tenant_id`) or current schema."""
+        try:
+            if tenant_id:
+                try:
+                    tenant = Tenant.objects.get(id=int(tenant_id))
+                except Tenant.DoesNotExist:
+                    return Response({'detail': 'Tenant not found'}, status=status.HTTP_404_NOT_FOUND)
+
+                # run aggregations inside tenant schema
+                with schema_context(tenant.schema_name):
+                    totals = MediaFile.objects.aggregate(
+                        total_files_count=Count('id'),
+                        total_files_size=Sum('file_size')
+                    )
+
+                    total_count = totals['total_files_count'] or 0
+                    total_size = totals['total_files_size'] or 0
+
+                    breakdown_by_type = MediaFile.objects.values('media_type').annotate(
+                        count=Count('id'),
+                        size=Sum('file_size')
+                    ).order_by('-size')
+
+                    type_breakdown = []
+                    for item in breakdown_by_type:
+                        type_breakdown.append({
+                            'media_type': item['media_type'],
+                            'count': item['count'] or 0,
+                            'size': item['size'] or 0,
+                            'size_mb': round((item['size'] or 0) / (1024 * 1024), 2),
+                        })
+                    # breakdown by church (aggregate per church inside tenant schema)
+                    churches = Church.objects.annotate(
+                        files_count=Count('media_files', filter=Q(media_files__isnull=False)),
+                        total_files_size=Sum('media_files__file_size', filter=Q(media_files__isnull=False))
+                    ).order_by('-total_files_size')
+
+                    church_breakdown = []
+                    for church in churches:
+                        church_breakdown.append({
+                            'id': church.id,
+                            'church_name': church.church_name,
+                            'address': getattr(church, 'address', None),
+                            'files_count': church.files_count or 0,
+                            'total_files_size': church.total_files_size or 0,
+                            'total_files_size_mb': round((church.total_files_size or 0) / (1024 * 1024), 2),
+                            'total_files_size_gb': round((church.total_files_size or 0) / (1024 * 1024 * 1024), 2),
+                        })
+
+                    return Response({
+                        'tenant_schema': tenant.schema_name,
+                        'tenant_id': tenant.id,
+                        'summary': {
+                            'total_files_count': total_count,
+                            'total_files_size': total_size,
+                            'total_files_size_mb': round(total_size / (1024 * 1024), 2),
+                            'total_files_size_gb': round(total_size / (1024 * 1024 * 1024), 2),
+                        },
+                        'breakdown_by_type': type_breakdown,
+                        'breakdown_by_church': church_breakdown,  # Optional: implement if needed
+                    })
+            else:
+                return Response({
+                    'detail': 'tenant_id query parameter is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            print(e)
+            return Response(
+                {'detail': f'Erreur lors du calcul du résumé du stockage: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
     def patch(self, request, tenant_id):
         """Update storage quota for a tenant"""

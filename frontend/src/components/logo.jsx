@@ -5,7 +5,6 @@ import useFetch from '../hooks/fetchHook'
 export const Logo = () => {
     // use fetch to get tenant info and display custom logo if available
     const { data } = useFetch('/eglise/logo', 'get') || { logo: null }
-    console.log("Logo data:", data) // Debugging line to check the response
     const logo = data?.logo_url || null
 
     return (

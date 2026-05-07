@@ -45,5 +45,4 @@ Veuillez changer votre mot de passe après votre première connexion.
         )
         return True
     except Exception as e:
-        print(f"Failed to send welcome email: {str(e)}")
         return False

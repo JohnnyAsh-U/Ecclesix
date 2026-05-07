@@ -56,9 +56,7 @@ class BillingFilterView(APIView):
         """
         month = request.query_params.get('month')
         year = request.query_params.get('year')
-        
-        print(month, year)
-        
+                
         if not month or not year:
             return Response(
                 {'detail': 'Les paramètres month et year sont requis'},
