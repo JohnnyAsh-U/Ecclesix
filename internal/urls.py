@@ -1,18 +1,7 @@
 from django.urls import path
-from . import views_tenant, views_billing, views_plans, views_storage, views_migration, views_infra_stats
+from . import views_tenant, views_billing, views_plans, views_storage, views_migration
 
 urlpatterns = [
-    
-    # Infrastructure & Stats endpoints
-    path('/stats/requests/hourly', views_infra_stats.RequestsPerHourView.as_view(), name='internal-stats-requests-hourly'),
-    path('/stats/requests/daily', views_infra_stats.RequestsPerDayView.as_view(), name='internal-stats-requests-daily'),
-    path('/stats/requests/tenants-hourly', views_infra_stats.RequestsPerTenantHourView.as_view(), name='internal-stats-requests-tenants-hourly'),
-    path('/stats/requests/tenants-daily', views_infra_stats.RequestsPerTenantDayView.as_view(), name='internal-stats-requests-tenants-daily'),
-    path('/stats/requests/summary', views_infra_stats.RequestsSummaryView.as_view(), name='internal-stats-requests-summary'),
-    path('/stats/cpu', views_infra_stats.CPUUsageView.as_view(), name='internal-stats-cpu'),
-    path('/stats/memory', views_infra_stats.MemoryUsageView.as_view(), name='internal-stats-memory'),
-    path('/stats/disk', views_infra_stats.DiskUsageView.as_view(), name='internal-stats-disk'),
-    path('/stats/api-latency', views_infra_stats.APILatencyView.as_view(), name='internal-stats-api-latency'),
     
     # Tenants Migrations
     path('/tenants/migrations', views_migration.all_tenants_migration_summary),
