@@ -32,8 +32,9 @@ urlpatterns = [
     # Billing endpoints
     path('/billings/recent', views_billing.TenantBillingRecentView.as_view(), name='internal-billings-recent'),
     path('/billings/filter', views_billing.BillingFilterView.as_view(), name='internal-billings-filter'),
+    path('/billings/stats', views_billing.BillingStatsView.as_view(), name='internal-billings-stats'),
     path('/billings/create', views_billing.BillingCreateView.as_view(), name='internal-billings-create'),
-    path('/billings/<int:payment_id>/cancel', views_billing.BillingCancelView.as_view(), name='internal-billing-cancel'),
+    path('/billings/change-plan', views_billing.ChangeBillingPlanView.as_view(), name='internal-billings-change-plan'),
     
     # Billing Plans endpoints
     path('/plans', views_plans.BillingPlanListCreateView.as_view(), name='internal-plans-list-create'),

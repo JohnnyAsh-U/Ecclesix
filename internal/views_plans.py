@@ -18,6 +18,7 @@ class BillingPlanListCreateView(APIView):
                 'code': plan.code,
                 'name': plan.name,
                 'price': str(plan.price),
+                'annual_price': str(plan.annual_price),
                 'currency': plan.currency,
                 'max_churches': plan.max_churches,
                 'max_members': plan.max_members,
@@ -33,6 +34,7 @@ class BillingPlanListCreateView(APIView):
         code = request.data.get('code', '').strip().lower()
         name = request.data.get('name', '').strip()
         price = request.data.get('price', 0)
+        annual_price = request.data.get('annual_price', 0)
         currency = request.data.get('currency', 'FCFA').strip()
         max_churches = request.data.get('max_churches', 1)
         max_members = request.data.get('max_members', 100)
@@ -72,6 +74,7 @@ class BillingPlanListCreateView(APIView):
                 code=code,
                 name=name,
                 price=price,
+                annual_price=annual_price,
                 currency=currency,
                 max_churches=max_churches,
                 max_members=max_members,
@@ -83,6 +86,7 @@ class BillingPlanListCreateView(APIView):
                     'code': plan.code,
                     'name': plan.name,
                     'price': str(plan.price),
+                    'annual_price': str(plan.annual_price),
                     'currency': plan.currency,
                     'max_churches': plan.max_churches,
                     'max_members': plan.max_members,
@@ -116,6 +120,7 @@ class BillingPlanDetailView(APIView):
             'code': plan.code,
             'name': plan.name,
             'price': str(plan.price),
+            'annual_price': str(plan.annual_price),
             'currency': plan.currency,
             'max_churches': plan.max_churches,
             'max_members': plan.max_members,
@@ -137,6 +142,7 @@ class BillingPlanDetailView(APIView):
         code = request.data.get('code', plan.code).strip().lower()
         name = request.data.get('name', plan.name).strip()
         price = request.data.get('price', plan.price)
+        annual_price = request.data.get('annual_price', plan.annual_price)
         currency = request.data.get('currency', plan.currency).strip()
         max_churches = request.data.get('max_churches', plan.max_churches)
         max_members = request.data.get('max_members', plan.max_members)
@@ -150,6 +156,7 @@ class BillingPlanDetailView(APIView):
 
         try:
             price = float(price)
+            annual_price = float(annual_price)
             max_churches = int(max_churches)
             max_members = int(max_members)
         except ValueError as e:
@@ -168,6 +175,7 @@ class BillingPlanDetailView(APIView):
             plan.code = code
             plan.name = name
             plan.price = price
+            plan.annual_price = annual_price
             plan.currency = currency
             plan.max_churches = max_churches
             plan.max_members = max_members
@@ -179,6 +187,7 @@ class BillingPlanDetailView(APIView):
                     'code': plan.code,
                     'name': plan.name,
                     'price': str(plan.price),
+                    'annual_price': str(plan.annual_price),
                     'currency': plan.currency,
                     'max_churches': plan.max_churches,
                     'max_members': plan.max_members,

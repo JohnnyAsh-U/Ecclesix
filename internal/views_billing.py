@@ -3,13 +3,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from datetime import datetime
+from decimal import Decimal
 
+from internal.permission import IsInternalAdminOrMod
 from tenants.models import Tenant, TenantPaymentHistory, BillingPlan
 
 
 class TenantBillingRecentView(APIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [IsInternalAdminOrMod]
     """GET: List all tenants with their most recent billing info"""
     def get(self, request):
         """
@@ -29,6 +31,7 @@ class TenantBillingRecentView(APIView):
                 data.append({
                     'tenant_id': tenant.id,
                     'church_name': tenant.church_name,
+                    'is_active': tenant.is_active,
                     'plan': recent_payment.plan.code if recent_payment.plan else None,
                     'amount': str(recent_payment.amount),
                     'currency': recent_payment.currency,
@@ -53,6 +56,8 @@ class BillingFilterView(APIView):
         """
         month = request.query_params.get('month')
         year = request.query_params.get('year')
+        
+        print(month, year)
         
         if not month or not year:
             return Response(
@@ -98,7 +103,7 @@ class BillingFilterView(APIView):
 
 
 class BillingCreateView(APIView):
-    permission_classes = []
+    permission_classes = [IsInternalAdminOrMod]
     authentication_classes = []
     """POST: Add a billing for a tenant"""
     def post(self, request):
@@ -116,7 +121,7 @@ class BillingCreateView(APIView):
         }
         """
         tenant_id = request.data.get('tenant_id')
-        plan_code = request.data.get('plan_code')
+        plan = request.data.get('plan')
         month = request.data.get('month', '')
         year = request.data.get('year', '')
         amount = request.data.get('amount')
@@ -155,8 +160,8 @@ class BillingCreateView(APIView):
         
         # Get plan if provided
         plan = None
-        if plan_code:
-            plan = BillingPlan.objects.filter(code=plan_code).first()
+        if plan:
+            plan = BillingPlan.objects.filter(pk=plan).first()
         
         # Validate paid_at if provided
         if paid_at:
@@ -215,39 +220,95 @@ class BillingCreateView(APIView):
             )
 
 
-class BillingCancelView(APIView):
-    permission_classes = []
+class ChangeBillingPlanView(APIView):
+    permission_classes = [IsInternalAdminOrMod]
     authentication_classes = []
-    """POST: Cancel a tenant payment"""
-    def post(self, request, payment_id):
-        """Cancel/refund a payment by changing status to 'refunded'"""
-        payment = TenantPaymentHistory.objects.filter(id=payment_id).first()
-        if not payment:
-            return Response(
-                {'detail': 'Paiement non trouvé'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Check if already refunded
-        if payment.status == 'refunded':
-            return Response(
-                {'detail': 'Ce paiement est déjà remboursé'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
+    """POST: Change a tenant's billing plan"""
+    def post(self, request):
+        """
+        Request body:
+        {
+            "tenant_id": 1,
+            "plan_id": 2
+        }
+        """
+        tenant_id = request.data.get('tenant_id')
+        plan_id = request.data.get('plan_id')
+
+        if not tenant_id or not plan_id:
+            return Response({'detail': 'tenant_id et plan_id sont requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        tenant = Tenant.objects.filter(id=tenant_id).first()
+        if not tenant:
+            return Response({'detail': 'Locataire non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
+        plan = BillingPlan.objects.filter(id=plan_id).first()
+        if not plan:
+            return Response({'detail': 'Plan non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
         try:
-            payment.status = 'refunded'
-            payment.save(update_fields=['status', 'updated_at'])
+            tenant.plan = plan
+            tenant.save()
+            return Response({'detail': 'Plan mis à jour', 'plan': plan.code}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+class BillingStatsView(APIView):
+    permission_classes = [IsInternalAdminOrMod]
+    authentication_classes = []
+    """GET: Get billing statistics (monthly revenue, annual revenue, active/inactive tenants)"""
+    def get(self, request):
+        """
+        Returns billing statistics:
+        - monthly_revenue: sum of active tenants' monthly billing amounts
+        - annual_revenue: projected annual revenue
+        - active_tenants_count: number of active tenants
+        - inactive_tenants_count: number of inactive tenants
+        
+        Calculation:
+        - Monthly revenue: 
+          - For monthly cycle: sum of plan.price
+          - For annual cycle: sum of (plan.annual_price / 12)
+        - Annual revenue:
+          - For monthly cycle: sum of (plan.price * 12)
+          - For annual cycle: sum of plan.annual_price
+        """
+        try:
+            active_tenants = Tenant.objects.select_related('plan').filter(is_active=True)
+            inactive_tenants = Tenant.objects.filter(is_active=False)
             
-            return Response(
-                {
-                    'id': payment.id,
-                    'invoice_number': payment.invoice_number,
-                    'status': payment.status,
-                    'message': 'Paiement annulé avec succès'
-                },
-                status=status.HTTP_200_OK
-            )
+            monthly_revenue = Decimal('0')
+            annual_revenue = Decimal('0')
+            
+            for tenant in active_tenants:
+                if not tenant.plan:
+                    continue
+                
+                plan_price = Decimal(str(tenant.plan.price)) if tenant.plan.price else Decimal('0')
+                annual_price = Decimal(str(tenant.plan.annual_price)) if tenant.plan.annual_price else Decimal('0')
+                
+                if tenant.billing_cycle == 'monthly':
+                    # Monthly cycle: add price to monthly, multiply by 12 for annual
+                    monthly_revenue += plan_price
+                    annual_revenue += plan_price * 12
+                elif tenant.billing_cycle == 'yearly':
+                    # Annual cycle: divide annual_price by 12 for monthly, add full to annual
+                    if annual_price > 0:
+                        monthly_revenue += annual_price / 12
+                        annual_revenue += annual_price
+                # 'custom' cycle: skip revenue calculations
+            
+            return Response({
+                'monthly_revenue': str(monthly_revenue),
+                'annual_revenue': str(annual_revenue),
+                'active_tenants_count': active_tenants.count(),
+                'inactive_tenants_count': inactive_tenants.count(),
+                'currency': 'FCFA',  # Default currency
+            }, status=status.HTTP_200_OK)
+            
         except Exception as e:
             return Response(
                 {'detail': str(e)},

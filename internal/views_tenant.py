@@ -67,7 +67,7 @@ class TenantListCreateView(APIView):
         2. Run migrations for tenant
         3. Create superuser with random password
         4. Send welcome email
-        """
+        """        
         serializer = TenantCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -78,20 +78,14 @@ class TenantListCreateView(APIView):
         domain_str = data.get('domain')
         superadmin_email = data.get('superadmin_email')
         schema_name = data.get('schema_name', '')
-        plan_id = data.get('plan', '')
+        plan = data.get('plan', '')
         billing_cycle = data.get('billing_cycle', 'monthly')
         email = data.get('email', '')
         phone = data.get('phone', '')
-        
 
         tenant = None
         password = None
-        try:
-            # Get plan if provided
-            plan = None
-            if plan_id:
-                plan = BillingPlan.objects.filter(pk=plan).first()
-
+        try:           
             # Check if schema already exists
             if Tenant.objects.filter(schema_name=schema_name).exists():
                 return Response(
@@ -127,6 +121,20 @@ class TenantListCreateView(APIView):
                 quota.tenant = tenant
                 quota.used_bytes = 0
                 quota.save()
+                
+                # Create billing for current month if plan is provided
+                if plan:
+                    amount = plan.price if billing_cycle == 'monthly' else plan.annual_price
+                    billing = TenantPaymentHistory.objects.create(
+                        tenant=tenant,
+                        invoice_number=f"INV-{tenant.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                        amount=amount,
+                        month=timezone.now().month,
+                        year=timezone.now().year,
+                        plan=plan,
+                        currency=plan.currency,
+                        status='paid',
+                    )
 
             # Create superuser inside the tenant schema
             try:
@@ -144,12 +152,14 @@ class TenantListCreateView(APIView):
             except Exception as e:
                 # Attempt to clean up tenant and related resources. Close DB connections
                 # to release any locks before deleting schema.
+                print(e)
                 try:
                     connection.close()
                 except Exception:
                     pass
                 if tenant:
                     try:
+                        billing.delete() if billing else None
                         domain.delete() if domain else None
                         quota.delete() if quota else None
                         tenant.delete()
@@ -179,12 +189,14 @@ class TenantListCreateView(APIView):
 
         except Exception as e:
             # Final catch-all: ensure partial resources are removed for consistency.
+            print(e)
             try:
                 connection.close()
             except Exception:
                 pass
             if tenant:
                 try:
+                    billing.delete() if billing else None
                     domain.delete() if domain else None
                     quota.delete() if quota else None
                     tenant.delete()
