@@ -164,6 +164,21 @@ class SendCommunicationView(APIView):
             },
         )
 
+        # If the service reported an error that prevented delivery to all recipients,
+        # return a 400 so callers can surface the error (but we still log the attempt).
+        if result.get("success", 0) == 0 and result.get("reason"):
+            return Response(
+                {
+                    "id": comm_log.id,
+                    "channel": channel,
+                    "recipients_count": len(recipients),
+                    "success_count": result["success"],
+                    "failed_count": result["failed"],
+                    "detail": result["reason"],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         return Response(
             {
                 "id": comm_log.id,

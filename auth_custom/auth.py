@@ -109,10 +109,11 @@ class AuthBackend:
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,
-                "Ecclesix <info@chms.site>",
+                "Ecclesix <support@ecclesix.com>",
                 [self.user.email],
             )
             msg.content_subtype = "html"
+            # msg.metadata = {"tenant_id": self.tenant.id}
             msg.send()
             return True
         except smtplib.SMTPException as e:
@@ -150,7 +151,7 @@ class AuthBackend:
             msg = EmailMultiAlternatives(
                 "Verification Email",
                 content,
-                "Ecclesix <info@chms.site>",
+                "Ecclesix <support@ecclesix.com>",
                 [self.user.email],
             )
             msg.content_subtype = "html"

@@ -38,7 +38,14 @@ class CommunicationService:
             "smtp_protocol": configs.get(EMAIL_SMTP_PROTOCOL_KEY, "SSL"),
         }
         
-            
+        # Basic sanity check for configuration
+        if not email_config["smtp_host"]:
+            return {
+                "success": 0,
+                "failed": len(recipients),
+                "reason": "SMTP pas configuré: hôte manquant",
+            }
+
         connection = get_connection(
             host=email_config["smtp_host"],
             port=int(email_config["smtp_port"]),
@@ -48,22 +55,37 @@ class CommunicationService:
             use_ssl=email_config["smtp_protocol"].upper() == "SSL",
             fail_silently=False,
         )
+        # Test opening the connection before attempting to send
+        try:
+            connection.open()
+        except Exception as e:
+            return {
+                "success": 0,
+                "failed": len(recipients),
+                "reason": f"Échec de la connexion SMTP : {e}",
+            }
 
-        msg = EmailMultiAlternatives(
-            subject,
-            message,
-            f"{church_name or configs.get(CHURCH_NAME_KEY, 'Ecclesix')} <{email_config['smtp_username']}>",
-            [],
-            bcc=emails,
-            connection=connection,
-        )
-        msg.send(fail_silently=False)
+        try:
+            msg = EmailMultiAlternatives(
+                subject,
+                message,
+                f"{church_name or configs.get(CHURCH_NAME_KEY, 'Ecclesix')} <{email_config['smtp_username']}>",
+                [],
+                bcc=emails,
+                connection=connection,
+            )
+            msg.send(fail_silently=False)
 
-        return {
-            "success": len(emails),
-            "failed": max(0, len(recipients) - len(emails)),
-            "reason": "",
-        }
+            return {
+                "success": len(emails),
+                "failed": max(0, len(recipients) - len(emails)),
+                "reason": "",
+            }
+        finally:
+            try:
+                connection.close()
+            except Exception:
+                pass
 
 
 

@@ -254,7 +254,7 @@ def SupportEmailView(request, *args, **kwargs):
     smtp_password = email_config.get(EMAIL_SMTP_PASSWORD_KEY, "")
     smtp_protocol = email_config.get(EMAIL_SMTP_PROTOCOL_KEY, "SSL")
 
-    support_recipient = os.getenv("SUPPORT_EMAIL") or os.getenv("support_email") or getattr(django_settings, "EMAIL_HOST_USER", None)
+    support_recipient = os.getenv("SUPPORT_EMAIL")
 
     connection_kwargs = {"fail_silently": False}
 
@@ -270,12 +270,33 @@ def SupportEmailView(request, *args, **kwargs):
             }
         )
 
+    if not support_recipient:
+        return Response(
+            {"detail": "Veuillez définir SUPPORT_EMAIL dans l\'environnement"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    connection = None
     try:
         connection = get_connection(**connection_kwargs)
-        sender_email = smtp_username or getattr(
-            django_settings, "EMAIL_HOST_USER", "support@ecclesix.com"
-        )
-        sender_name = "Ecclesix"
+
+        # Test opening the SMTP connection before composing/sending
+        try:
+            connection.open()
+        except Exception as e:
+            return Response(
+                {"detail": f"Echec de connexion SMTP: {e}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sender_email = smtp_username if smtp_username else ""
+        sender_name = full_name if full_name else "Ecclesix User"
+        
+        if not sender_email:
+            return Response(
+                {"detail": "L\'email de l\'expéditeur n\'est pas configuré. Veuillez configurer votre email."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         composed_message = (
             f"Nom: {full_name}\n"
@@ -285,7 +306,7 @@ def SupportEmailView(request, *args, **kwargs):
             f"Message:\n{message}"
         )
 
-        email = EmailMultiAlternatives(
+        email_msg = EmailMultiAlternatives(
             f"[Support Ecclesix] {title}",
             composed_message,
             f"{sender_name} <{sender_email}>",
@@ -293,12 +314,19 @@ def SupportEmailView(request, *args, **kwargs):
             reply_to=[email] if email else None,
             connection=connection,
         )
-        email.send(fail_silently=False)
+        email_msg.send(fail_silently=False)
+
     except Exception as exc:
         return Response(
-            {"detail": f"Echec d’envoi de l’email: {str(exc)}"},
+            {"detail": f"Echec d\'envoi de l\'email"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    finally:
+        if connection:
+            try:
+                connection.close()
+            except Exception:
+                pass
 
     return Response(
         {"detail": "Message envoyé au support avec succès"},

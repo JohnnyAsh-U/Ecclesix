@@ -322,7 +322,7 @@ class Reinitialization(APIView):
         # to make sure if the password is not default
         if not admin or admin.password == "":
             return Response(
-                {"status": False, "err": "Mot de passe incorrect ou compte n'existe pas"},
+                { "status": True },
                 status.HTTP_400_BAD_REQUEST,
             )
 

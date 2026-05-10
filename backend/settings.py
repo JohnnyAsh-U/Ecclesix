@@ -211,10 +211,13 @@ TENANT_MODEL = "tenants.Tenant"
 TENANT_DOMAIN_MODEL = "tenants.TenantDomain"
 
 
+
+EMAIL_BACKEND = "anymail.backends.resend.EmailBackend"
+
 EMAIL_BACKEND = (
     "django.core.mail.backends.console.EmailBackend"
     if os.getenv("DJANGO_ENV") == "development"
-    else "django.core.mail.backends.smtp.EmailBackend"
+    else "anymail.backends.resend.EmailBackend"
 )
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
@@ -222,6 +225,13 @@ EMAIL_HOST_USER = os.getenv("EMAIL_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True if os.getenv("DJANGO_ENV") == "production" else False
+
+
+ANYMAIL = {
+    "RESEND_API_KEY": os.getenv("RESEND_API_KEY"),
+}
+
+DEFAULT_FROM_EMAIL = "Ecclesix <support@ecclesix.com>"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

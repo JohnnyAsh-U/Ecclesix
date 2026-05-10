@@ -302,7 +302,7 @@ class TenantActivateView(APIView):
             return Response({'detail': 'Non trouvé'}, status=status.HTTP_404_NOT_FOUND)
         tenant.is_active = True
         tenant.save(update_fields=['is_active', 'updated_at'])
-        return Response({'detail': 'Activé'})
+        return Response({'detail': 'Activé', 'schema_name': tenant.schema_name})
 
 
 class TenantDeactivateView(APIView):
@@ -314,7 +314,7 @@ class TenantDeactivateView(APIView):
             return Response({'detail': 'Non trouvé'}, status=status.HTTP_404_NOT_FOUND)
         tenant.is_active = False
         tenant.save(update_fields=['is_active', 'updated_at'])
-        return Response({'detail': 'Désactivé'})
+        return Response({'detail': 'Désactivé', 'schema_name': tenant.schema_name})
 
 
 class TenantDomainsView(APIView):
