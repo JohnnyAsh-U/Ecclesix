@@ -25,9 +25,11 @@ django-extensions==3.2.3
 django-prometheus==2.4.1
 django-storages==1.14.6
 django-tenants==3.10.1
+django_dramatiq==0.15.0
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
 dotenv==0.9.9
+dramatiq==2.1.0
 drf-spectacular==0.27.2
 drf-spectacular-sidecar==2024.11.1
 et_xmlfile==2.0.0
@@ -78,5 +80,6 @@ tzlocal==5.2
 uritemplate==4.1.1
 urllib3==2.6.3
 uvicorn==0.34.0
+watchdog==6.0.0
 whitenoise==6.8.2
 wrapt==2.1.2

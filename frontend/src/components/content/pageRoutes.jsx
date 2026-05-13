@@ -29,6 +29,7 @@ const Budgets = React.lazy(()=>import('../../pages/finance/budgets'))
 const FinanceLog = React.lazy(()=>import('../../pages/finance/logs'))
 const EventDetail = React.lazy(() => import('../../pages/evenementDetail'))
 
+const CommunicationSend1 = React.lazy(() => import('../../pages/communications'))
 
 export const routes = [
   // { path: '/', exact: true, name: 'Home' },
@@ -47,13 +48,13 @@ export const routes = [
   {
     path: '/communication',
     name: 'Communication',
-    element: Communication,
+    element: CommunicationSend1,
     PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
   },
   {
     path: '/communication/send',
     name: 'Email/SMS',
-    element: CommunicationSend,
+    element: CommunicationSend1,
     PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
   },
   {

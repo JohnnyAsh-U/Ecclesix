@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, campaign_views
 
 
 urlpatterns = [
@@ -10,4 +10,19 @@ urlpatterns = [
     # Announcements - for viewing ongoing (published only)
     path('/announcements/ongoing', views.OngoingAnnouncementListView.as_view(), name='announcement-ongoing'),
     
+    # Campaign
+    path('/campaigns', campaign_views.CampaignListCreateAPIView.as_view(), name="campaign-list-create"),
+    path('/campaigns/<int:id>', campaign_views.CampaignDetailAPIView.as_view(), name="campagn-detail-view"),
+    path('/campaigns/<int:id>/send', campaign_views.CampaignSendAPIView.as_view(), name="campagn-send"),
+    path('/campaigns/<int:id>/retry_failed', campaign_views.CampaignRetryFailedAPIView.as_view(), name="campagn-retry-view"),
+    path('/campaigns/<int:id>/statistics', campaign_views.CampaignStatsAPIView.as_view(), name="campagn-stats-view"),
+    
+    
+    # Provider
+    path('/provider-configs', campaign_views.ProviderConfigListCreateAPIView.as_view(), name="provider-config-list-create"),
+    path('/provider-configs/<int:id>', campaign_views.ProviderConfigDetailAPIView.as_view(), name="provider-config-detail-view"),
+    path('/provider-configs/<int:id>/test_connection', campaign_views.ProviderConfigTestAPIView.as_view(), name="provider-config-test-view"),
+
+    # Webhook endpoint for provider notifications
+    path('/webhooks/provider', campaign_views.WebhookView.as_view(), name='provider-webhook'),
 ]

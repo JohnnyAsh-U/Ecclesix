@@ -38,6 +38,7 @@ SHARED_APPS = [
     "django_tenants",
     "tenants",
     "django.contrib.contenttypes",
+    "django_dramatiq",
 ]
 
 TENANT_APPS = [
@@ -393,3 +394,26 @@ AWS_S3_ADDRESSING_STYLE = "path"
 
 INTERNAL_API_SECRET_ADMIN = os.getenv("INTERNAL_API_SECRET_ADMIN", "admin-secret-key")
 INTERNAL_API_SECRET_MOD = os.getenv("INTERNAL_API_SECRET_MOD", "mod-secret-key")
+
+
+
+
+
+
+
+
+DRAMATIQ_BROKER = {
+    "BROKER": "dramatiq.brokers.redis.RedisBroker", 
+    "OPTIONS": {
+        "url": REDIS_URL,
+    },
+    "MIDDLEWARE": [
+        "dramatiq.middleware.prometheus.Prometheus",
+        "dramatiq.middleware.AgeLimit",
+        "dramatiq.middleware.TimeLimit",
+        "dramatiq.middleware.Callbacks",
+        "dramatiq.middleware.Retries",
+        "django_dramatiq.middleware.DbConnectionsMiddleware",
+        "django_dramatiq.middleware.AdminMiddleware",
+    ]
+}

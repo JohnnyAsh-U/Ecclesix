@@ -38,6 +38,7 @@
     "react-select": "^5.8.2",
     "react-toastify": "^10.0.6",
     "simplebar-react": "^3.2.6",
+    "swr": "^2.4.1",
     "yup": "^1.4.0"
   },
   "devDependencies": {
