@@ -265,7 +265,7 @@ def get_church_logo_from_domain(request):
     cache_key = f'church:logo:{key_id}'
     cached = cache.get(cache_key)
     if cached is not None:
-        status_code = status.HTTP_200_OK if cached.get('logo_url') else status.HTTP_404_NOT_FOUND
+        status_code = status.HTTP_200_OK
         return Response(cached, status=status_code)
 
     if tenant.custom_logo and tenant.logo:
@@ -277,4 +277,4 @@ def get_church_logo_from_domain(request):
     # cache for 45 minutes
     cache.set(cache_key, payload, timeout=45 * 60)
 
-    return Response(payload, status=status.HTTP_200_OK if payload.get('logo_url') else status.HTTP_404_NOT_FOUND)
+    return Response(payload, status=status.HTTP_200_OK)

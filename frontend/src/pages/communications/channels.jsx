@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEnvelope, faMessage, faToggleOn, faToggleOff, faCog, faPlus, faCheckCircle, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope, faMessage, faToggleOn, faToggleOff, faCog, faPlus, faCheckCircle, faTimes, faPaperPlane, faSave } from '@fortawesome/free-solid-svg-icons'
 import { toast } from 'react-toastify'
 import { useProviderConfigs, createProviderConfig, testProviderConnection, getAvailableProviders } from '../../services/providers'
 
@@ -9,13 +9,43 @@ const Channels = ({ refresh }) => {
     const [selectedChannel, setSelectedChannel] = useState(null)
     const [selectedProvider, setSelectedProvider] = useState(null)
     const [setupStep, setSetupStep] = useState(1)
-    const [apiKey, setApiKey] = useState('')
-    const [domain, setDomain] = useState('')
+    const [credentials, setCredentials] = useState({})
     const [availableProviders, setAvailableProviders] = useState({})
     const [isLoading, setIsLoading] = useState(false)
+    const [providerMetadata, setProviderMetadata] = useState({})
 
     // Fetch provider configs from API
     const { configs, isLoading: configsLoading, mutate } = useProviderConfigs()
+
+    // Provider credential field definitions
+    const providerCredentials = {
+        resend: {
+            fields: [
+                { name: 'api_key', label: 'API Key', type: 'password', required: true },
+                { name: 'from_email', label: 'From Email', type: 'email', required: true }
+            ]
+        },
+        sendgrid: {
+            fields: [
+                { name: 'api_key', label: 'API Key', type: 'password', required: true }
+            ]
+        },
+        smtp: {
+            fields: [
+                { name: 'smtp_host', label: 'SMTP Host', type: 'text', placeholder: 'smtp.gmail.com', required: true },
+                { name: 'smtp_port', label: 'SMTP Port', type: 'number', placeholder: '587', required: true },
+                { name: 'smtp_username', label: 'Username (Email)', type: 'email', required: true },
+                { name: 'smtp_password', label: 'Password', type: 'password', required: true }
+            ]
+        },
+        twilio: {
+            fields: [
+                { name: 'account_sid', label: 'Account SID', type: 'password', required: true },
+                { name: 'auth_token', label: 'Auth Token', type: 'password', required: true },
+                { name: 'phone_number', label: 'From Phone Number', type: 'text', required: true }
+            ]
+        }
+    }
 
     // Fetch available providers
     useEffect(() => {
@@ -23,6 +53,14 @@ const Channels = ({ refresh }) => {
             const result = await getAvailableProviders()
             if (result.success) {
                 setAvailableProviders(result.data)
+                // Create metadata from available providers
+                const metadata = {}
+                if (result.data.providers) {
+                    result.data.providers.forEach(p => {
+                        metadata[p.id] = providerCredentials[p.id] || { fields: [] }
+                    })
+                }
+                setProviderMetadata(metadata)
             }
         }
         fetchProviders()
@@ -64,32 +102,40 @@ const Channels = ({ refresh }) => {
         setShowConnectModal(true)
         setSetupStep(1)
         setSelectedProvider(null)
-        setApiKey('')
-        setDomain('')
+        setCredentials({})
     }
 
     const handleProviderSelect = (provider) => {
         setSelectedProvider(provider)
         setSetupStep(2)
+        // Initialize credentials based on provider fields
+        const providerFields = providerMetadata[provider]?.fields || []
+        const initialCreds = {}
+        providerFields.forEach(field => {
+            initialCreds[field.name] = ''
+        })
+        setCredentials(initialCreds)
+    }
+
+    const handleCredentialChange = (fieldName, value) => {
+        setCredentials(prev => ({
+            ...prev,
+            [fieldName]: value
+        }))
     }
 
     const handleTestConnection = async () => {
-        if (!apiKey.trim()) {
-            toast.error('Please enter API key')
-            return
-        }
-        if (selectedProvider === 'resend' && !domain.trim()) {
-            toast.error('Please enter domain')
-            return
+        // Validate required fields
+        const providerFields = providerMetadata[selectedProvider]?.fields || []
+        for (const field of providerFields) {
+            if (field.required && !credentials[field.name]?.trim()) {
+                toast.error(`Please enter ${field.label}`)
+                return
+            }
         }
 
         setIsLoading(true)
         try {
-            const credentials = {
-                api_key: apiKey,
-                ...(selectedProvider === 'resend' && { from_email: domain })
-            }
-
             const result = await testProviderConnection({ 
                 channel: selectedChannel.id,
                 provider: selectedProvider,
@@ -112,11 +158,6 @@ const Channels = ({ refresh }) => {
     const handleConfirmConnection = async () => {
         setIsLoading(true)
         try {
-            const credentials = {
-                api_key: apiKey,
-                ...(selectedProvider === 'resend' && { from_email: domain })
-            }
-
             const result = await createProviderConfig({
                 channel: selectedChannel.id,
                 provider: selectedProvider,
@@ -126,8 +167,7 @@ const Channels = ({ refresh }) => {
             if (result.success) {
                 toast.success(`${selectedChannel.name} connected successfully!`)
                 setShowConnectModal(false)
-                setApiKey('')
-                setDomain('')
+                setCredentials({})
                 mutate() // Refresh configs
             } else {
                 toast.error(result.error || 'Failed to save configuration')
@@ -271,42 +311,49 @@ const Channels = ({ refresh }) => {
                                         <h6 className="mb-3">{selectedProvider} Setup Steps</h6>
                                         <ol className="mb-4">
                                             <li>Create {selectedProvider} account</li>
-                                            {selectedProvider === 'resend' && <li>Verify domain</li>}
-                                            <li>Generate API key</li>
-                                            <li>Paste key below</li>
+                                            <li>Generate API credentials</li>
+                                            <li>Fill in the details below</li>
+                                            <li>Test the connection</li>
                                         </ol>
 
-                                        <div className="mb-3">
-                                            <label className="form-label">API Key:</label>
-                                            <input
-                                                type="password"
-                                                className="form-control"
-                                                value={apiKey}
-                                                onChange={(e) => setApiKey(e.target.value)}
-                                                placeholder="Paste your API key"
-                                                disabled={isLoading}
-                                            />
+                                        <div>
+                                            {(providerMetadata[selectedProvider]?.fields || []).map(field => (
+                                                <div key={field.name} className="mb-3">
+                                                    <label className="form-label">
+                                                        {field.label}
+                                                        {field.required && <span className="text-danger">*</span>}
+                                                    </label>
+                                                    {field.type === 'number' ? (
+                                                        <input
+                                                            type="number"
+                                                            className="form-control"
+                                                            name={field.name}
+                                                            placeholder={field.placeholder}
+                                                            value={credentials[field.name] || ''}
+                                                            onChange={(e) => handleCredentialChange(field.name, e.target.value)}
+                                                            disabled={isLoading}
+                                                        />
+                                                    ) : (
+                                                        <input
+                                                            type={field.type}
+                                                            className="form-control"
+                                                            name={field.name}
+                                                            placeholder={field.placeholder}
+                                                            value={credentials[field.name] || ''}
+                                                            onChange={(e) => handleCredentialChange(field.name, e.target.value)}
+                                                            disabled={isLoading}
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
-
-                                        {selectedProvider === 'resend' && (
-                                            <div className="mb-3">
-                                                <label className="form-label">Domain/Email:</label>
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    value={domain}
-                                                    onChange={(e) => setDomain(e.target.value)}
-                                                    placeholder="e.g., noreply@church.org"
-                                                    disabled={isLoading}
-                                                />
-                                            </div>
-                                        )}
 
                                         <button
                                             className="btn btn-primary w-100"
                                             onClick={handleTestConnection}
                                             disabled={isLoading}
                                         >
+                                            <FontAwesomeIcon icon={faPaperPlane} className="me-2" />
                                             {isLoading ? 'Testing...' : 'Test Connection'}
                                         </button>
                                     </div>
@@ -326,6 +373,7 @@ const Channels = ({ refresh }) => {
                                             onClick={handleConfirmConnection}
                                             disabled={isLoading}
                                         >
+                                            <FontAwesomeIcon icon={faSave} className="me-2" />
                                             {isLoading ? 'Saving...' : 'Confirm and Save'}
                                         </button>
                                     </div>
