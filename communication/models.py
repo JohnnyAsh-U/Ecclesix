@@ -156,6 +156,7 @@ class ProviderConfig(models.Model):
         ("dialog360", "360dialog"),
     ]
 
+    name = models.CharField(max_length=255, help_text="Friendly name for this configuration")
     channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES)
     provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
     
@@ -180,7 +181,7 @@ class ProviderConfig(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.get_channel_display()} - {self.get_provider_display()}"
+        return f"{self.name} ({self.get_channel_display()} - {self.get_provider_display()})"
 
     @staticmethod
     def _get_cipher():

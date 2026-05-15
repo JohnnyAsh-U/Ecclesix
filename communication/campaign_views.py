@@ -3,6 +3,7 @@ Campaign DRF APIViews.
 No provider logic here - all delegated to service layer and factories.
 """
 from rest_framework.views import APIView
+from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -322,7 +323,11 @@ class ProviderConfigListCreateAPIView(APIView):
     GET /api/communications/provider-configs/
     POST /api/communications/provider-configs/
     """
-    permission_classes = [IsAuthenticated]
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "POST": ["superadmin"],
+        "GET": ["superadmin"],
+    }
 
     def get(self, request):
         """List provider configurations with optional filtering."""
@@ -350,18 +355,20 @@ class ProviderConfigListCreateAPIView(APIView):
         
         except Exception as e:
             logger.exception(f"Failed to list provider configs: {e}")
+            print(e)
             return Response(
                 {"detail": "Failed to list provider configurations"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     def post(self, request):
-        """Create or update provider configuration."""
+        """Create provider configuration with connection test."""
         serializer = ProviderConfigCreateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            name = serializer.validated_data["name"]
             channel = serializer.validated_data["channel"]
             provider = serializer.validated_data["provider"]
             credentials = serializer.validated_data["credentials"]
@@ -370,10 +377,11 @@ class ProviderConfigListCreateAPIView(APIView):
             config, created = ProviderConfig.objects.get_or_create(
                 channel=channel,
                 provider=provider,
+                name=name,
                 defaults={"is_active": True}
             )
 
-            # Update credentials
+            # Update credentials and mark as verified
             config.credentials = credentials
             config.is_verified = True
             config.last_tested_at = timezone.now()
@@ -411,62 +419,24 @@ class ProviderConfigListCreateAPIView(APIView):
             )
 
 
-class ProviderConfigDetailAPIView(APIView):
+class ProviderConfigDeleteAPIView(DestroyAPIView):
     """
-    Retrieve, update, or delete a provider config.
-    GET /api/communications/provider-configs/{id}/
-    PATCH /api/communications/provider-configs/{id}/
     DELETE /api/communications/provider-configs/{id}/
     """
-    permission_classes = [IsAuthenticated]
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "DELETE": ["superadmin"],
+    }
 
-    def get_config(self, config_id):
+    def get_config(self, id):
         """Get provider config or return 404."""
-        return get_object_or_404(ProviderConfig, id=config_id)
+        return get_object_or_404(ProviderConfig, id=id)
 
-    def get(self, request, config_id):
-        """Get provider configuration details."""
-        try:
-            config = self.get_config(config_id)
-            serializer = ProviderConfigSerializer(config)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        except Exception as e:
-            logger.exception(f"Failed to retrieve provider config {config_id}: {e}")
-            return Response(
-                {"detail": "Failed to retrieve provider configuration"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
-    def patch(self, request, config_id):
-        """Update provider configuration."""
-        try:
-            config = self.get_config(config_id)
-            
-            # Allow updating certain fields
-            if 'is_active' in request.data:
-                config.is_active = request.data['is_active']
-            
-            if 'credentials' in request.data:
-                config.credentials = request.data['credentials']
-                config.last_tested_at = timezone.now()
-            
-            config.save()
-            
-            serializer = ProviderConfigSerializer(config)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        
-        except Exception as e:
-            logger.exception(f"Failed to update provider config {config_id}: {e}")
-            return Response(
-                {"detail": "Failed to update provider configuration"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    def delete(self, request, config_id):
+    def delete(self, request, id):
         """Delete provider configuration."""
         try:
-            config = self.get_config(config_id)
+            config = self.get_config(id)
             config_name = f"{config.get_channel_display()} - {config.get_provider_display()}"
             config.delete()
             
@@ -476,7 +446,7 @@ class ProviderConfigDetailAPIView(APIView):
                 log_type="DELETE",
                 detail={
                     "resource": "ProviderConfig",
-                    "id": config_id,
+                    "id": id,
                     "lib": config_name,
                 },
             )
@@ -487,50 +457,9 @@ class ProviderConfigDetailAPIView(APIView):
             )
         
         except Exception as e:
-            logger.exception(f"Failed to delete provider config {config_id}: {e}")
+            logger.exception(f"Failed to delete provider config {id}: {e}")
             return Response(
                 {"detail": "Failed to delete provider configuration"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-class ProviderConfigTestAPIView(APIView):
-    """
-    Test provider connection.
-    POST /api/communications/provider-configs/{id}/test_connection/
-    """
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, config_id):
-        """Test provider connection with current credentials."""
-        try:
-            config = get_object_or_404(ProviderConfig, id=config_id)
-
-            success, error = CampaignService.test_provider(
-                config.channel,
-                config.provider,
-                config.credentials
-            )
-
-            if success:
-                config.is_verified = True
-                config.test_error = ""
-            else:
-                config.is_verified = False
-                config.test_error = error
-
-            config.last_tested_at = timezone.now()
-            config.save(update_fields=["is_verified", "test_error", "last_tested_at"])
-
-            return Response({
-                "success": success,
-                "error": error if not success else None
-            }, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            logger.exception(f"Provider test failed for config {config_id}: {e}")
-            return Response(
-                {"detail": "Failed to test provider connection"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

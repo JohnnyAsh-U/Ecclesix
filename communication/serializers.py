@@ -176,6 +176,7 @@ class CampaignDetailSerializer(serializers.ModelSerializer):
 
 class ProviderConfigCreateSerializer(serializers.Serializer):
     """Serializer for creating/updating provider configuration."""
+    name = serializers.CharField(max_length=255)
     channel = serializers.ChoiceField(choices=["email", "whatsapp"])
     provider = serializers.ChoiceField(choices=["resend", "smtp", "dialog360"])
     credentials = serializers.JSONField()
@@ -204,7 +205,7 @@ class ProviderConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProviderConfig
         fields = [
-            "id", "channel", "provider", "is_active", "is_verified",
+            "id", "name", "channel", "provider", "is_active", "is_verified",
             "created_at", "updated_at", "last_tested_at", "test_error"
         ]
         read_only_fields = [

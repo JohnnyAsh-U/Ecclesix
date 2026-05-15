@@ -20,8 +20,7 @@ urlpatterns = [
     
     # Provider
     path('/provider-configs', campaign_views.ProviderConfigListCreateAPIView.as_view(), name="provider-config-list-create"),
-    path('/provider-configs/<int:id>', campaign_views.ProviderConfigDetailAPIView.as_view(), name="provider-config-detail-view"),
-    path('/provider-configs/<int:id>/test_connection', campaign_views.ProviderConfigTestAPIView.as_view(), name="provider-config-test-view"),
+    path('/provider-configs/<int:id>', campaign_views.ProviderConfigDeleteAPIView.as_view(), name="provider-config-delete-view"),
 
     # Webhook endpoint for provider notifications
     path('/webhooks/provider', campaign_views.WebhookView.as_view(), name='provider-webhook'),
