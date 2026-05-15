@@ -1,3 +1,4 @@
+
 from .models import City, Church_type, Church
 from members.models import Member
 from admin_custom.models import Log
@@ -257,13 +258,6 @@ class ChurchRUDView(RetrieveUpdateDestroyAPIView):
 @permission_classes([])
 def get_church_logo_from_domain(request):
     tenant = getattr(request, "tenant", None)
-    domain = getattr(request, "tenant_domain", None)
-    print(tenant)
-    print(domain)
-    # Add this temporarily
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.warning(f"TENANT_CHECK host={request.get_host()} tenant={tenant}")
     
     if not tenant:
         return Response({"logo_url": None}, status=status.HTTP_404_NOT_FOUND)
