@@ -3,12 +3,53 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faMessage, faClock, faCheckCircle, faClock as faPending, faExclamationCircle } from '@fortawesome/free-solid-svg-icons'
 import CampaignDetail from '../../components/communications/CampaignDetail'
 import { useCampaigns } from '../../services/campaigns'
+import { ContentPermsWrapper } from '../../utils/permissions/permwrapper'
+import { FormSelect } from '../../components/Inputbox/form-select'
+import { AppGlobalContext } from '../../hooks/AppContext'
 
 const Campaigns = ({ refresh }) => {
     const [selectedCampaign, setSelectedCampaign] = useState(null)
     const [channelFilter, setChannelFilter] = useState('all')
     const [statusFilter, setStatusFilter] = useState('all')
+    const [churchFilter, setChurchFilter] = useState('all')
     const [search, setSearch] = useState('')
+    const { eglises } = AppGlobalContext()
+
+
+    const stats = [
+        {
+            title: 'E-mails envoyés ce mois',
+            value: '0',
+            icon: faEnvelope,
+            color: 'primary',
+            trend: '0%',
+            trendUp: true
+        },
+        {
+            title: 'Messages WhatsApp envoyés',
+            value: '0',
+            icon: faMessage,
+            color: 'success',
+            trend: '0%',
+            trendUp: true
+        },
+        {
+            title: 'Taux de livraison',
+            value: '0%',
+            icon: faCheckCircle,
+            color: 'info',
+            trend: '0%',
+            trendUp: true
+        },
+        {
+            title: 'Échecs',
+            value: '0%',
+            icon: faExclamationCircle,
+            color: 'danger',
+            trend: '0%',
+            trendUp: false
+        }
+    ]
 
     // Fetch campaigns from API
     const filters = {
@@ -16,11 +57,12 @@ const Campaigns = ({ refresh }) => {
         ...(statusFilter !== 'all' && { status: statusFilter })
     }
     const { campaigns, isLoading, error, mutate } = useCampaigns(filters)
+    console.log(error)
 
     // Local search filtering
     const filteredCampaigns = useMemo(() => {
         if (!campaigns || campaigns.length === 0) return []
-        
+
         return campaigns.filter(campaign => {
             const matchSearch = campaign.name.toLowerCase().includes(search.toLowerCase())
             return matchSearch
@@ -29,13 +71,13 @@ const Campaigns = ({ refresh }) => {
 
     const getStatusBadge = (status) => {
         const statusMap = {
-            completed: { label: 'Completed', color: 'bg-success', icon: faCheckCircle },
-            processing: { label: 'Processing', color: 'bg-info', icon: faClock },
-            queued: { label: 'Queued', color: 'bg-warning', icon: faPending },
-            scheduled: { label: 'Scheduled', color: 'bg-warning', icon: faPending },
-            draft: { label: 'Draft', color: 'bg-secondary', icon: faExclamationCircle },
-            failed: { label: 'Failed', color: 'bg-danger', icon: faExclamationCircle },
-            paused: { label: 'Paused', color: 'bg-secondary', icon: faPending }
+            completed: { label: 'Terminé', color: 'bg-success', icon: faCheckCircle },
+            processing: { label: 'Traitement', color: 'bg-info', icon: faClock },
+            queued: { label: 'En attente', color: 'bg-warning', icon: faPending },
+            scheduled: { label: 'Programmé', color: 'bg-warning', icon: faPending },
+            draft: { label: 'Brouillon', color: 'bg-secondary', icon: faExclamationCircle },
+            failed: { label: 'Échoué', color: 'bg-danger', icon: faExclamationCircle },
+            paused: { label: 'Suspendu', color: 'bg-secondary', icon: faPending }
         }
         const statusInfo = statusMap[status] || { label: status, color: 'bg-secondary' }
         return statusInfo
@@ -51,56 +93,84 @@ const Campaigns = ({ refresh }) => {
 
     return (
         <div>
-            {/* Header */}
-            <div className="card mb-3">
-                <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <h5 className="card-title mb-0">Campaigns Dashboard</h5>
-                        <button className="btn btn-primary btn-sm">
-                            <i className="fa fa-plus me-2"></i> New Campaign
-                        </button>
+            {/* Stats Cards */}
+            <div className="row gx-3">
+                {stats.map((stat, index) => (
+                    <div key={index} className="col-md-6 col-lg-3">
+                        <div className="card">
+                            <div className="card-body">
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <small className="text-muted">{stat.title}</small>
+                                        <h4 className="fw-bold mt-2">{stat.value}</h4>
+                                        <small className={stat.trendUp ? 'text-success' : 'text-danger'}>
+                                            {stat.trend}
+                                        </small>
+                                    </div>
+                                    <FontAwesomeIcon
+                                        icon={stat.icon}
+                                        size="lg"
+                                        className={`text-${stat.color} opacity-50`}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                ))}
             </div>
 
             {/* Filters */}
             <div className="card mb-3">
                 <div className="card-body">
-                    <div className="row gap-2">
+                    <div className="row">
                         <div className="col-md-3">
                             <input
                                 type="text"
                                 className="form-control form-control-sm"
-                                placeholder="Search campaigns..."
+                                placeholder="Rechercher des campagnes..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
                         <div className="col-md-3">
-                            <select
-                                className="form-select form-select-sm"
+                            <FormSelect
                                 value={channelFilter}
                                 onChange={(e) => setChannelFilter(e.target.value)}
                             >
-                                <option value="all">All Channels</option>
-                                <option value="email">Email</option>
+                                <option value="all">Tous les canaux</option>
+                                <option value="email">E-mail</option>
                                 <option value="whatsapp">WhatsApp</option>
-                            </select>
+                            </FormSelect>
                         </div>
                         <div className="col-md-3">
-                            <select
-                                className="form-select form-select-sm"
+                            <FormSelect
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
-                                <option value="all">All Status</option>
-                                <option value="draft">Draft</option>
-                                <option value="queued">Queued</option>
-                                <option value="processing">Processing</option>
-                                <option value="completed">Completed</option>
-                                <option value="failed">Failed</option>
-                            </select>
+                                <option value="all">Tous les statuts</option>
+                                <option value="draft">Brouillon</option>
+                                <option value="queued">En attente</option>
+                                <option value="processing">Traitement</option>
+                                <option value="completed">Terminé</option>
+                                <option value="failed">Échoué</option>
+                            </FormSelect>
                         </div>
+                        <ContentPermsWrapper requiredPerms={['superAdmin', 'envoyer_toutes_communications']}>
+                            <div className="col-md-3">
+                                <FormSelect
+                                    name="eglise"
+                                    onChange={(e) => setChurchFilter(e.target.value)}
+                                    value={churchFilter}
+                                >
+                                    <option value={'tout'}>Eglise: Tout</option>
+                                    {eglises.map((eglise) => (
+                                        <option key={eglise.id} value={eglise.id}>
+                                            {eglise.church_name}
+                                        </option>
+                                    ))}
+                                </FormSelect>
+                            </div>
+                        </ContentPermsWrapper>
                     </div>
                 </div>
             </div>
@@ -111,13 +181,13 @@ const Campaigns = ({ refresh }) => {
                     <table className="table table-hover table-striped mb-0">
                         <thead className="table-light">
                             <tr>
-                                <th>Campaign Name</th>
-                                <th>Channel</th>
-                                <th>Sent</th>
-                                <th>Delivered</th>
-                                <th>Failed</th>
-                                <th>Pending</th>
-                                <th>Status</th>
+                                <th>Nom de la campagne</th>
+                                <th>Canal</th>
+                                <th>Envoyé</th>
+                                <th>Livré</th>
+                                <th>Échoué</th>
+                                <th>En attente</th>
+                                <th>Statut</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -126,14 +196,14 @@ const Campaigns = ({ refresh }) => {
                                 <tr>
                                     <td colSpan="8" className="text-center py-4">
                                         <div className="spinner-border spinner-border-sm" role="status">
-                                            <span className="visually-hidden">Loading...</span>
+                                            <span className="visually-hidden">Chargement...</span>
                                         </div>
                                     </td>
                                 </tr>
                             ) : error ? (
                                 <tr>
                                     <td colSpan="8" className="text-center py-4 text-danger">
-                                        Error loading campaigns. Please refresh.
+                                        Erreur lors du chargement des campagnes. Veuillez actualiser.
                                     </td>
                                 </tr>
                             ) : filteredCampaigns.length > 0 ? (
@@ -169,7 +239,7 @@ const Campaigns = ({ refresh }) => {
                                                     className="btn btn-sm btn-outline-primary"
                                                     onClick={() => setSelectedCampaign(campaign)}
                                                 >
-                                                    View Details
+                                                    Afficher les détails
                                                 </button>
                                             </td>
                                         </tr>
@@ -178,7 +248,7 @@ const Campaigns = ({ refresh }) => {
                             ) : (
                                 <tr>
                                     <td colSpan="8" className="text-center py-4 text-muted">
-                                        No campaigns found
+                                        Aucune campagne trouvée
                                     </td>
                                 </tr>
                             )}

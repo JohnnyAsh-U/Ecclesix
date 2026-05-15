@@ -20,16 +20,14 @@ const Eglises = React.lazy(()=>import('../../pages/eglise'))
 const Parametres = React.lazy(()=>import('../../pages/parametres'))
 const Abonnement = React.lazy(() => import('../../pages/billing'))
 const Support = React.lazy(() => import('../../pages/support'))
-const Communication = React.lazy(() => import('../../pages/communication'))
-const CommunicationSend = React.lazy(() => import('../../pages/communication'))
-const CommunicationAnnouncements = React.lazy(() => import('../../pages/communication/announcements'))
+const Announcements = React.lazy(() => import('../../pages/announcements'))
 const Rapports = React.lazy(()=>import('../../pages/finance/rapports'))
 const Transactions = React.lazy(()=>import('../../pages/finance/transactions'))
 const Budgets = React.lazy(()=>import('../../pages/finance/budgets'))
 const FinanceLog = React.lazy(()=>import('../../pages/finance/logs'))
 const EventDetail = React.lazy(() => import('../../pages/evenementDetail'))
 
-const CommunicationSend1 = React.lazy(() => import('../../pages/communications'))
+const CommunicationSend = React.lazy(() => import('../../pages/communications'))
 
 export const routes = [
   // { path: '/', exact: true, name: 'Home' },
@@ -46,21 +44,15 @@ export const routes = [
   { path: '/membres', name: 'Membres', element: Membres, PermissionRequises: ['voir_membre', 'voir_touts_membres'] },
   
   {
-    path: '/communication',
-    name: 'Communication',
-    element: CommunicationSend1,
-    PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
-  },
-  {
     path: '/communication/send',
-    name: 'Email/SMS',
-    element: CommunicationSend1,
+    name: 'Email/WhatsApp',
+    element: CommunicationSend,
     PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
   },
   {
     path: '/communication/announcements',
     name: 'Annonces',
-    element: CommunicationAnnouncements,
+    element: Announcements,
     PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
   },
 

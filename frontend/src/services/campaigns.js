@@ -1,7 +1,7 @@
 import axios from '../utils/config/axiosConfig'
 import useSWR from 'swr'
 
-const API_BASE = '/communications'
+const API_BASE = '/communication'
 
 /**
  * Fetcher function for SWR - extracts data from axios response
@@ -14,7 +14,7 @@ const fetcher = (url) => axios.get(url).then(res => res.data)
  * @returns {Object} SWR result with data, error, isLoading, mutate
  */
 export const useCampaigns = (filters = {}) => {
-  let url = `${API_BASE}/campaigns/`
+  let url = `${API_BASE}/campaigns`
   const params = new URLSearchParams()
   
   if (filters.status) params.append('status', filters.status)

@@ -1,10 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faMessage, faArrowRight, faArrowLeft, faCheck } from '@fortawesome/free-solid-svg-icons'
 import { toast } from 'react-toastify'
+import CommunicationFilterTop from './filter-top'
+import CommunicationMemberList from './list'
 
-const CreateCampaign = ({ onCampaignCreated }) => {
+const defaultFilters = {
+    sexe: 'tout',
+    age: 'tout',
+    statut_matrimonial: 'tout',
+    type_metier: 'tout',
+    eglise: 'tout',
+    Ministre: true,
+    Ouvrier: true,
+    Membre: true,
+    Visiteur: true,
+    baptise: true,
+    non_baptise: true,
+    actif: true,
+    inactif: true,
+}
+
+const CreateCampaign = ({ onCampaignCreated, onBack }) => {
     const [step, setStep] = useState(1)
+    const [filters, setFilters] = useState(defaultFilters)
+    const [search, setSearch] = useState('')
+    const [selectedMembersMap, setSelectedMembersMap] = useState({})
+    
     const [formData, setFormData] = useState({
         channel: null,
         audience: 'all',
@@ -19,9 +41,24 @@ const CreateCampaign = ({ onCampaignCreated }) => {
         timezone: 'UTC'
     })
 
+    const selectedMembers = useMemo(() => Object.values(selectedMembersMap), [selectedMembersMap])
+
     const handleChannelSelect = (channel) => {
         setFormData({ ...formData, channel })
         setStep(2)
+    }
+
+    const handleFilterChange = (name, value) => {
+        if (name === 'statut' || name === 'bapteme' || name === 'actif') {
+            setFilters((prev) => ({ ...prev, [value]: !prev[value] }))
+            return
+        }
+        setFilters((prev) => ({ ...prev, [name]: value }))
+    }
+
+    const filterDefault = () => {
+        setSearch('')
+        setFilters(defaultFilters)
     }
 
     const handleAudienceSelect = (audience) => {
@@ -53,24 +90,28 @@ const CreateCampaign = ({ onCampaignCreated }) => {
     const handleSubmit = () => {
         // Validate form
         if (!formData.channel) {
-            toast.error('Please select a channel')
+            toast.error('Veuillez sélectionner un canal')
+            return
+        }
+        if (selectedMembers.length === 0) {
+            toast.error('Veuillez sélectionner au moins un destinataire')
             return
         }
         if (!formData.message.trim()) {
-            toast.error('Please add a message')
+            toast.error('Veuillez ajouter un message')
             return
         }
         if (formData.channel === 'email' && !formData.subject.trim()) {
-            toast.error('Please add a subject for email')
+            toast.error('Veuillez ajouter un objet pour l\'e-mail')
             return
         }
         if (!formData.sendNow && !formData.scheduledDate) {
-            toast.error('Please select a scheduled date')
+            toast.error('Veuillez sélectionner une date programmée')
             return
         }
 
         // Simulate API call
-        toast.success('Campaign created successfully!')
+        toast.success('Campagne créée avec succès !')
         onCampaignCreated()
         // Reset form
         setFormData({
@@ -86,11 +127,22 @@ const CreateCampaign = ({ onCampaignCreated }) => {
             scheduledTime: '',
             timezone: 'UTC'
         })
+        setSelectedMembersMap({})
         setStep(1)
     }
 
     return (
         <div>
+            {/* Back Button */}
+            {onBack && (
+                <button 
+                    className="btn btn-sm btn-outline-secondary mb-3"
+                    onClick={onBack}
+                >
+                    <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Retour
+                </button>
+            )}
+            
             {/* Progress Bar */}
             <div className="card mb-4">
                 <div className="card-body">
@@ -115,11 +167,11 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                         ))}
                     </div>
                     <div className="d-flex justify-content-between mt-3 small text-muted">
-                        <span>Channel</span>
+                        <span>Canal</span>
                         <span>Audience</span>
-                        <span>Compose</span>
-                        <span>Schedule</span>
-                        <span>Review</span>
+                        <span>Composer</span>
+                        <span>Planifier</span>
+                        <span>Examen</span>
                     </div>
                 </div>
             </div>
@@ -128,7 +180,7 @@ const CreateCampaign = ({ onCampaignCreated }) => {
             {step === 1 && (
                 <div className="card">
                     <div className="card-body">
-                        <h5 className="card-title mb-4">Step 1: Choose Channel</h5>
+                        <h5 className="card-title mb-4">Étape 1 : Choisir le canal</h5>
                         <div className="row g-4">
                             {/* Email Card */}
                             <div className="col-md-6">
@@ -144,9 +196,9 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                                 >
                                     <div className="card-body text-center">
                                         <FontAwesomeIcon icon={faEnvelope} size="3x" className="text-primary mb-3" />
-                                        <h5 className="card-title">Email</h5>
-                                        <p className="card-text text-muted">Send newsletters and announcements</p>
-                                        <button className="btn btn-sm btn-primary">Select</button>
+                                        <h5 className="card-title">E-mail</h5>
+                                        <p className="card-text text-muted">Envoyer des bulletins d'information et des annonces</p>
+                                        <button className="btn btn-sm btn-primary">Sélectionner</button>
                                     </div>
                                 </div>
                             </div>
@@ -166,8 +218,8 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                                     <div className="card-body text-center">
                                         <FontAwesomeIcon icon={faMessage} size="3x" className="text-success mb-3" />
                                         <h5 className="card-title">WhatsApp</h5>
-                                        <p className="card-text text-muted">Instant member notifications</p>
-                                        <button className="btn btn-sm btn-success">Select</button>
+                                        <p className="card-text text-muted">Notifications instantanées des membres</p>
+                                        <button className="btn btn-sm btn-success">Sélectionner</button>
                                     </div>
                                 </div>
                             </div>
@@ -180,51 +232,41 @@ const CreateCampaign = ({ onCampaignCreated }) => {
             {step === 2 && (
                 <div className="card">
                     <div className="card-body">
-                        <h5 className="card-title mb-4">Step 2: Select Audience</h5>
-                        <div className="form-group">
-                            <label className="form-label">Send to:</label>
-                            <div className="space-y-2">
-                                {['all', 'branch', 'ministry', 'attendance', 'custom'].map((option) => (
-                                    <div key={option} className="form-check">
-                                        <input
-                                            className="form-check-input"
-                                            type="radio"
-                                            name="audience"
-                                            id={`audience_${option}`}
-                                            value={option}
-                                            checked={formData.audience === option}
-                                            onChange={handleAudienceSelect}
-                                        />
-                                        <label className="form-check-label" htmlFor={`audience_${option}`}>
-                                            {option === 'all' && 'All Members'}
-                                            {option === 'branch' && 'Specific Branch'}
-                                            {option === 'ministry' && 'Ministry'}
-                                            {option === 'attendance' && 'Attendance Segment'}
-                                            {option === 'custom' && 'Custom Selection'}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
+                        <h5 className="card-title mb-4">Étape 2 : Sélectionner l'audience</h5>
+                        
+                        {/* Filters */}
+                        <CommunicationFilterTop
+                            handleChange={handleFilterChange}
+                            filters={filters}
+                            search={search}
+                            handleSearchChange={setSearch}
+                            filterDefault={filterDefault}
+                        />
+
+                        {/* Member List */}
+                        <div className="mt-3 mb-3">
+                            <CommunicationMemberList
+                                filters={filters}
+                                search={search}
+                                selectedMap={selectedMembersMap}
+                                setSelectedMap={setSelectedMembersMap}
+                            />
                         </div>
 
-                        {formData.audience === 'branch' && (
-                            <div className="mt-3">
-                                <label className="form-label">Branch:</label>
-                                <select className="form-select form-select-sm">
-                                    <option>Select Branch</option>
-                                    <option>Main Branch</option>
-                                    <option>Downtown Branch</option>
-                                    <option>North Branch</option>
-                                </select>
-                            </div>
-                        )}
+                        <div className="alert alert-light border p-2 small mb-3">
+                            Destinataires sélectionnés: <b>{selectedMembers.length}</b>
+                        </div>
 
                         <div className="mt-4 d-flex gap-2 justify-content-between">
                             <button className="btn btn-outline-secondary" onClick={() => setStep(1)}>
-                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Back
+                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Retour
                             </button>
-                            <button className="btn btn-primary" onClick={() => setStep(3)}>
-                                Next <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                            <button 
+                                className="btn btn-primary" 
+                                onClick={() => setStep(3)}
+                                disabled={selectedMembers.length === 0}
+                            >
+                                Suivant <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
                             </button>
                         </div>
                     </div>
@@ -236,86 +278,86 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                 <div className="card">
                     <div className="card-body">
                         <h5 className="card-title mb-4">
-                            Step 3: Compose {formData.channel === 'email' ? 'Email' : 'WhatsApp Message'}
+                            Étape 3 : Composer {formData.channel === 'email' ? "l'e-mail" : "le message WhatsApp"}
                         </h5>
 
                         {formData.channel === 'email' ? (
                             <>
                                 <div className="mb-3">
-                                    <label className="form-label">Subject:</label>
+                                    <label className="form-label">Objet :</label>
                                     <input
                                         type="text"
                                         className="form-control"
                                         name="subject"
                                         value={formData.subject}
                                         onChange={handleInputChange}
-                                        placeholder="Email subject"
+                                        placeholder="Objet de l'e-mail"
                                     />
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label">Message:</label>
+                                    <label className="form-label">Message :</label>
                                     <textarea
                                         className="form-control"
                                         name="message"
                                         value={formData.message}
                                         onChange={handleInputChange}
                                         rows="8"
-                                        placeholder="Write your email message here..."
+                                        placeholder="Écrivez votre message e-mail ici..."
                                     ></textarea>
                                 </div>
                             </>
                         ) : (
                             <>
                                 <div className="mb-3">
-                                    <label className="form-label">Template:</label>
+                                    <label className="form-label">Modèle :</label>
                                     <select
                                         className="form-select"
                                         name="template"
                                         onChange={handleInputChange}
                                     >
-                                        <option>Select Template</option>
-                                        <option value="sunday_reminder">Sunday Reminder</option>
-                                        <option value="prayer_meeting">Prayer Meeting</option>
-                                        <option value="offering_reminder">Offering Reminder</option>
+                                        <option>Sélectionner un modèle</option>
+                                        <option value="sunday_reminder">Rappel du dimanche</option>
+                                        <option value="prayer_meeting">Réunion de prière</option>
+                                        <option value="offering_reminder">Rappel de collecte</option>
                                     </select>
                                 </div>
 
                                 {formData.template && (
                                     <div className="mb-3">
-                                        <label className="form-label">Variables:</label>
+                                        <label className="form-label">Variables :</label>
                                         <div className="mb-2">
-                                            <label className="form-label small">Service Time:</label>
+                                            <label className="form-label small">Heure du service :</label>
                                             <input
                                                 type="text"
                                                 className="form-control form-control-sm"
                                                 value={formData.variables.serviceTime || ''}
                                                 onChange={(e) => handleVariableChange('serviceTime', e.target.value)}
-                                                placeholder="e.g., 8:00 AM"
+                                                placeholder="p. ex., 8h00"
                                             />
                                         </div>
                                         <div>
-                                            <label className="form-label small">Location:</label>
+                                            <label className="form-label small">Lieu :</label>
                                             <input
                                                 type="text"
                                                 className="form-control form-control-sm"
                                                 value={formData.variables.location || ''}
                                                 onChange={(e) => handleVariableChange('location', e.target.value)}
-                                                placeholder="e.g., Main Hall"
+                                                placeholder="p. ex., Salle principale"
                                             />
                                         </div>
                                     </div>
                                 )}
 
                                 <div className="mb-3">
-                                    <label className="form-label">Message:</label>
+                                    <label className="form-label">Message :</label>
                                     <textarea
                                         className="form-control"
                                         name="message"
                                         value={formData.message}
                                         onChange={handleInputChange}
                                         rows="6"
-                                        placeholder="Write your WhatsApp message here..."
+                                        placeholder="Écrivez votre message WhatsApp ici..."
                                     ></textarea>
                                 </div>
                             </>
@@ -323,10 +365,10 @@ const CreateCampaign = ({ onCampaignCreated }) => {
 
                         <div className="mt-4 d-flex gap-2 justify-content-between">
                             <button className="btn btn-outline-secondary" onClick={() => setStep(2)}>
-                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Back
+                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Retour
                             </button>
                             <button className="btn btn-primary" onClick={() => setStep(4)}>
-                                Next <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                                Suivant <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
                             </button>
                         </div>
                     </div>
@@ -337,10 +379,10 @@ const CreateCampaign = ({ onCampaignCreated }) => {
             {step === 4 && (
                 <div className="card">
                     <div className="card-body">
-                        <h5 className="card-title mb-4">Step 4: Schedule Campaign</h5>
+                        <h5 className="card-title mb-4">Étape 4 : Planifier la campagne</h5>
 
                         <div className="mb-3">
-                            <label className="form-label">When to send:</label>
+                            <label className="form-label">Quand envoyer :</label>
                             <div className="form-check">
                                 <input
                                     className="form-check-input"
@@ -352,7 +394,7 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                                     onChange={handleSendNowChange}
                                 />
                                 <label className="form-check-label" htmlFor="sendNow">
-                                    Send Now
+                                    Envoyer maintenant
                                 </label>
                             </div>
                             <div className="form-check">
@@ -366,7 +408,7 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                                     onChange={handleSendNowChange}
                                 />
                                 <label className="form-check-label" htmlFor="scheduleLater">
-                                    Schedule for Later
+                                    Planifier pour plus tard
                                 </label>
                             </div>
                         </div>
@@ -375,7 +417,7 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                             <>
                                 <div className="row">
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label">Date:</label>
+                                        <label className="form-label">Date :</label>
                                         <input
                                             type="date"
                                             className="form-control"
@@ -385,7 +427,7 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                                         />
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label">Time:</label>
+                                        <label className="form-label">Heure :</label>
                                         <input
                                             type="time"
                                             className="form-control"
@@ -397,7 +439,7 @@ const CreateCampaign = ({ onCampaignCreated }) => {
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label">Timezone:</label>
+                                    <label className="form-label">Fuseau horaire :</label>
                                     <select
                                         className="form-select"
                                         name="timezone"
@@ -416,10 +458,10 @@ const CreateCampaign = ({ onCampaignCreated }) => {
 
                         <div className="mt-4 d-flex gap-2 justify-content-between">
                             <button className="btn btn-outline-secondary" onClick={() => setStep(3)}>
-                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Back
+                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Retour
                             </button>
                             <button className="btn btn-primary" onClick={() => setStep(5)}>
-                                Next <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
+                                Suivant <FontAwesomeIcon icon={faArrowRight} className="ms-2" />
                             </button>
                         </div>
                     </div>
@@ -430,32 +472,28 @@ const CreateCampaign = ({ onCampaignCreated }) => {
             {step === 5 && (
                 <div className="card">
                     <div className="card-body">
-                        <h5 className="card-title mb-4">Step 5: Review Campaign</h5>
+                        <h5 className="card-title mb-4">Étape 5 : Examen de la campagne</h5>
 
                         <div className="row">
                             <div className="col-md-6">
                                 <div className="mb-3">
-                                    <label className="form-label small text-muted">Channel:</label>
+                                    <label className="form-label small text-muted">Canal :</label>
                                     <p className="fw-bold">{formData.channel.charAt(0).toUpperCase() + formData.channel.slice(1)}</p>
                                 </div>
                                 <div className="mb-3">
-                                    <label className="form-label small text-muted">Audience:</label>
-                                    <p className="fw-bold">{formData.audience === 'all' ? 'All Members' : formData.audience}</p>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label small text-muted">Recipients:</label>
-                                    <p className="fw-bold">1,240</p>
+                                    <label className="form-label small text-muted">Destinataires :</label>
+                                    <p className="fw-bold">{selectedMembers.length}</p>
                                 </div>
                             </div>
                             <div className="col-md-6">
                                 <div className="mb-3">
-                                    <label className="form-label small text-muted">Provider:</label>
+                                    <label className="form-label small text-muted">Fournisseur :</label>
                                     <p className="fw-bold">{formData.channel === 'email' ? 'Resend' : '360dialog'}</p>
                                 </div>
                                 <div className="mb-3">
-                                    <label className="form-label small text-muted">Scheduled:</label>
+                                    <label className="form-label small text-muted">Planifié :</label>
                                     <p className="fw-bold">
-                                        {formData.sendNow ? 'Immediate' : `${formData.scheduledDate} ${formData.scheduledTime}`}
+                                        {formData.sendNow ? 'Immédiat' : `${formData.scheduledDate} ${formData.scheduledTime}`}
                                     </p>
                                 </div>
                             </div>
@@ -463,13 +501,13 @@ const CreateCampaign = ({ onCampaignCreated }) => {
 
                         {formData.channel === 'email' && (
                             <div className="mb-3">
-                                <label className="form-label small text-muted">Subject:</label>
+                                <label className="form-label small text-muted">Objet :</label>
                                 <p>{formData.subject}</p>
                             </div>
                         )}
 
                         <div className="mb-3">
-                            <label className="form-label small text-muted">Message:</label>
+                            <label className="form-label small text-muted">Message :</label>
                             <p style={{ whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto' }}>
                                 {formData.message}
                             </p>
@@ -477,10 +515,10 @@ const CreateCampaign = ({ onCampaignCreated }) => {
 
                         <div className="mt-4 d-flex gap-2 justify-content-between">
                             <button className="btn btn-outline-secondary" onClick={() => setStep(4)}>
-                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Back
+                                <FontAwesomeIcon icon={faArrowLeft} className="me-2" /> Retour
                             </button>
                             <button className="btn btn-success btn-lg" onClick={handleSubmit}>
-                                <FontAwesomeIcon icon={faCheck} className="me-2" /> Send Campaign
+                                <FontAwesomeIcon icon={faCheck} className="me-2" /> Envoyer la campagne
                             </button>
                         </div>
                     </div>

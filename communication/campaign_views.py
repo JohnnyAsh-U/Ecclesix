@@ -35,8 +35,12 @@ class CampaignListCreateAPIView(APIView):
     GET /api/communications/campaigns/ - List campaigns with optional filtering
     POST /api/communications/campaigns/ - Create new campaign
     """
-    permission_classes = [IsAuthenticated]
-
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "POST": ["envoyer_communication", "envoyer_toutes_communications"],
+        "GET": ["envoyer_communication", "envoyer_toutes_communications"],
+    }
+    
     def get(self, request):
         """
         List campaigns with optional filtering.

@@ -18,7 +18,7 @@ const CommunicationFilterTop = ({
     const { eglises } = AppGlobalContext()
 
     return (
-        <div className="card mb-3">
+        <div className="card shadow-md mb-3">
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">
                     <i className="icofont icofont-filter m-r-5"></i>Filter Membres
