@@ -1,12 +1,16 @@
 import axios from 'axios'
 
 
-axios.defaults.baseURL = "/api/v1"
-axios.defaults.withCredentials = true
+const api = axios.create({
+    baseURL: "http://localhost:8000/api/v1",
+    withCredentials: true,
+})
+// axios.defaults.baseURL = "http://localhost:8000/api/v1"
+// axios.defaults.withCredentials = true
 
 
 // Request interceptor to add authorization;
-axios.interceptors.request.use(config=>{
+api.interceptors.request.use(config=>{
     config.headers.Authorization = `BEARER ${localStorage.getItem('chms')}`
     return config;
 }, error=>{
@@ -16,16 +20,16 @@ axios.interceptors.request.use(config=>{
 
 
 //Refresh token interceptor
-axios.interceptors.response.use((response) => {
+api.interceptors.response.use((response) => {
     return response
 }, async(err) => {
     const originalRequest = err.config
     if (err.response.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
         try{
-            const res = await axios.post('/auth/refresh', {})
+            const res = await api.post('/auth/refresh', {})
             localStorage.setItem('chms', res.data.token)
-            return axios(originalRequest)
+            return api(originalRequest)
         }catch(err){
             localStorage.removeItem('chms');
             window.location.reload()
@@ -36,4 +40,4 @@ axios.interceptors.response.use((response) => {
     return Promise.reject(err)
 })
 
-export default axios;
+export default api;

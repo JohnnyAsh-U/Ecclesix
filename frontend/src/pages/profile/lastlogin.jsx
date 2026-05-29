@@ -3,7 +3,7 @@ import { timeFormat } from '../../utils/datetime/formattime'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { toast } from 'react-toastify'
 import Modal from 'react-bootstrap/Modal'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 
 const LastLogin = ({ membre }) => {
     const { admin, permissions } = AppGlobalContext()

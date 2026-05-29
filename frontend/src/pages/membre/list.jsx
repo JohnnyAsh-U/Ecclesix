@@ -6,7 +6,7 @@ import { AgeCategory } from '../../utils/datetime/agecategory'
 import { useNavigate } from 'react-router-dom'
 import { ActifStatut, StatutBadge } from '../../utils/membre/statut'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import useDebounce from './debounce'
 
 const List = ({ filters, search }) => {

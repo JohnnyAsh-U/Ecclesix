@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { useFormik, Form, Field, ErrorMessage, Formik } from 'formik'
 import * as yup from 'yup';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import axios from '../../../utils/config/axiosConfig'
 import { AppGlobalContext } from '../../../hooks/AppContext';
 import { LoadingButton2 } from '../../../components/buttons/loadingbuttons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

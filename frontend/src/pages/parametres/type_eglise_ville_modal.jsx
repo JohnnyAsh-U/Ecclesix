@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import Modal from 'react-bootstrap/Modal'
 import { useFormik, Form, Formik } from 'formik'
-import axios from 'axios';
+import axios from '../../utils/config/axiosConfig'
 import * as yup from 'yup';
 import { toast } from 'react-toastify';
 import { FormInputWithLabel } from '../../components/Inputbox/input';

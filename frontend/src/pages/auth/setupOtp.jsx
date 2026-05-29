@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik';
 import * as yup from 'yup';
 import InputBox from '../../components/Inputbox/authBox';
-import axios from 'axios';
+import axios from '../../utils/config/axiosConfig'
 import Alert from '../../components/alert/alert';
 import { LoadingButton } from '../../components/buttons/loadingbuttons';
 import { AppGlobalContext } from '../../hooks/AppContext';

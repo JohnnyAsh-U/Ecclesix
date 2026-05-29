@@ -1,4 +1,8 @@
 import json
+from pathlib import Path
+from os import path
+import uuid
+from django.db import connection
 from rest_framework.generics import ListCreateAPIView, RetrieveDestroyAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -7,12 +11,18 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404, redirect
 from django.http import FileResponse
 
+from backend import settings
+from multimedia.tasks import scan_uploaded_media
+from .services.s3 import s3_client
+from backend.settings import UPLOAD_POLICIES
+
 from .models import MediaFile
-from .serializers import MediaFileSerializer
+from .serializers import CreateUploadMediaFileSerializer, MediaFileSerializer
 from event.models import Event
 from members.models import Member
 from django.db.models import Q, Sum
 from rest_framework.pagination import PageNumberPagination
+from .services import s3
 
 
 def _get_member_for_user(user):
@@ -386,3 +396,128 @@ class MediaFileShareView(APIView):
             else ''
         )
         return Response({'url': url})
+    
+    
+    
+
+class CreateUploadMediaFileView(APIView):
+    
+    
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "POST": ["ajouter_mediafile"],
+    }
+    
+    
+    def post(self, request):
+        # permission: require ajouter_mediafile or superuser
+        user = request.user
+        if not user.is_superuser and not getattr(user, 'has_perm_custom', lambda p: False)('ajouter_mediafile'):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        serializer = CreateUploadMediaFileSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        print(data)
+        filename = data['filename']
+        mimetype = data['mimetype']
+        size = data['filesize']
+        title = data.get("title", '')
+        provided_church_id = data['church_id']
+        
+        media_type = mimetype.split('/')[0] if '/' in mimetype else 'document'
+        
+        policy = UPLOAD_POLICIES.get(media_type, UPLOAD_POLICIES['document'])
+        
+        if mimetype not in policy['allowed_types']:
+            return Response(
+                {'detail': f"File type {mimetype} is not allowed for {media_type}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if size > policy['max_size']:
+            return Response(
+                {'detail': f"File size exceeds the maximum allowed for {media_type} ({policy['max_size']} bytes)"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        ext = Path(filename).suffix.lower()
+        schema = connection.schema_name
+        
+        # determine church: prefer provided church (only superusers), otherwise user's church
+        church_id = None
+        if provided_church_id:
+            try:
+                cid = int(provided_church_id)
+            except Exception:
+                cid = None
+            if cid is not None:
+                if not user.is_superuser:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+                church_id = cid
+
+        if church_id is None:
+            church_id = getattr(user, 'church_id', None)
+
+        
+        key = (f"medias/{schema}/{filename}" )
+        
+        media = MediaFile.objects.create(
+            church_id = church_id,
+            media_type=media_type,
+            object_key=key,
+            title=title,
+            uploaded_by=_get_member_for_user(user),
+            file_size=size,
+        )
+        
+        upload_url = s3.generate_presigned_upload_url(
+            object_key=key,
+            content_type=mimetype
+        )
+        
+        return Response({
+            "upload_id": str(media.id),
+            "upload_url": upload_url,
+            "key": key
+        })
+        
+
+class CompleteUploadView(APIView):
+    
+    perms = {
+        "OPTIONS": ["superadmin"],
+        "POST": ["ajouter_mediafile"],
+    }
+    
+    
+    def post(self, request, upload_id):
+        media = MediaFile.objects.get(
+            id= upload_id,
+            uploaded_by = request.user
+        )
+        
+        try:
+            metadata = s3_client.head_object(
+                Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+                Key=media.object_key
+            )
+        except Exception:
+            return Response({"error": "upload missing"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        actual_size = metadata["ContentLength"]
+        if actual_size != media.file_size:
+            media.status = MediaFile.Status.REJECTED
+            media.scan_result = "size mismatch"
+            media.save()
+            return Response({"error": "size mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        media.status = MediaFile.Status.READY
+        media.file.name = media.object_key.split("/")[-1]
+        media.save(update_fields=["status", "file"])
+        
+        # scan_uploaded_media.send(str(media.id))
+
+        return Response({'created': "Created"}, status=status.HTTP_201_CREATED)

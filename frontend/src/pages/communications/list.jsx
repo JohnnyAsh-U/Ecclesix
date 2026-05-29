@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Pagination from '../../components/pagination/pagination'
 import { LoadingData } from '../../components/Loading/loading'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import useDebounce from '../membre/debounce'
 
 const CommunicationMemberList = ({ filters, search, selectedMap, setSelectedMap }) => {

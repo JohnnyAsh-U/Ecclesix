@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import VerifyOtp from './VerifyOtp'
 import LoginBox from './LoginBox'
 import SetupOTP from './setupOtp'

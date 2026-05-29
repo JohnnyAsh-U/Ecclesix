@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useContext } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSearch, faTh, faThList, faDownload, faEye, faTrash, faPlus, faFile, faTimesCircle, faBuilding, faShareAlt, faPlay } from '@fortawesome/free-solid-svg-icons'
+import api from '../../utils/config/axiosConfig'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { AppGlobalContext } from '../../hooks/AppContext'
@@ -68,7 +69,7 @@ export default function Mediatheque() {
 
   const [videoPlayer, setVideoPlayer] = useState({ open: false, src: '', title: '', objectUrl: null })
   const [confirmDelete, setConfirmDelete] = useState({ open: false, item: null })
-  const [addModal, setAddModal] = useState({ open: false, file: null, title: '', uploading: false })
+  const [addModal, setAddModal] = useState({ open: false, file: null, title: '', uploading: false, progress: 0 })
 
   const onPreview = (item) => {
     if (item.media_type === 'video') {
@@ -93,7 +94,7 @@ export default function Mediatheque() {
   const onDownload = async (item) => {
    try {
          // Local file: use object URL
-         const { data } = await axios.get(`/multimedia/${item.id}/download`, { responseType: 'blob' })
+         const { data } = await api.get(`/multimedia/${item.id}/download`, { responseType: 'blob' })
          const link = URL.createObjectURL(data)
          const a = document.createElement('a')
          a.href = link
@@ -116,7 +117,7 @@ export default function Mediatheque() {
     if (item.media_type === 'image') return // PhotoView handles image click
     if (item.media_type === 'audio') return onPreview(item)
     if (item.media_type === 'document') {
-      const { data: blob } = await axios.get(`/multimedia/${item.id}/download`, { responseType: 'blob' })
+      const { data: blob } = await api.get(`/multimedia/${item.id}/download`, { responseType: 'blob' })
       const objectUrl = URL.createObjectURL(blob)
       window.open(objectUrl, '_blank')
       // revoke after a delay to allow the new tab to load
@@ -134,7 +135,7 @@ export default function Mediatheque() {
   const performDelete = async (item) => {
     if (!item || !item.id) return
     try {
-      await axios.delete(`/multimedia/${item.id}`)
+      await api.delete(`/multimedia/${item.id}`)
       setConfirmDelete({ open: false, item: null })
       fetchData()
       toast.success('Fichier supprimé')
@@ -147,7 +148,7 @@ export default function Mediatheque() {
   const shareItem = async (item) => {
     if (!item.id) return alert('Impossible de partager: id manquant')
     try {
-      const { data } = await axios.get(`/multimedia/${item.id}/share`)
+      const { data } = await api.get(`/multimedia/${item.id}/share`)
       setShareModal({ open: true, link: data.url || '' })
     } catch (err) {
       console.error(err)
@@ -164,22 +165,66 @@ export default function Mediatheque() {
     e.preventDefault()
     if (!addModal.file || addModal.file.length === 0) return alert('Veuillez sélectionner au moins un fichier.')
     try {
-      setAddModal(prev => ({ ...prev, uploading: true }))
-      const fd = new FormData()
-      // attach multiple files using the same 'file' key
-      addModal.file.forEach(f => fd.append('file', f))
-      if (addModal.title) fd.append('title', addModal.title)
-      // do not send a global media_type; backend will infer per-file
-      if (isSuper && selectedChurch) fd.append('church', selectedChurch)
+      setAddModal(prev => ({ ...prev, uploading: true, progress: 0 }))
+      let successCount = 0
 
-      await axios.post('/multimedia/all', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      toast.success('Fichier ajouté')
-      setAddModal({ open: false, file: null, title: '', uploading: false })
+      for (let i = 0; i < addModal.file.length; i++) {
+        const file = addModal.file[i]
+        
+        try {
+          // Step 1: Request presigned URL from backend
+          const createFormData = new FormData()
+          createFormData.append('filename', file.name)
+          createFormData.append('filesize', file.size)
+          createFormData.append('mimetype', file.type)
+          if (isSuper && selectedChurch) createFormData.append('church_id', selectedChurch)
+          if (addModal.title) createFormData.append('title', addModal.title)
+          if (isSuper && selectedChurch) createFormData.append('church', selectedChurch)
+
+          const { data: uploadData } = await api.post('/multimedia/create', createFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          })
+
+          const { upload_url, upload_id } = uploadData
+
+          // Step 2: Upload file directly to S3 with progress tracking
+          await axios.put(upload_url, file, {
+            headers: {
+              'Content-Type': file.type || 'application/octet-stream'
+            },
+            onUploadProgress: (progressEvent) => {
+              const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+              const overallProgress = Math.round(((i * 100 + percentCompleted) / addModal.file.length))
+              setAddModal(prev => ({ ...prev, progress: overallProgress }))
+            }
+          })
+
+          // Step 3: Notify backend that upload is complete
+          await api.post(`/multimedia/${upload_id}/complete`, {})
+          
+          successCount++
+        } catch (fileErr) {
+          console.error(`Error uploading ${file.name}:`, fileErr.response)
+          toast.error(`Erreur lors de l'upload de ${file.name}`)
+        }
+
+        // Update progress for completed files
+        const overallProgress = Math.round(((i + 1) * 100) / addModal.file.length)
+        setAddModal(prev => ({ ...prev, progress: overallProgress }))
+      }
+
+      if (successCount === addModal.file.length) {
+        toast.success(`${successCount} fichier(s) ajouté(s)`)
+      } else if (successCount > 0) {
+        toast.info(`${successCount}/${addModal.file.length} fichier(s) ajouté(s)`)
+      }
+
+      setAddModal({ open: false, file: null, title: '', uploading: false, progress: 0 })
       fetchData()
     } catch (err) {
       console.error(err)
-      alert('Erreur lors de l\'upload du fichier')
-      setAddModal(prev => ({ ...prev, uploading: false }))
+      alert('Erreur lors de l\'initialisation de l\'upload')
+      setAddModal(prev => ({ ...prev, uploading: false, progress: 0 }))
     }
   }
 
@@ -202,7 +247,7 @@ export default function Mediatheque() {
       }
       if (isSuper && selectedChurch) params.church = selectedChurch
 
-      const { data } = await axios.get('/multimedia/all', { params })
+      const { data } = await api.get('/multimedia/all', { params })
       // drf pagination returns {count, next, previous, results}
       const results = data.results || data
       setTotalCount(data.count || results.length)
@@ -225,7 +270,7 @@ export default function Mediatheque() {
       <BreadCrumb icon={<FontAwesomeIcon icon={faFile} />} title={"Médiathèque"} >
         <>
           <ContentPermsWrapper requiredPerms={['ajouter_mediafile']}>
-            <button className="btn btn-primary btn-round btn-sm" onClick={() => setAddModal({ open: true, file: null, title: '', uploading: false })}><FontAwesomeIcon icon={faPlus} />&nbsp; Ajouter un fichier</button>
+            <button className="btn btn-primary btn-round btn-sm" onClick={() => setAddModal({ open: true, file: null, title: '', uploading: false, progress: 0 })}><FontAwesomeIcon icon={faPlus} />&nbsp; Ajouter un fichier</button>
           </ContentPermsWrapper>
         </>
       </BreadCrumb>
@@ -286,7 +331,7 @@ export default function Mediatheque() {
                 <form className="modal-content" onSubmit={handleAddSubmit}>
                   <div className="modal-header">
                     <h5 className="modal-title">Ajouter un fichier</h5>
-                    <button type="button" className="btn-close" aria-label="Close" onClick={() => setAddModal({ open: false, file: null, title: '', uploading: false })} />
+                    <button type="button" className="btn-close" aria-label="Close" onClick={() => setAddModal({ open: false, file: null, title: '', uploading: false, progress: 0 })} />
                   </div>
                   <div className="modal-body">
                     <div className="mb-2">
@@ -305,15 +350,23 @@ export default function Mediatheque() {
 
                     <div className="mb-2">
                       <label className="form-label">Fichier</label>
-                      <input type="file" className="form-control" onChange={handleFileChange} accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple />
+                      <input type="file" className="form-control" onChange={handleFileChange} accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple disabled={addModal.uploading} />
                       {addModal.file && addModal.file.length > 0 && (
                         <div className="small text-muted mt-1">Sélectionné: {addModal.file.length} fichier(s){addModal.file.length <= 5 ? (': ' + addModal.file.map(f => f.name).join(', ')) : ''}</div>
                       )}
                     </div>
+                    {addModal.uploading && (
+                      <div className="mb-2">
+                        <div className="small text-muted mb-1">Progression: {addModal.progress}%</div>
+                        <div className="progress" style={{ height: '6px' }}>
+                          <div className="progress-bar" style={{ width: `${addModal.progress}%` }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="modal-footer">
-                    <button type="button" className="btn btn-secondary" onClick={() => setAddModal({ open: false, file: null, title: '', uploading: false })}>Annuler</button>
-                    <button type="submit" className="btn btn-primary" disabled={addModal.uploading}>{addModal.uploading ? 'Téléversement...' : 'Ajouter'}</button>
+                    <button type="button" className="btn btn-secondary" onClick={() => setAddModal({ open: false, file: null, title: '', uploading: false, progress: 0 })} disabled={addModal.uploading}>Annuler</button>
+                    <button type="submit" className="btn btn-primary" disabled={addModal.uploading}>{addModal.uploading ? `Téléversement... ${addModal.progress}%` : 'Ajouter'}</button>
                   </div>
                 </form>
               </div>

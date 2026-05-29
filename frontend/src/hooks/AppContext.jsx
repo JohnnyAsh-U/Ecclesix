@@ -1,7 +1,8 @@
 import { useContext, useState, createContext, useEffect } from "react";
 import useDeviceSize from "./screenWidth";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from '../utils/config/axiosConfig'
+
 import { jwtDecode } from "jwt-decode";
 import Loading from "../components/Loading/loading";
 

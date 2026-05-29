@@ -20,3 +20,15 @@ class MediaFileSerializer(serializers.ModelSerializer):
             except Exception:
                 return obj.file.url
         return ''
+    
+    
+    
+    
+class CreateUploadMediaFileSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    church_id = serializers.CharField()
+    filename = serializers.CharField()
+    mimetype = serializers.CharField()
+    filesize = serializers.IntegerField()
+    
+

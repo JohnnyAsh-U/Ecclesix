@@ -1,4 +1,5 @@
-import axios from 'axios'
+
+import axios from '../../utils/config/axiosConfig'
 import React, { useState } from 'react'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import AsyncSelect from 'react-select/async'

@@ -417,3 +417,23 @@ DRAMATIQ_BROKER = {
         "django_dramatiq.middleware.AdminMiddleware",
     ]
 }
+
+
+UPLOAD_POLICIES = {
+    "image" : {
+        "max_size": 10 * 1024 * 1024,  # 10 MB
+        "allowed_types": ["image/jpeg", "image/png", "image/gif"],
+    },
+    "document" : {
+        "max_size": 25 * 1024 * 1024,  # 25 MB
+        "allowed_types": ["application/pdf", "application/msword"],
+    },
+    "audio" : {
+        "max_size": 50 * 1024 * 1024,  # 50 MB
+        "allowed_types": ["audio/mpeg", "audio/wav", "audio/mp3"],
+    },
+    "video" : {
+        "max_size": 100 * 1024 * 1024,  # 100 MB
+        "allowed_types": ["video/mp4", "video/x-msvideo", "video/x-matroska"],
+    },
+}

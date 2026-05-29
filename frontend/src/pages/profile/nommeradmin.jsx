@@ -1,6 +1,6 @@
 import { faUserGear } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import React, { useState } from 'react'
 import Modal from 'react-bootstrap/Modal'
 import { toast } from 'react-toastify'

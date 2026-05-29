@@ -1,6 +1,6 @@
 import { faCalendarAlt, faCalendarCheck, faGear, faLevelDownAlt, faPencil, faUserGear, faUserGroup } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import React, { useState } from 'react'
 import { toast } from 'react-toastify';
 import { formatDate } from '../../utils/datetime/formatdate';

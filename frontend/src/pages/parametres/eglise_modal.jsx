@@ -4,7 +4,7 @@ import Select from 'react-select';
 import * as yup from 'yup';
 import Modal from 'react-bootstrap/Modal'
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import axios from '../../utils/config/axiosConfig'
 import useFetch from '../../hooks/fetchHook';
 import { date_aujourdhui } from '../../utils/datetime/formatdate';
 import { capitalizeFirstLetter } from '../../utils/string/formatting';

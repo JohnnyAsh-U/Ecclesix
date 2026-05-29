@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react'
 import { useFormik, Form, Field, ErrorMessage, Formik } from 'formik'
 import * as yup from 'yup';
 import { date_aujourdhui } from '../../../utils/datetime/formatdate';
-import axios from 'axios';
+import axios from '../../../utils/config/axiosConfig'
 import { toast } from 'react-toastify';
 import Modal from 'react-bootstrap/Modal'
 import { LoadingButton2 } from '../../../components/buttons/loadingbuttons';

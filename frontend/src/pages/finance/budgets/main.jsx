@@ -3,7 +3,7 @@ import { ErrorMessage, Field, Form, Formik } from 'formik'
 import * as yup from 'yup';
 import { ContentPermsWrapper } from '../../../utils/permissions/permwrapper';
 import { AppGlobalContext } from '../../../hooks/AppContext';
-import axios from 'axios';
+import axios from '../../../utils/config/axiosConfig'
 import { toast } from 'react-toastify';
 import useFetch from '../../../hooks/fetchHook';
 import { LoadingData } from '../../../components/Loading/loading';

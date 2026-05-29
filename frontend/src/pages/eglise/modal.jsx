@@ -8,7 +8,7 @@ import { FormInputWithLabel } from '../../components/Inputbox/input';
 import Modal from 'react-bootstrap/Modal'
 import { FormSelectWithLabel } from '../../components/Inputbox/form-select';
 import { LoadingButton2 } from '../../components/buttons/loadingbuttons';
-import axios from 'axios';
+import axios from '../../utils/config/axiosConfig'
 
 
 

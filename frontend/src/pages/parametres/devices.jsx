@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheckCircle, faMobileAlt, faRotateRight, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { toast } from 'react-toastify'

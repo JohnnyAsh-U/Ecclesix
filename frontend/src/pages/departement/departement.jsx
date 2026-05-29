@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { LoadingData } from '../../components/Loading/loading'

@@ -14,7 +14,7 @@ import { AppGlobalContext } from '../../hooks/AppContext'
 import { DesactiverModal, SupprimerModal } from './modals'
 import { toast } from 'react-toastify'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import EditForm from './editform'
 
 const Information = ({ membre, roles, ville, fetch }) => {

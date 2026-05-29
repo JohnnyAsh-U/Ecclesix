@@ -9,7 +9,7 @@ import { faAdd, faMoneyCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { FormSelect } from '../../../components/Inputbox/form-select';
 import { ContentPermsWrapper } from '../../../utils/permissions/permwrapper';
-import axios from 'axios';
+import axios from '../../../utils/config/axiosConfig'
 import Main from './main';
 import { Ajouter, DepenseBudget, Modifier, Supprimer } from './modal';
 

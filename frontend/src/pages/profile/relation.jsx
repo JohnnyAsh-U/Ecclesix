@@ -1,6 +1,6 @@
 import { faPencil, faTrash, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import axios from 'axios';
+import axios from '../../utils/config/axiosConfig'
 import _ from 'lodash'
 import React, { useState } from 'react'
 import { toast } from 'react-toastify';

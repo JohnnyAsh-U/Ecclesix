@@ -10,7 +10,7 @@ import { faAdd, faCartPlus, faEnvelopeOpen, faMoneyBills, faMoneyBillTransfer } 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import BreadCrumb from '../../../components/breadcrumbs/breadcrumb';
 import { FormSelect } from '../../../components/Inputbox/form-select';
-import axios from 'axios';
+import axios from '../../../utils/config/axiosConfig'
 import TransactionTable from './transactionTable';
 import Ajouter, { Info } from './transactionModal';
 

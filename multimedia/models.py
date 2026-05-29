@@ -20,15 +20,26 @@ class MediaFile(models.Model):
         VIDEO = 'video', 'Vidéo'
         IMAGE = 'image', 'Image'
         DOCUMENT = 'document', 'Document'
+        
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'En attente'
+        SCANNING = 'scanning', 'En cours de scan'
+        READY = 'ready', 'Prêt'
+        ERROR = 'error', 'Erreur'
+        REJECTED = 'rejected', 'Rejeté'
+        INFECTED = 'infected', 'Infecté'
 
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, null=True, related_name='media')
     media_type = models.CharField(max_length=20, choices=MediaType.choices)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     church = models.ForeignKey(Church, on_delete=models.SET_NULL, null=True, related_name='media_files')
+    object_key = models.CharField(max_length=500, null=True, blank=True)
     file = models.FileField(storage=TenantMediaStorage())
     file_size = models.BigIntegerField(null=True, blank=True)
     title = models.CharField(max_length=255, blank=True)
     uploaded_by = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    scan_result = models.TextField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self.file:

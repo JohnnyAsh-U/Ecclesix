@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faCheckCircle, faTimes, faCog, faPlus, faPaperPlane, faSave, faMessage, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { toast } from 'react-toastify'
 import useFetch from '../../hooks/fetchHook'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 
 
 

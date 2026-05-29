@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { Formik, Form } from 'formik';
 import * as yup from 'yup';
 import { toast } from 'react-toastify';
-import axios from 'axios';
+import axios from '../../utils/config/axiosConfig';
 import BreadCrumb from '../../components/breadcrumbs/breadcrumb';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBriefcase, faCalendarCheck, faChurch, faCity, faLocation, faPhone, faPlus, faUser } from '@fortawesome/free-solid-svg-icons';

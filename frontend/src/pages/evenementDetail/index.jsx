@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import { LoadingData } from '../../components/Loading/loading'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faFileAlt, faUserCheck, faVideo, faPencil, faTrash, faCalendar, faArrowLeft, faCheck } from '@fortawesome/free-solid-svg-icons'

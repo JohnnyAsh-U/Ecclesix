@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import axios from '../utils/config/axiosConfig'
+
 
 const useFetch = (url, method, values = {}) => {
     const [loading, setLoading] = useState(true)

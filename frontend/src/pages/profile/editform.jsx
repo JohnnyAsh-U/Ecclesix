@@ -5,7 +5,7 @@ import * as yup from 'yup'
 import { FormSelectWithLabel } from '../../components/Inputbox/form-select'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { toast } from 'react-toastify'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import { LoadingButton2 } from '../../components/buttons/loadingbuttons'
 
 

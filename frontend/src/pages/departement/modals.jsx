@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Modal from 'react-bootstrap/Modal'
 import { useFormik, Form, Field, ErrorMessage, Formik } from 'formik'
-import axios from 'axios';
+import axios from '../../utils/config/axiosConfig'
 import * as yup from 'yup';
 import Select from 'react-select'
 import { AppGlobalContext } from '../../hooks/AppContext';

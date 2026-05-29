@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import axios from '../../utils/config/axiosConfig'
 import { AppGlobalContext } from '../../hooks/AppContext'
 import { LoadingButton } from '../../components/buttons/loadingbuttons'
 import * as yup from 'yup';
