@@ -11,268 +11,357 @@ from django.db.models import Sum
 from functools import reduce
 
 
-def TotalMembersForSixMonth(id):
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from django.db.models import Count, Q
+from datetime import date
+from django.db.models import Sum
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
+
+
+def TotalMembersForSixMonth(church_id):
     today = datetime.now()
-    result = []
-
-    for a in range(5, -1, -1):
-        start_date = today.replace(day=1) + relativedelta(months=-a)
-        # end_date = today.replace(day=31) + relativedelta(months=-a)
-        end_date = today + relativedelta(day=31, months=-a)
-
-
-        count = Member.objects.filter(
-            church=id, date_joined__date__range=(start_date, end_date), is_active=True
-        ).count()
-
-        result.append(
-            {"month": time_date.list_month[start_date.month - 1], "count": count}
-        )
-    return result
-
-
-def TotalEventsForSixMonth(id):
-    today = datetime.now()
-    result = []
-
-    for a in range(0, 6):
-        start_date = today.replace(day=1) + relativedelta(months=-a)
-        # end_date = today.replace(day=31) + relativedelta(months=-a)
-        end_date = today + relativedelta(day=31, months=-a)
-
-
-        count = Event.objects.filter(
-            church=id,
-            event_date__range=(start_date, end_date),
-        ).count()
-
-        result.insert(
-            0, {"month": time_date.list_month[start_date.month - 1], "count": count}
-        )
-    return result
-
-
-def TotalAttendanceForSixMonth(id):
-    today = datetime.now()
-    result = []
-
-    for a in range(0, 6):
-        start_date = today.replace(day=1) + relativedelta(months=-a)
-        # end_date = today.replace(day=31) + relativedelta(months=-a)
-        end_date = today + relativedelta(day=31, months=-a)
-
-
-        count = Event.objects.filter(
-            church=id,
-            event_date__range=(start_date, end_date),
-        )
-
-        count = Event.objects.filter(
-            church=id, event_date__range=(start_date, end_date)
-        ).aggregate(Sum("total"))
-
-        total_sum = count["total__sum"]
-
-        result.insert(
-            0,
-            {
-                "month": time_date.list_month[start_date.month - 1],
-                "count": total_sum if total_sum != None else 0,
-            },
-        )
-    return result
-
-
-def AgeRangeCount(id):
-    age_range = [
-        {"category": "Enfants", "range": "<13"},
-        {"category": "Ados", "range": "13-20"},
-        {"category": "Jeune", "range": "20-35"},
-        {"category": "Adultes", "range": "35-50"},
-        {"category": "Agees", "range": ">50"},
-    ]
-    result = []
-
-    for r in age_range:
-        count = Member.objects.filter(
-            church=id,
+    start_date = today - relativedelta(months=5)
+    
+    qs = (
+        Member.objects
+        .filter(
+            church=church_id,
             is_active=True,
-            birthdate__range=time_date.age_range_to_year_range(r["range"]),
-        ).count()
+            date_joined__date__gte=start_date,
+            date_joined__date__lte=today,
+        )
+        .annotate(month=TruncMonth("date_joined"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
 
-        result.append({"categorie": r["category"], "count": count})
+    data = {row["month"].month: row["count"] for row in qs}
 
-    return result
+    return [
+        {
+            "month": time_date.list_month[m],
+            "count": data.get(m + 1, 0)
+        }
+        for m in range(start_date.month - 1, (start_date.month - 1) + 6)
+    ]
 
 
-def AttendanceMonthGraph(id):
+def TotalEventsForSixMonth(church_id):
+    today = datetime.now()
+    start_date = today - relativedelta(months=5)
+
+    qs = (
+        Event.objects
+        .filter(
+            church=church_id,
+            event_date__gte=start_date,
+            event_date__lte=today,
+        )
+        .annotate(month=TruncMonth("event_date"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+
+    data = {row["month"].month: row["count"] for row in qs}
+
+    return [
+        {
+            "month": time_date.list_month[m],
+            "count": data.get(m + 1, 0)
+        }
+        for m in range(start_date.month - 1, (start_date.month - 1) + 6)
+    ]
+
+
+
+def TotalAttendanceForSixMonth(church_id):
+    today = datetime.now()
+    start_base = today - relativedelta(months=5)
+
+    qs = (
+        Event.objects
+        .filter(
+            church=church_id,
+            event_date__gte=start_base,
+            event_date__lte=today,
+        )
+        .annotate(month=TruncMonth("event_date"))
+        .values("month")
+        .annotate(total=Sum("total"))
+        .order_by("month")
+    )
+
+    data = {row["month"].month: row["total"] or 0 for row in qs}
+
+    return [
+        {
+            "month": time_date.list_month[m],
+            "count": data.get(m + 1, 0),
+        }
+        for m in range(start_base.month - 1, start_base.month - 1 + 6)
+    ]
+
+
+def AgeRangeCount(church_id):
     today = date.today()
-    month = today.month
+
+    def year_from_age(age):
+        return today.year - age
+
+    qs = Member.objects.filter(
+        church=church_id,
+        is_active=True,
+    ).aggregate(
+        enfants=Count("id", filter=Q(birthdate__gte=date(year_from_age(13), 1, 1))),
+        
+        ados=Count("id", filter=Q(birthdate__lt=date(year_from_age(13), 1, 1)) &
+                             Q(birthdate__gte=date(year_from_age(20), 1, 1))),
+
+        jeune=Count("id", filter=Q(birthdate__lt=date(year_from_age(20), 1, 1)) &
+                              Q(birthdate__gte=date(year_from_age(35), 1, 1))),
+
+        adultes=Count("id", filter=Q(birthdate__lt=date(year_from_age(35), 1, 1)) &
+                                Q(birthdate__gte=date(year_from_age(50), 1, 1))),
+
+        agees=Count("id", filter=Q(birthdate__lt=date(year_from_age(50), 1, 1))),
+    )
+
+    return [
+        {"categorie": "Enfants", "count": qs["enfants"]},
+        {"categorie": "Ados", "count": qs["ados"]},
+        {"categorie": "Jeune", "count": qs["jeune"]},
+        {"categorie": "Adultes", "count": qs["adultes"]},
+        {"categorie": "Agees", "count": qs["agees"]},
+    ]
+from collections import defaultdict
+from datetime import date
+from dateutil.relativedelta import relativedelta
+from django.db.models import Sum
+from django.db.models.functions import ExtractWeek
+
+
+def AttendanceMonthGraph(church_id):
+    today = date.today()
     year = today.year
+    current_month = today.month
+
     results = {}
-    for m in range(1, month + 1, 3):
-        start_date = today.replace(month=m, day=1)
-        start_date_week = start_date + relativedelta(weekday=MO(-1))
 
-        end_date = today.replace(month=m, day=1) + relativedelta(months=+2, day=31)
-        end_date_week = end_date + relativedelta(weekday=SU(+1))
+    # cache event types once (NO repeated queries)
+    event_types = list(Event_Type.objects.values_list("event_type_name", flat=True))
 
-        event_types = Event_Type.objects.all()
+    for m in range(1, current_month + 1, 3):
+        start_date = date(year, m, 1)
+        end_date = (start_date + relativedelta(months=3)) - relativedelta(days=1)
 
-        start_dt = start_date_week
+        # normalize week range boundaries
+        start_week = start_date + relativedelta(weekday=MO(-1))
+        end_week = end_date + relativedelta(weekday=SU(+1))
 
-        period = []
+        # 🔥 SINGLE QUERY for all events in range
+        rows = (
+            Event.objects.filter(
+                church=church_id,
+                event_date__range=(start_week, end_week),
+            )
+            .annotate(week=ExtractWeek("event_date"))
+            .values("week", "event_type__event_type_name")
+            .annotate(total=Sum("total"))
+        )
+
+        # index for fast lookup: (event_type, week) → total
+        data_map = {
+            (r["event_type__event_type_name"], r["week"]): r["total"]
+            for r in rows
+        }
+
+        # build weeks once (NO event scanning)
         weeks = []
+        period = []
 
-        # to print each week interval for the month interval
-        while start_dt.isocalendar()[1] != end_date_week.isocalendar()[1] + 1:
-            start_period = f"{start_dt.day} {time_date.month_abbr[start_dt.month-1]}"
+        start_dt = start_week
 
-            # to get the week end
-            end_date = start_dt + relativedelta(weekday=SU(+1))
-            end_period = f"{end_date.day} {time_date.month_abbr[end_date.month-1]}"
+        while start_dt <= end_week:
+            week_num = start_dt.isocalendar()[1]
 
-            # append the week start to weeks and period to period
-            weeks.append(start_dt)
-            period.append(start_period + "-" + end_period)
+            end_dt = start_dt + relativedelta(weekday=SU(+1))
 
-            start_dt = start_dt + relativedelta(weeks=+1)
+            weeks.append(week_num)
 
-        events = []
-
-        for ev in event_types:
-            totals = []
-            label = ev.event_type_name
-
-            events_of_ev: list[Event] = ev.event_set.filter(
-                church=id, event_date__range=(start_date_week, end_date_week)
+            period.append(
+                f"{start_dt.day} {start_dt.strftime('%b')}-"
+                f"{end_dt.day} {end_dt.strftime('%b')}"
             )
 
-            # use the week start list to arrange the events by week
-            for week in weeks:
-                # events_of_ev.
-                found_event = next(
-                    (
-                        event
-                        for event in events_of_ev
-                        if event.event_date.isocalendar()[1] == week.isocalendar()[1]
-                    ),
-                    None,
-                )
-                totals.append(found_event.total) if found_event else totals.append(None)
+            start_dt += relativedelta(weeks=1)
 
-            events.append({"label": ev.event_type_name, "totals": totals})
+        # build event matrix
+        events = []
 
-        results[f"{m-1}-{m+1}"] = {"period": period, "events": events}
+        for ev_type in event_types:
+            totals = [
+                data_map.get((ev_type, w)) for w in weeks
+            ]
+
+            events.append({
+                "label": ev_type,
+                "totals": totals
+            })
+
+        results[f"{m-1}-{m+1}"] = {
+            "period": period,
+            "events": events
+        }
 
     return results
 
 
-def AttendanceYearGraph(id):
-    month_data = [0 for a in range(0, 12)]
-    result = {}
-    
+from collections import defaultdict
+
+
+def AttendanceYearGraph(church_id):
     try:
-        totalEvent = list(Event_stats.objects.filter(church_id=id).order_by("year", "month", "church_id", "event_type_name"))
-    except (ProgrammingError, OperationalError):
+        rows = (
+            Event_stats.objects
+            .filter(church_id=church_id)
+            .values("id", "year", "month", "event_type_name", "average")
+            .order_by("year", "month")
+        )
+    except Exception:
         return {}
 
-    if not totalEvent:
-        return {}    
+    if not rows:
+        return {}
+
+    result = defaultdict(lambda: defaultdict(lambda: {
+        "event": "",
+        "data": [0] * 12
+    }))
+
+    years = set()
+
+    for r in rows:
+        year = r["year"]
+        event = r["event_type_name"]
+        month_idx = r["month"] - 1
+
+        years.add(year)
+
+        # initialize once
+        if result[year][event]["event"] == "":
+            result[year][event]["event"] = event
+
+        # direct index assignment (NO SEARCH)
+        result[year][event]["data"][month_idx] = r["average"]
+
+    # convert defaultdict → normal dict
+    final = {
+        str(year): list(events.values())
+        for year, events in result.items()
+    }
+
+    return {
+        "year": min(years),
+        **final
+    }
     
-    oldest_event_stat =reduce(lambda x,y: min(x,y), [ev.year for ev in totalEvent])
-
-    for ev in totalEvent:
-        event_by_year = result.get(str(ev.year), None)
-        if not event_by_year:
-            result[str(ev.year)] = []
-
-        found_event = next(
-            (event for event in result[str(ev.year)] if event['event'] == ev.event_type_name),
-            None,
-        )
-
-        if not found_event:
-            result[str(ev.year)].append(
-                {"id": ev.pk, "event": ev.event_type_name, "data": [*month_data]}
-            )
-            
-            found_event = next(
-                (event for event in result[str(ev.year)] if event['event'] == ev.event_type_name),
-                None,
-            )
-        
-        found_event["data"][int(ev.month)-1] = ev.average
-
-    return {"year": oldest_event_stat, **result}
+    
+from django.db.models import Count
 
 
-def Professions(id):
+def Professions(church_id):
     professions = ["Travailleur", "Entrepreneur", "Eleve/Etudiant", "Autres"]
+
+    qs = (
+        Member.objects
+        .filter(church=church_id, is_active=True)
+        .values("profession_type")
+        .annotate(count=Count("id"))
+    )
+
+    data = {r["profession_type"]: r["count"] for r in qs}
+
+    total = sum(data.values())
+
     result = []
-    all_member = Member.objects.filter(church=id, is_active=True).count()
+    for p in professions:
+        count = data.get(p, 0)
+        percent = int((count / total) * 100) if total else 0
 
-    for profession in professions:
-        member_by_profession = Member.objects.filter(
-            church=id, is_active=True, profession_type=profession
-        ).count()
+        result.append({
+            "profession": p,
+            "count": count,
+            "percent": percent
+        })
 
-        percent = (
-            int((member_by_profession / all_member) * 100) if all_member != 0 else 0
-        )
-
-        result.append(
-            {
-                "profession": profession,
-                "count": member_by_profession,
-                "percent": percent,
-            }
-        )
     return result
 
-
-def Marital_Status(id):
-    m_status = [
+def Marital_Status(church_id):
+    statuses = [
         {"statut": "Marie", "tag": "M"},
         {"statut": "Celibataire", "tag": "C"},
         {"statut": "Veuf(ve)", "tag": "V"},
     ]
+
+    qs = (
+        Member.objects
+        .filter(church=church_id, is_active=True)
+        .values("marital_status")
+        .annotate(count=Count("id"))
+    )
+
+    data = {r["marital_status"]: r["count"] for r in qs}
+
+    total = sum(data.values())
+
     result = []
-    all_member = Member.objects.filter(church=id, is_active=True).count()
+    for s in statuses:
+        count = data.get(s["tag"], 0)
+        percent = int((count / total) * 100) if total else 0
 
-    for s in m_status:
-        member_by_status = Member.objects.filter(
-            church=id, is_active=True, marital_status=s["tag"]
-        ).count()
+        result.append({
+            "statut": s["statut"],
+            "count": count,
+            "percent": percent
+        })
 
-        percent = int((member_by_status / all_member) * 100) if all_member != 0 else 0
-
-        result.append(
-            {"statut": s["statut"], "count": member_by_status, "percent": percent}
-        )
     return result
 
 
-def Gender(id):
-    sex = [
+
+def Gender(church_id):
+    genders = [
         {"sexe": "Homme", "tag": "H"},
         {"sexe": "Femme", "tag": "F"},
     ]
+
+    qs = (
+        Member.objects
+        .filter(church=church_id, is_active=True)
+        .values("gender")
+        .annotate(count=Count("id"))
+    )
+
+    data = {r["gender"]: r["count"] for r in qs}
+
+    total = sum(data.values())
+
     result = []
-    all_member = Member.objects.filter(church=id, is_active=True).count()
+    for g in genders:
+        count = data.get(g["tag"], 0)
+        percent = int((count / total) * 100) if total else 0
 
-    for s in sex:
-        member_by_gender = Member.objects.filter(
-            church=id, is_active=True, gender=s["tag"]
-        ).count()
+        result.append({
+            "sexe": g["sexe"],
+            "count": count,
+            "percent": percent
+        })
 
-        percent = int((member_by_gender / all_member) * 100) if all_member != 0 else 0
-
-        result.append(
-            {
-                "sexe": s["sexe"],
-                "count": member_by_gender,
-                "percent": percent,
-            }
-        )
     return result

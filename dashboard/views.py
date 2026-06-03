@@ -15,6 +15,7 @@ from .services import (
     AgeRangeCount,
     YearTraffic
 )
+from django.db import connection
 
 
 class Dashboard(generics.ListAPIView):

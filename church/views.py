@@ -12,6 +12,7 @@ from admin_custom.services import ViewLogger
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from django.core.cache import cache
 from tenants.models import Tenant
+from django.db import connection
 
 
 class CityListCreateView(ListCreateAPIView):
@@ -248,6 +249,7 @@ class ChurchRUDView(RetrieveUpdateDestroyAPIView):
             "Demo_Statut": services.Marital_Status(id),
             "Demo_Sexe": services.Gender(id),
         }
+        print(len(connection.queries))
 
         return Response({"church": serializer.data, "metrics": metrics})
     

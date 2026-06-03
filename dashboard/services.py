@@ -15,291 +15,331 @@ def lastSixMembers():
     result = Member.objects.filter(is_active=True).order_by("-date_joined")[:6]
     return MemberSerializer(result, many=True).data
 
+from collections import defaultdict
+from django.db.models import Count
+from django.db.models.functions import TruncMonth, TruncYear
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+from django.db.models import Case, When, IntegerField, Value, Count, F
+from django.db.models.functions import ExtractYear
+from datetime import date
+
+
 
 def TotalMembersForSixMonth():
     today = datetime.now()
-    result = []
 
     six_month_ago = today.replace(day=1) + relativedelta(months=-5)
 
-    total_members_six_months_ago = Member.objects.filter(
-        date_joined__date__lt=six_month_ago, is_active=True
+    base_count = Member.objects.filter(
+        is_active=True,
+        date_joined__lt=six_month_ago
     ).count()
 
-    cumulativeSum = 0
+    monthly_counts = (
+        Member.objects.filter(
+            is_active=True,
+            date_joined__gte=six_month_ago
+        )
+        .annotate(month=TruncMonth("date_joined"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+
+    counts_map = {
+        row["month"].month: row["count"]
+        for row in monthly_counts
+    }
+
+    cumulative = base_count
+    result = []
 
     for a in range(5, -1, -1):
-        start_date = today.replace(day=1) + relativedelta(months=-a)
-        # end_date = today.replace(day=31) + relativedelta(months=-a)
-        end_date = today + relativedelta(day=31, months=-a)
+        month_date = today.replace(day=1) + relativedelta(months=-a)
 
-        count = Member.objects.filter(
-            date_joined__date__range=(start_date, end_date), is_active=True
-        ).count()
+        cumulative += counts_map.get(month_date.month, 0)
 
-        cumulativeSum += count
-        result.append(
-            {
-                "month": time_date.list_month[start_date.month - 1],
-                "count": cumulativeSum + total_members_six_months_ago,
-            }
-        )
+        result.append({
+            "month": time_date.list_month[month_date.month - 1],
+            "count": cumulative,
+        })
+
     return result
 
 
 def TotalChurchForSixYears():
     today = datetime.now()
-    result = []
 
-    six_years_ago = today.replace(day=1, month=1) + relativedelta(years=-5)
+    six_years_ago = today.replace(month=1, day=1) + relativedelta(years=-5)
 
-    total_churches_six_months_ago = Church.objects.filter(
+    base_count = Church.objects.filter(
         opening_date__lt=six_years_ago
     ).count()
 
-    cumulativeSum = 0
+    yearly_counts = (
+        Church.objects.filter(
+            opening_date__gte=six_years_ago
+        )
+        .annotate(year=TruncYear("opening_date"))
+        .values("year")
+        .annotate(count=Count("id"))
+        .order_by("year")
+    )
+
+    counts_map = {
+        row["year"].year: row["count"]
+        for row in yearly_counts
+    }
+
+    cumulative = base_count
+    result = []
 
     for a in range(5, -1, -1):
-        start_date = today.replace(day=1, month=1) + relativedelta(years=-a)
-        end_date = today.replace(day=31, month=12) + relativedelta(years=-a)
+        year = today.year - a
 
-        count = Church.objects.filter(
-            opening_date__range=(start_date, end_date)
-        ).count()
+        cumulative += counts_map.get(year, 0)
 
-        cumulativeSum += count
-        result.append(
-            {
-                "years": start_date.year,
-                "count": cumulativeSum + total_churches_six_months_ago,
-            }
-        )
+        result.append({
+            "years": year,
+            "count": cumulative,
+        })
+
     return result
 
 
 def TotalMinistersForSixMonth():
     today = datetime.now()
-    result = []
+    start_date = today.replace(day=1) + relativedelta(months=-5)
 
-    six_month_ago = today.replace(day=1) + relativedelta(months=-5)
-
-    total_ministers_six_months_ago = Member.objects.filter(
-        date_joined__date__lt=six_month_ago, is_active=True, status="Ministre"
-    ).count()
-
-    cumulativeSum = 0
-
-    for a in range(5, -1, -1):
-        start_date = today.replace(day=1) + relativedelta(months=-a)
-        # end_date = today.replace(day=31) + relativedelta(months=-a)
-        end_date = today + relativedelta(day=31, months=-a)
-
-
-        count = Member.objects.filter(
-            date_joined__date__range=(start_date, end_date),
+    queryset = (
+        Member.objects.filter(
+            date_joined__gte=start_date,
             is_active=True,
-            status="Ministre",
-        ).count()
-
-        cumulativeSum += count
-        result.append(
-            {
-                "month": time_date.list_month[start_date.month - 1],
-                "count": cumulativeSum + total_ministers_six_months_ago,
-            }
+            status="Ministre"
         )
+        .annotate(month=TruncMonth("date_joined"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+
+    # convert to dict for fast lookup
+    data_map = {item["month"].month: item["count"] for item in queryset}
+
+    result = []
+    cumulative = 0
+
+    for i in range(5, -1, -1):
+        month_date = today.replace(day=1) + relativedelta(months=-i)
+        month_num = month_date.month
+
+        cumulative += data_map.get(month_num, 0)
+
+        result.append({
+            "month": time_date.list_month[month_num - 1],
+            "count": cumulative
+        })
+
     return result
 
 
 def TotalEventsForSixMonth():
     today = datetime.now()
+    start_date = today.replace(day=1) + relativedelta(months=-5)
+
+    queryset = (
+        Event.objects.filter(event_date__gte=start_date)
+        .annotate(month=TruncMonth("event_date"))
+        .values("month")
+        .annotate(count=Count("id"))
+        .order_by("month")
+    )
+
+    data_map = {item["month"].month: item["count"] for item in queryset}
+
     result = []
 
-    for a in range(0, 6):
-        start_date = today.replace(day=1) + relativedelta(months=-a)
-        # end_date = today.replace(day=31) + relativedelta(months=-a)
-        end_date = today + relativedelta(day=31, months=-a)
+    for i in range(5, -1, -1):
+        month_date = today.replace(day=1) + relativedelta(months=-i)
 
+        result.append({
+            "month": time_date.list_month[month_date.month - 1],
+            "count": data_map.get(month_date.month, 0)
+        })
 
-        count = Event.objects.filter(
-            event_date__range=(start_date, end_date),
-        ).count()
-
-        result.insert(
-            0, {"month": time_date.list_month[start_date.month - 1], "count": count}
-        )
     return result
 
 
 def totalEventsCount():
-    return Event.objects.count()
+    return Event.objects.only("id").count()
 
 
 def demographicsStatut():
-    ministers = Member.objects.filter(is_active=True, status="Ministre").count()
+    base = Member.objects.filter(is_active=True)
 
-    workers = Member.objects.filter(is_active=True, status="Ouvrier").count()
+    status_data = (
+        base.values("status")
+        .annotate(count=Count("id"))
+    )
 
-    members = Member.objects.filter(is_active=True, status="Membre").count()
+    status_map = {item["status"]: item["count"] for item in status_data}
 
-    visitor = Member.objects.filter(is_active=True, status="Visiteur").count()
-
-    inactive = Member.objects.filter(
-        is_active=False,
-    ).count()
+    ministers = status_map.get("Ministre", 0)
+    workers = status_map.get("Ouvrier", 0)
+    members = status_map.get("Membre", 0)
+    visitor = status_map.get("Visiteur", 0)
 
     total = ministers + workers + members + visitor
 
-    result = [
-        {
-            "title": "Ministres",
-            "count": ministers,
-            "percentage": round((ministers / total) * 100),
-        },
-        {
-            "title": "Ouvriers",
-            "count": workers,
-            "percentage": round((workers / total) * 100),
-        },
-        {
-            "title": "Membres",
-            "count": members,
-            "percentage": round((members / total) * 100),
-        },
-        {
-            "title": "Visiteurs",
-            "count": visitor,
-            "percentage": round((visitor / total) * 100),
-        },
-        {
-            "title": "Inactif",
-            "count": inactive,
-            "percentage": round((inactive / (total + inactive)) * 100),
-        },
+    def pct(value):
+        return round((value / total) * 100) if total else 0
+
+    return [
+        {"title": "Ministres", "count": ministers, "percentage": pct(ministers)},
+        {"title": "Ouvriers", "count": workers, "percentage": pct(workers)},
+        {"title": "Membres", "count": members, "percentage": pct(members)},
+        {"title": "Visiteurs", "count": visitor, "percentage": pct(visitor)},
     ]
-
-    return result
-
+    
+    
 
 def demographicsGender():
+    base = Member.objects.filter(is_active=True)
 
-    men = Member.objects.filter(is_active=True, gender="H").count()
-    women = Member.objects.filter(is_active=True, gender="F").count()
+    data = base.values("gender").annotate(count=Count("id"))
+
+    gender_map = {d["gender"]: d["count"] for d in data}
+
+    men = gender_map.get("H", 0)
+    women = gender_map.get("F", 0)
 
     total = men + women
 
-    result = [
-        {"title": "Hommes", "count": men, "percent": round((men / total) * 100)},
-        {"title": "Femmes", "count": women, "percent": round((women / total) * 100)},
+    def pct(v):
+        return round((v / total) * 100) if total else 0
+
+    return [
+        {"title": "Hommes", "count": men, "percent": pct(men)},
+        {"title": "Femmes", "count": women, "percent": pct(women)},
     ]
-
-    return result
-
 
 def demographicsProfessions():
+    base = Member.objects.filter(is_active=True)
+
+    data = (
+        base.values("profession_type")
+        .annotate(count=Count("id"))
+    )
+
+    data_map = {d["profession_type"]: d["count"] for d in data}
+
     professions = ["Travailleur", "Entrepreneur", "Eleve/Etudiant", "Autres"]
-    result = []
-    all_member = Member.objects.filter(is_active=True).count()
 
-    for profession in professions:
-        member_by_profession = Member.objects.filter(
-            is_active=True, profession_type=profession
-        ).count()
+    total = sum(data_map.values())
 
-        percent = (
-            round((member_by_profession / all_member) * 100) if all_member != 0 else 0
-        )
-
-        result.append(
-            {
-                "title": profession,
-                "count": member_by_profession,
-                "percent": percent,
-            }
-        )
-    return result
-
-
-def demographicsStatutM():
-    m_status = [
-        {"statut": "Marie", "tag": "M"},
-        {"statut": "Celibataire", "tag": "C"},
-        {"statut": "Veuf(ve)", "tag": "V"},
+    return [
+        {
+            "title": p,
+            "count": data_map.get(p, 0),
+            "percent": round((data_map.get(p, 0) / total) * 100) if total else 0
+        }
+        for p in professions
     ]
-    result = []
-    all_member = Member.objects.filter(is_active=True).count()
+    
+    
+def demographicsStatutM():
+    base = Member.objects.filter(is_active=True)
 
-    for s in m_status:
-        member_by_status = Member.objects.filter(
-            is_active=True, marital_status=s["tag"]
-        ).count()
+    data = base.values("marital_status").annotate(count=Count("id"))
 
-        percent = round((member_by_status / all_member) * 100) if all_member != 0 else 0
+    data_map = {d["marital_status"]: d["count"] for d in data}
 
-        result.append(
-            {"title": s["statut"], "count": member_by_status, "percent": percent}
-        )
-    return result
+    mapping = {
+        "M": "Marie",
+        "C": "Celibataire",
+        "V": "Veuf(ve)"
+    }
+
+    total = sum(data_map.values())
+
+    return [
+        {
+            "title": mapping[k],
+            "count": data_map.get(k, 0),
+            "percent": round((data_map.get(k, 0) / total) * 100) if total else 0
+        }
+        for k in mapping
+    ]
+    
+    
 
 
 def AgeRangeCount():
-    age_range = [
-        {"category": "Enfants", "range": "<13"},
-        {"category": "Ados", "range": "13-20"},
-        {"category": "Jeune", "range": "20-35"},
-        {"category": "Adultes", "range": "35-50"},
-        {"category": "Agees", "range": ">50"},
+    today = date.today()
+
+    qs = Member.objects.filter(is_active=True)
+
+    # age in years computed in DB
+    qs = qs.annotate(
+        age=today.year - ExtractYear("birthdate")
+    )
+
+    qs = qs.aggregate(
+        enfants=Count(Case(When(age__lt=13, then=1), output_field=IntegerField())),
+        ados=Count(Case(When(age__gte=13, age__lt=20, then=1), output_field=IntegerField())),
+        jeune=Count(Case(When(age__gte=20, age__lt=35, then=1), output_field=IntegerField())),
+        adultes=Count(Case(When(age__gte=35, age__lt=50, then=1), output_field=IntegerField())),
+        agees=Count(Case(When(age__gte=50, then=1), output_field=IntegerField())),
+    )
+
+    total = sum(qs.values())
+
+    def pct(v):
+        return round((v / total) * 100) if total else 0
+
+    return [
+        {"title": "Enfants", "count": qs["enfants"], "percent": pct(qs["enfants"])},
+        {"title": "Ados", "count": qs["ados"], "percent": pct(qs["ados"])},
+        {"title": "Jeune", "count": qs["jeune"], "percent": pct(qs["jeune"])},
+        {"title": "Adultes", "count": qs["adultes"], "percent": pct(qs["adultes"])},
+        {"title": "Agees", "count": qs["agees"], "percent": pct(qs["agees"])},
     ]
-    result = []
-
-    all_member = Member.objects.filter(is_active=True).count()
-
-    for r in age_range:
-        count = Member.objects.filter(
-            is_active=True,
-            birthdate__range=time_date.age_range_to_year_range(r["range"]),
-        ).count()
-
-        percent = round((count / all_member) * 100) if all_member != 0 else 0
-
-        result.append(
-            {
-                "title": r["category"],
-                "range": r["range"],
-                "percent": percent,
-                "count": count,
-            }
-        )
-
-    return result
-
-
+    
+    
+    
 def YearTraffic():
-    month_data = [None for _ in range(12)]
+    month_data = [0] * 12
     result = {}
 
     try:
-        totalEvent = list(Event_stats.objects.all().order_by("year", "month", "church_id", "event_type_name"))
+        qs = Event_stats.objects.all().order_by(
+            "year", "month", "church_id", "event_type_name"
+        )
     except (ProgrammingError, OperationalError):
         return {}
 
-    if not totalEvent:
+    if not qs.exists():
         return {}
 
-    oldest_event_stat = reduce(lambda x, y: min(x, y), [ev.year for ev in totalEvent])
+    oldest_event_stat = qs.order_by("year").values_list("year", flat=True).first()
 
-    for ev in totalEvent:
+    for ev in qs.iterator():  # 🔥 important improvement
         year_key = str(ev.year)
+
         if year_key not in result:
             result[year_key] = []
 
         found_event = next(
-            (event for event in result[year_key] if event["event"] == ev.event_type_name),
+            (e for e in result[year_key] if e["event"] == ev.event_type_name),
             None,
         )
 
         if not found_event:
-            found_event = {"event": ev.event_type_name, "data": [*month_data]}
+            found_event = {
+                "event": ev.event_type_name,
+                "data": month_data.copy(),
+            }
             result[year_key].append(found_event)
 
         month_index = int(ev.month) - 1
@@ -307,3 +347,36 @@ def YearTraffic():
         found_event["data"][month_index] = current_value + int(ev.totals)
 
     return {"year": oldest_event_stat, **result}
+
+
+# def YearTraffic():
+
+#     qs = Event_stats.objects.all()
+
+#     if not qs.exists():
+#         return {}
+
+#     qs = qs.values(
+#         "year",
+#         "event_type_name",
+#         "month"
+#     ).annotate(
+#         total=Sum("totals")
+#     ).order_by("year", "event_type_name", "month")
+
+#     result = {}
+
+#     for row in qs:
+#         year = str(row["year"])
+#         event = row["event_type_name"]
+#         month = int(row["month"]) - 1
+
+#         if year not in result:
+#             result[year] = {}
+
+#         if event not in result[year]:
+#             result[year][event] = [0] * 12
+
+#         result[year][event][month] += int(row["total"])
+
+#     return result

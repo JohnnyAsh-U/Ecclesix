@@ -30,7 +30,7 @@ class MediaFile(models.Model):
         INFECTED = 'infected', 'Infecté'
 
     event = models.ForeignKey(Event, on_delete=models.SET_NULL, null=True, related_name='media')
-    media_type = models.CharField(max_length=20, choices=MediaType.choices)
+    media_type = models.CharField(max_length=20, choices=MediaType.choices, db_index=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     church = models.ForeignKey(Church, on_delete=models.SET_NULL, null=True, related_name='media_files')
     object_key = models.CharField(max_length=500, null=True, blank=True)
@@ -85,4 +85,8 @@ class MediaFile(models.Model):
             ("voir_mediafile", "Voir MediaFile"),
             ("voirs_touts_mediafiles", "Voir tous les MediaFiles"),
             ("supprimer_mediafile", "Supprimer MediaFile"),
+        ]
+        indexes = [
+            models.Index(fields=['church', 'media_type']),
+            models.Index(fields=['-uploaded_at'])
         ]

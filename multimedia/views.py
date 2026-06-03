@@ -20,7 +20,7 @@ from .models import MediaFile
 from .serializers import CreateUploadMediaFileSerializer, MediaFileSerializer
 from event.models import Event
 from members.models import Member
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Count
 from rest_framework.pagination import PageNumberPagination
 from .services import s3
 
@@ -248,75 +248,37 @@ class AllMediaFilesView(ListCreateAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        
+        # Compute stats once with a single aggregation query (combines 5 queries into 1)
+        stats_data = queryset.aggregate(
+            total_size=Sum('file_size'),
+            total=Count('id'),
+            videos=Count('id', filter=Q(media_type='video')),
+            audios=Count('id', filter=Q(media_type='audio')),
+            photos=Count('id', filter=Q(media_type='image')),
+            documents=Count('id', filter=Q(media_type='document')),
+        )
+        
+        stats = {
+            'total': stats_data['total'] or 0,
+            'videos': stats_data['videos'] or 0,
+            'audios': stats_data['audios'] or 0,
+            'photos': stats_data['photos'] or 0,
+            'documents': stats_data['documents'] or 0,
+            'total_size': int(stats_data['total_size'] or 0),
+        }
+        
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True, context={'request': request})
             data = serializer.data
-            # enrich each serialized item with the church name (if available)
-            try:
-                enriched = []
-                for ser, obj in zip(data, page):
-                    church_name = ''
-                    ch = getattr(obj, 'church', None)
-                    if ch is not None:
-                        church_name = getattr(ch, 'name', None) or str(ch) or getattr(obj, 'church_id', '')
-                    else:
-                        church_name = getattr(obj, 'church_id', '')
-                    ser['church_name'] = church_name
-                    enriched.append(ser)
-
-                # compute stats from the full filtered queryset
-                try:
-                    total_size = queryset.aggregate(total_size=Sum('file_size'))['total_size'] or 0
-                    stats = {
-                        'total': queryset.count(),
-                        'videos': queryset.filter(media_type='video').count(),
-                        'audios': queryset.filter(media_type='audio').count(),
-                        'photos': queryset.filter(media_type='image').count(),
-                        'documents': queryset.filter(media_type='document').count(),
-                        'total_size': int(total_size),
-                    }
-                except Exception:
-                    stats = {}
-
-                response = self.get_paginated_response(enriched)
-                # attach stats to the paginated response payload
-                response.data['stats'] = stats
-                return response
-            except Exception:
-                return self.get_paginated_response(data)
-
+            response = self.get_paginated_response(data)
+            response.data['stats'] = stats
+            return response
+        
         serializer = self.get_serializer(queryset, many=True, context={'request': request})
-        data = serializer.data
-        # try to add church_name for non-paginated responses as well
-        try:
-            enriched = []
-            for ser, obj in zip(data, queryset):
-                church_name = ''
-                ch = getattr(obj, 'church', None)
-                if ch is not None:
-                    church_name = getattr(ch, 'name', None) or str(ch) or getattr(obj, 'church_id', '')
-                else:
-                    church_name = getattr(obj, 'church_id', '')
-                ser['church_name'] = church_name
-                enriched.append(ser)
-
-            try:
-                total_size = queryset.aggregate(total_size=Sum('file_size'))['total_size'] or 0
-                stats = {
-                    'total': queryset.count(),
-                    'videos': queryset.filter(media_type='video').count(),
-                    'audios': queryset.filter(media_type='audio').count(),
-                    'photos': queryset.filter(media_type='image').count(),
-                    'documents': queryset.filter(media_type='document').count(),
-                    'total_size': int(total_size),
-                }
-            except Exception:
-                stats = {}
-
-            return Response({'results': enriched, 'stats': stats})
-        except Exception:
-            return Response({'results': data})
+        
+        return Response({'results': serializer.data, 'stats': stats})
 
 
 class MediaFileDetailView(RetrieveDestroyAPIView):

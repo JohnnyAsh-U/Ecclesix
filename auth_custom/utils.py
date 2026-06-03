@@ -42,6 +42,6 @@ def getRefreshToken(request):
 
 
 def generate_tokens(payload):
-    access = jwtEncode(payload, age=10, secret=access_token_secret)
+    access = jwtEncode(payload, age=60, secret=access_token_secret)
     refresh = jwtEncode(payload, age=360, secret=refresh_token_secret)
     return access, refresh
