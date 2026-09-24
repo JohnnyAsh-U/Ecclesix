@@ -64,7 +64,6 @@ TENANT_APPS = [
     "communication",
     "seeders",
     "attendance",
-    "device",
     "storages",
     "multimedia",
     "internal"

@@ -24,7 +24,6 @@ urlpatterns = [
     path('api/v1/finance', include('finance.urls')),
     path('api/v1/communication', include('communication.urls')),
     path('api/v1/attendance', include('attendance.urls')),
-    path('api/v1/device', include('device.urls')),
     path('api/v1/tenant', include('tenants.urls')),
     path('api/v1/multimedia', include('multimedia.urls')),
     path('api/v1/internal', include('internal.urls')),

@@ -220,6 +220,7 @@ After the administrator has successfully logged in, initialize the tenant data i
 2. Create the first **City**.
 3. Create the first **Church Type**.
 4. Create the first **Church**, assigning the city and church type.
+5. Go to the Currently logged in superadmin profile and update his profile especially the **Church**
 
 The tenant is now ready for normal setup, including members, departments, events, attendance, and finance configuration. Creating the city, church type, and first church first prevents later forms from having no valid organization data to select.
 
@@ -504,4 +505,4 @@ For changes affecting Core integration, test the complete request path: Core aut
 
 - [English feature catalog](Features_EN.md)
 - [French feature catalog](Features_FR.md)
-- [Ecclesix Core control-plane README](https://github/JohnnyAsh-U/Ecclesix-core/README.md)
+- [Ecclesix Core control-plane README](https://github.com/JohnnyAsh-U/Ecclesix-core/README.md)
