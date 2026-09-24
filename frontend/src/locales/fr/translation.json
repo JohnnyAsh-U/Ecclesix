@@ -1,0 +1,28 @@
+{
+  "header": {
+    "language": "Langue",
+    "english": "Anglais",
+    "french": "Français"
+  },
+  "nav": {
+    "dashboard": "Tableau de Bord",
+    "membersManagement": "La Gestion des Membres",
+    "members": "Membres",
+    "communication": "Communication",
+    "announcements": "Annonces",
+    "departments": "Departements",
+    "admins": "Admins",
+    "churchManagement": "La Gestion Des Eglises",
+    "events": "Evenements",
+    "mediaLibrary": "Mediatheques",
+    "churches": "Eglises",
+    "finances": "Finances",
+    "reports": "Rapports",
+    "transactions": "Transactions",
+    "budgets": "Budgets",
+    "logs": "Logs",
+    "admin": "Admin",
+    "adminLogs": "Admin Logs",
+    "settings": "Parametres"
+  }
+}

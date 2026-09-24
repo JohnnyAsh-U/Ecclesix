@@ -11,6 +11,8 @@ const api = axios.create({
 // Request interceptor to add authorization;
 api.interceptors.request.use(config=>{
     config.headers.Authorization = `BEARER ${localStorage.getItem('chms')}`
+    const language = localStorage.getItem('i18nextLng') || 'fr';
+    config.headers['Accept-Language'] = language;
     return config;
 }, error=>{
     return Promise.reject(error)

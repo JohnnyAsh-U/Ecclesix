@@ -1,0 +1,50 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-24 22:54+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: auth_custom/views.py:33
+msgid "Verifiez votre mot de passe"
+msgstr ""
+
+#: auth_custom/views.py:55
+msgid "Erreur ! Impossible de s'inscrire"
+msgstr ""
+
+#: auth_custom/views.py:67 auth_custom/views.py:116 auth_custom/views.py:335
+msgid "Echec de verification"
+msgstr ""
+
+#: auth_custom/views.py:84 auth_custom/views.py:240
+msgid "Remplissez les champs"
+msgstr ""
+
+#: auth_custom/views.py:96
+msgid "Ce compte n'existe pas"
+msgstr ""
+
+#: auth_custom/views.py:104
+msgid "Password ou Username Incorrecte "
+msgstr ""
+
+#: auth_custom/views.py:250 auth_custom/views.py:260
+msgid "Mot de passe incorrect ou compte n'existe pas"
+msgstr ""
+
+#: auth_custom/views.py:268
+msgid "Veuillez vérifier votre adresse e-mail avant de vous connecter."
+msgstr ""

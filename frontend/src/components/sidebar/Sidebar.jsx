@@ -3,10 +3,11 @@ import SimpleBar from 'simplebar-react'
 import 'simplebar-react/dist/simplebar.min.css'
 import UserIcon from './UserIcon'
 import SideBarNavigation from './SidebarNavigation'
-import { NavList } from './NavList'
+import { useNavList } from './NavList'
 
 
 const Sidebar = ({ deviceType }) => {
+    const navItems = useNavList()
 
     return (
         <SimpleBar
@@ -21,7 +22,7 @@ const Sidebar = ({ deviceType }) => {
 
                 {/* <UserIcon /> */}
 
-                <SideBarNavigation items={NavList()} />
+                <SideBarNavigation items={navItems} />
             </div>
         </SimpleBar>
     )

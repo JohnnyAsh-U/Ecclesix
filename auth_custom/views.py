@@ -5,6 +5,7 @@ from django.core.cache import cache
 from .throttles import LoginThrottle, register_failed_login, clear_failed_login, PasswordResetThrottle
 from members.models import Member
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.contrib.auth import logout
 from .auth import AuthBackend
 from .services import auth_logger
@@ -29,7 +30,7 @@ class Register(APIView):
 
         if not email or not password or not password2 or password != password2:
             return Response(
-                {"status": False, "err": "Verifiez votre mot de passe"},
+                {"status": False, "err": _("Verifiez votre mot de passe")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -51,7 +52,7 @@ class Register(APIView):
         # to make sure the user is not already registered as an admin
         if not new_user or new_user.password != "":
             return Response(
-                {"status": False, "err": "Erreur ! Impossible de s'inscrire"},
+                {"status": False, "err": _("Erreur ! Impossible de s'inscrire")},
                 status.HTTP_400_BAD_REQUEST,
             )
 
@@ -63,7 +64,7 @@ class Register(APIView):
         return (
             Response({"email": email, "token": token, "next": "VerifyEmail"})
             if sent
-            else Response({"err": "Echec de verification"}, status.HTTP_400_BAD_REQUEST)
+            else Response({"err": _("Echec de verification")}, status.HTTP_400_BAD_REQUEST)
         )
 
 
@@ -80,7 +81,7 @@ class Login(APIView):
         if not email or not password:
             register_failed_login(request, email)
             return Response(
-                {"status": False, "err": "Remplissez les champs"},
+                {"status": False, "err": _("Remplissez les champs")},
                 status.HTTP_400_BAD_REQUEST,
             )
 
@@ -92,7 +93,7 @@ class Login(APIView):
         if not admin or admin.password == "":
             register_failed_login(request, email)
             return Response(
-                {"status": False, "err": "Ce compte n'existe pas"},
+                {"status": False, "err": _("Ce compte n'existe pas")},
                 status.HTTP_400_BAD_REQUEST,
             )
 
@@ -100,7 +101,7 @@ class Login(APIView):
         if not admin:
             register_failed_login(request, email)
             return Response(
-                {"status": False, "err": "Password ou Username Incorrecte "},
+                {"status": False, "err": _("Password ou Username Incorrecte ")},
                 status.HTTP_400_BAD_REQUEST,
             )
 
@@ -112,7 +113,7 @@ class Login(APIView):
                 Response({"email": email, "token": token, "next": "VerifyEmail"})
                 if sent
                 else Response(
-                    {"err": "Echec de verification"}, status.HTTP_400_BAD_REQUEST
+                    {"err": _("Echec de verification")}, status.HTTP_400_BAD_REQUEST
                 )
             )
 
@@ -236,7 +237,7 @@ class MobileLogin(APIView):
      
         if not email or not password:
             return Response(
-                {"status": False, "err": "Remplissez les champs"},
+                {"status": False, "err": _("Remplissez les champs")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -246,7 +247,7 @@ class MobileLogin(APIView):
 
         if not existing_user or existing_user.password == "":
             return Response(
-                {"status": False, "err": "Mot de passe incorrect ou compte n'existe pas"},
+                {"status": False, "err": _("Mot de passe incorrect ou compte n'existe pas")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -256,7 +257,7 @@ class MobileLogin(APIView):
 
         if not admin:
             return Response(
-                {"status": False, "err": "Mot de passe incorrect ou compte n'existe pas"},
+                {"status": False, "err": _("Mot de passe incorrect ou compte n'existe pas")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -264,7 +265,7 @@ class MobileLogin(APIView):
             return Response(
                 {
                     "status": False,
-                    "err": "Veuillez vérifier votre adresse e-mail avant de vous connecter.",
+                    "err": _("Veuillez vérifier votre adresse e-mail avant de vous connecter."),
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -331,7 +332,7 @@ class Reinitialization(APIView):
         return (
             Response({"email": email})
             if token
-            else Response({"err": "Echec de verification"}, status.HTTP_400_BAD_REQUEST)
+            else Response({"err": _("Echec de verification")}, status.HTTP_400_BAD_REQUEST)
         )
 
 
