@@ -116,8 +116,7 @@ SPECTACULAR_SETTINGS = {
 
 
 MIDDLEWARE = [
-    "backend.middleware.MetricsAwareTenantMainMiddleware",
-    "backend.middleware.PrometheusMetricsMiddleware",
+    "backend.middleware.ActiveTenantMainMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -136,21 +135,6 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
 
-PROMETHEUS_METRICS_PATH = os.getenv("PROMETHEUS_METRICS_PATH", "/metrics")
-PROMETHEUS_TENANT_LABEL_MODE = os.getenv("PROMETHEUS_TENANT_LABEL_MODE", "grouped")
-PROMETHEUS_TENANT_LABEL_ALLOWLIST = [
-    item.strip()
-    for item in os.getenv("PROMETHEUS_TENANT_LABEL_ALLOWLIST", "").split(",")
-    if item.strip()
-]
-
-# Secret for internal API requests (used by `backend.middleware.InternalAPIMiddleware`)
-# Set this in your environment as `INTERNAL_API_SECRET`.
-INTERNAL_API_SECRET = os.getenv("INTERNAL_API_SECRET", "")
-
-# Prometheus URL for metrics queries (used by `internal.views_infra_stats`)
-# Set this in your environment as `PROMETHEUS_URL` (defaults to http://localhost:9090)
-PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
 
 REDIS_URL = os.getenv("REDIS_URL")
 if REDIS_URL:
@@ -408,7 +392,6 @@ DRAMATIQ_BROKER = {
         "url": REDIS_URL,
     },
     "MIDDLEWARE": [
-        "dramatiq.middleware.prometheus.Prometheus",
         "dramatiq.middleware.AgeLimit",
         "dramatiq.middleware.TimeLimit",
         "dramatiq.middleware.Callbacks",

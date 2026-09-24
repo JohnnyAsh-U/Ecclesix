@@ -1,12 +1,11 @@
 import axios from 'axios'
 
+const API_URL = import.meta.env.VITE_API_URL
 
 const api = axios.create({
-    baseURL: "http://localhost:8000/api/v1",
+    baseURL: API_URL || "http://localhost:8000/api/v1",
     withCredentials: true,
 })
-// axios.defaults.baseURL = "http://localhost:8000/api/v1"
-// axios.defaults.withCredentials = true
 
 
 // Request interceptor to add authorization;

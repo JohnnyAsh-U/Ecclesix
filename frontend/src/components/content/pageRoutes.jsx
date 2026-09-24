@@ -27,7 +27,7 @@ const Budgets = React.lazy(()=>import('../../pages/finance/budgets'))
 const FinanceLog = React.lazy(()=>import('../../pages/finance/logs'))
 const EventDetail = React.lazy(() => import('../../pages/evenementDetail'))
 
-const CommunicationSend = React.lazy(() => import('../../pages/communications'))
+// const CommunicationSend = React.lazy(() => import('../../pages/communications'))
 
 export const routes = [
   // { path: '/', exact: true, name: 'Home' },
@@ -43,12 +43,12 @@ export const routes = [
   { path: '/dashboard/members', name: 'Members Dashboard', element: MembersDashboard, PermissionRequises: [] },
   { path: '/membres', name: 'Membres', element: Membres, PermissionRequises: ['voir_membre', 'voir_touts_membres'] },
   
-  {
-    path: '/communication/send',
-    name: 'Email/WhatsApp',
-    element: CommunicationSend,
-    PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
-  },
+  // {
+  //   path: '/communication/send',
+  //   name: 'Email/WhatsApp',
+  //   element: CommunicationSend,
+  //   PermissionRequises: ['envoyer_communication', 'envoyer_toutes_communications']
+  // },
   {
     path: '/communication/announcements',
     name: 'Annonces',

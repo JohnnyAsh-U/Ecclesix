@@ -36,5 +36,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Job completed"))
         except Exception as m:
             logger.exception(m)
+            print(m)
             self.stdout.write(self.style.ERROR("Job Failed"))
 

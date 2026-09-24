@@ -1,7 +1,7 @@
 import logging
 import time
-from types import SimpleNamespace
 import hmac
+from types import SimpleNamespace
 
 # from asgiref.sync import iscoroutinefunction
 from inspect import iscoroutinefunction
@@ -13,14 +13,12 @@ from django_tenants.utils import get_public_schema_name
 from django.http import JsonResponse
 from requests import request
 
-from .db_instrumentation import instrument_database_connections
 from .logging_utils import clear_request_context, set_request_context
-from .metrics import ERROR_COUNT, REQUEST_COUNT, REQUEST_LATENCY, get_tenant_label, normalize_endpoint
 
 request_logger = logging.getLogger("backend.request")
 
 
-class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
+class ActiveTenantMainMiddleware(TenantMainMiddleware):
     
     def get_tenant(self, domain_model, hostname):
         """Override get_tenant to check if tenant and domain are active."""
@@ -39,12 +37,10 @@ class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
     
     
     def process_request(self, request):
-        metrics_path = getattr(settings, "PROMETHEUS_METRICS_PATH", "/metrics")
         internal_api_prefix = "/api/v1/internal"
         path = request.path or ""
         
-        if (request.path.rstrip("/") == metrics_path.rstrip("/")
-            or path.rstrip("/") == internal_api_prefix
+        if (path.rstrip("/") == internal_api_prefix
             or path.startswith(internal_api_prefix + "/")
         ):
             connection.set_schema_to_public()
@@ -57,14 +53,7 @@ class MetricsAwareTenantMainMiddleware(TenantMainMiddleware):
 
 @sync_and_async_middleware
 def RequestLoggingMiddleware(get_response):
-    metrics_path = getattr(settings, "PROMETHEUS_METRICS_PATH", "/metrics")
-    def should_skip(path):
-        return path.rstrip("/") == metrics_path.rstrip("/")
-
     async def async_middleware(request):
-        if should_skip(request.path):
-            return await get_response(request)
-
         token = set_request_context(request)
         response = None
         start = time.perf_counter()
@@ -89,9 +78,6 @@ def RequestLoggingMiddleware(get_response):
             clear_request_context(token)
 
     def sync_middleware(request):
-        if should_skip(request.path):
-            return get_response(request)
-
         token = set_request_context(request)
         response = None
         start = time.perf_counter()
@@ -149,67 +135,3 @@ def InternalAPIMiddleware(get_response):
     return sync_middleware
 
 
-@sync_and_async_middleware
-def PrometheusMetricsMiddleware(get_response):
-    metrics_path = getattr(settings, "PROMETHEUS_METRICS_PATH", "/metrics")
-
-    def should_skip(path):
-        return path.rstrip("/") == metrics_path.rstrip("/")
-
-    async def async_middleware(request):
-        if should_skip(request.path):
-            return await get_response(request)
-
-        method = request.method or "UNKNOWN"
-        tenant_label = get_tenant_label(request=request)
-        response = None
-        error_type = None
-        start = time.perf_counter()
-
-        with instrument_database_connections(tenant_label):
-            try:
-                response = await get_response(request)
-                return response
-            except Exception as exc:
-                error_type = exc.__class__.__name__
-                raise
-            finally:
-                endpoint = normalize_endpoint(request)
-                status_code = str(getattr(response, "status_code", 500))
-                REQUEST_COUNT.labels(method=method, endpoint=endpoint, status_code=status_code, tenant=tenant_label).inc()
-                REQUEST_LATENCY.labels(method=method, endpoint=endpoint, tenant=tenant_label).observe(time.perf_counter() - start)
-                if error_type:
-                    ERROR_COUNT.labels(method=method, endpoint=endpoint, error_type=error_type, tenant=tenant_label).inc()
-                elif status_code.startswith("5"):
-                    ERROR_COUNT.labels(method=method, endpoint=endpoint, error_type="5xx", tenant=tenant_label).inc()
-
-    def sync_middleware(request):
-        if should_skip(request.path):
-            return get_response(request)
-
-        method = request.method or "UNKNOWN"
-        tenant_label = get_tenant_label(request=request)
-        response = None
-        error_type = None
-        start = time.perf_counter()
-
-        with instrument_database_connections(tenant_label):
-            try:
-                response = get_response(request)
-                return response
-            except Exception as exc:
-                error_type = exc.__class__.__name__
-                raise
-            finally:
-                endpoint = normalize_endpoint(request)
-                status_code = str(getattr(response, "status_code", 500))
-                REQUEST_COUNT.labels(method=method, endpoint=endpoint, status_code=status_code, tenant=tenant_label).inc()
-                REQUEST_LATENCY.labels(method=method, endpoint=endpoint, tenant=tenant_label).observe(time.perf_counter() - start)
-                if error_type:
-                    ERROR_COUNT.labels(method=method, endpoint=endpoint, error_type=error_type, tenant=tenant_label).inc()
-                elif status_code.startswith("5"):
-                    ERROR_COUNT.labels(method=method, endpoint=endpoint, error_type="5xx", tenant=tenant_label).inc()
-
-    if iscoroutinefunction(get_response):
-        return async_middleware
-    return sync_middleware

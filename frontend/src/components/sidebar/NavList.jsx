@@ -71,11 +71,6 @@ export const NavList = () => {
             perms: ['envoyer_communication', 'envoyer_toutes_communications'],
             items: [
                 {
-                    name: 'Email/WhatsApp',
-                    to: '/communication/send',
-                    perms: ['envoyer_communication', 'envoyer_toutes_communications']
-                },
-                {
                     name: 'Annonces',
                     to: '/communication/announcements',
                     perms: ['envoyer_communication', 'envoyer_toutes_communications']

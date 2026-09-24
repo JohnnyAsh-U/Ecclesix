@@ -10,9 +10,7 @@ import Categories from './categories'
 import Regles from './regles'
 import RolesPerms from './roles_et_perms'
 import Eglise from './eglise'
-import Devices from './devices'
 import DatabaseBackup from './database_backup'
-import CommConfig from './comm_config'
 
 const Parametres = () => {
     const [settings, setSettings] = useState(5)
@@ -62,16 +60,6 @@ const Parametres = () => {
                                 <FontAwesomeIcon icon={faUserGear} /> Les Roles Et Permissions</li>
                             <li
                                 style={{ cursor: 'pointer' }}
-                                className={`list-group-item list-group-item-action py-3 ${settings == 8 ? 'active' : ''}`}
-                                onClick={() => setSettings(8)}>
-                                <FontAwesomeIcon icon={faMobileAlt} /> Les Appareils</li>
-                            <li
-                                style={{ cursor: 'pointer' }}
-                                className={`list-group-item list-group-item-action py-3 ${settings == 9 ? 'active' : ''}`}
-                                onClick={() => setSettings(9)}>
-                                <FontAwesomeIcon icon={faEnvelope} /> Configuration Email/WhatsApp</li>
-                            <li
-                                style={{ cursor: 'pointer' }}
                                 className={`list-group-item list-group-item-action py-3 ${settings == 10 ? 'active' : ''}`}
                                 onClick={() => setSettings(10)}>
                                 <FontAwesomeIcon icon={faDatabase} /> Sauvegarde Base de Données</li>
@@ -88,8 +76,6 @@ const Parametres = () => {
                     {settings === 5 && <TypeVille />}
                     {settings === 6 && <RolesPerms />}
                     {settings === 7 && <Eglise />}
-                    {settings === 8 && <Devices />}
-                    {settings === 9 && <CommConfig />}
                     {settings === 10 && <DatabaseBackup />}
 
                 </div>
